@@ -5,6 +5,48 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
+        <!-- Platform Free Mode Toggle -->
+        <div class="card mb-4 border-{{ 'success' if is_free_mode else 'warning' }}">
+            <div class="card-header bg-{{ 'success' if is_free_mode else 'warning' }} text-white">
+                <h4><i class="fas fa-{{ 'unlock' if is_free_mode else 'lock' }}"></i> Platform Access Control</h4>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-2">
+                            {% if is_free_mode %}
+                                <span class="text-success">🟢 Free Mode Active</span>
+                            {% else %}
+                                <span class="text-warning">🔒 Premium Mode Active</span>
+                            {% endif %}
+                        </h5>
+                        <p class="mb-0">
+                            {% if is_free_mode %}
+                                All premium features are currently <strong>FREE</strong> for all users. 
+                                This includes access to the store, labs, and all premium content.
+                            {% else %}
+                                Premium features require subscription. Users need activation keys or payment plans to access premium content.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <form method="POST" class="d-inline">
+                            <div class="form-check form-switch d-inline-block me-3">
+                                <input class="form-check-input" type="checkbox" id="platform_free_mode" name="platform_free_mode" 
+                                       {{ 'checked' if is_free_mode else '' }} style="transform: scale(1.5);">
+                                <label class="form-check-label fw-bold" for="platform_free_mode">
+                                    Free Mode
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-{{ 'success' if is_free_mode else 'warning' }}">
+                                <i class="fas fa-save"></i> Update
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -141,8 +183,12 @@
                                 <div class="col-md-3">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
-                                            <h6>Database</h6>
-                                            <span class="badge bg-success">Connected</span>
+                                            <h6>Access Mode</h6>
+                                            {% if is_free_mode %}
+                                                <span class="badge bg-success">Free</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Premium</span>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>

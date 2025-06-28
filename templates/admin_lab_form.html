@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}{% if lab %}Edit Lab{% else %}Add New Lab{% endif %}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{% if lab %}Edit Lab{% else %}Add New Lab{% endif %}</h2>
+    <form method="post">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" name="title" required value="{{ lab.title if lab else '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="category" class="form-label">Category</label>
+                <input type="text" class="form-control" id="category" name="category" required value="{{ lab.category if lab else '' }}">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="2" required>{{ lab.description if lab else '' }}</textarea>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="difficulty" class="form-label">Difficulty</label>
+                <select class="form-select" id="difficulty" name="difficulty" required>
+                    <option value="easy" {% if lab and lab.difficulty=='easy' %}selected{% endif %}>Easy</option>
+                    <option value="medium" {% if lab and lab.difficulty=='medium' %}selected{% endif %}>Medium</option>
+                    <option value="hard" {% if lab and lab.difficulty=='hard' %}selected{% endif %}>Hard</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="points" class="form-label">Points</label>
+                <input type="number" class="form-control" id="points" name="points" required value="{{ lab.points if lab else 0 }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="estimated_time" class="form-label">Estimated Time (min)</label>
+                <input type="number" class="form-control" id="estimated_time" name="estimated_time" value="{{ lab.estimated_time if lab else 0 }}">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="instructions" class="form-label">Instructions</label>
+            <textarea class="form-control" id="instructions" name="instructions" rows="2">{{ lab.instructions if lab else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="hints" class="form-label">Hints</label>
+            <textarea class="form-control" id="hints" name="hints" rows="2">{{ lab.hints if lab else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="solution" class="form-label">Solution</label>
+            <textarea class="form-control" id="solution" name="solution" rows="2">{{ lab.solution if lab else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="flag" class="form-label">Flag</label>
+            <input type="text" class="form-control" id="flag" name="flag" required value="{{ lab.flag if lab else '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="tools_needed" class="form-label">Tools Needed</label>
+            <input type="text" class="form-control" id="tools_needed" name="tools_needed" value="{{ lab.tools_needed if lab else '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="learning_objectives" class="form-label">Learning Objectives</label>
+            <textarea class="form-control" id="learning_objectives" name="learning_objectives" rows="2">{{ lab.learning_objectives if lab else '' }}</textarea>
+        </div>
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="is_premium" name="is_premium" {% if lab and lab.is_premium %}checked{% endif %}>
+            <label class="form-check-label" for="is_premium">Premium Lab?</label>
+        </div>
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if lab is none or lab.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">Active?</label>
+        </div>
+        <hr>
+        <!-- Quiz Questions Section -->
+        <h4 class="mt-4">Quiz Questions</h4>
+        <div class="mb-3">
+            {% if lab and lab.quiz_questions %}
+                <ul class="list-group mb-3">
+                {% for q in lab.quiz_questions|sort(attribute='order') %}
+                    <li class="list-group-item">
+                        <strong>Q{{ loop.index }} ({{ q.marks }} mark{{ 's' if q.marks != 1 else '' }}):</strong> {{ q.question }}<br>
+                        <em>Options:</em> {{ q.options_list|join(', ') }}<br>
+                        <em>Answer:</em> {{ q.correct_answer }}<br>
+                        <em>Explanation:</em> {{ q.explanation }}<br>
+                        <form method="post" action="{{ url_for('admin_delete_quiz_question', question_id=q.id, lab_id=lab.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-muted">No quiz questions yet.</div>
+            {% endif %}
+        </div>
+        <form method="post" action="{{ url_for('admin_add_quiz_question', lab_id=lab.id if lab else 0) }}">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <input type="text" class="form-control" name="question" placeholder="Question" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" class="form-control" name="options" placeholder="Options (comma separated)" required>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <input type="text" class="form-control" name="correct_answer" placeholder="Correct Answer" required>
+                </div>
+                <div class="col-md-1 mb-2">
+                    <input type="number" class="form-control" name="marks" placeholder="Marks" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="mb-2">
+                <input type="text" class="form-control" name="explanation" placeholder="Explanation (optional)">
+            </div>
+            <button type="submit" class="btn btn-success btn-sm">Add Quiz Question</button>
+        </form>
+        <hr>
+        <!-- Hacking Lab Section -->
+        <h4 class="mt-4">Real-Time Hacking Lab</h4>
+        <div class="mb-3">
+            <label for="sandbox_url" class="form-label">Sandbox URL/Connection</label>
+            <input type="text" class="form-control" id="sandbox_url" name="sandbox_url" value="{{ lab.sandbox_url if lab else '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="sandbox_instructions" class="form-label">Sandbox Instructions</label>
+            <textarea class="form-control" id="sandbox_instructions" name="sandbox_instructions" rows="2">{{ lab.sandbox_instructions if lab else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="required_command" class="form-label">Required Command (for success)</label>
+            <input type="text" class="form-control" id="required_command" name="required_command" value="{{ lab.required_command if lab else '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="command_success_criteria" class="form-label">Command Success Criteria (output, flag, etc.)</label>
+            <input type="text" class="form-control" id="command_success_criteria" name="command_success_criteria" value="{{ lab.command_success_criteria if lab else '' }}">
+        </div>
+        <button type="submit" class="btn btn-primary">{% if lab %}Update Lab{% else %}Create Lab{% endif %}</button>
+        <a href="{{ url_for('admin_labs') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

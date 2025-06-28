@@ -24,11 +24,21 @@
                         </span>
                         {% endif %}
                     </div>
+                    <div class="d-flex align-items-center">
                     {% if post.price > 0 %}
-                    <div class="badge bg-success fs-6">
+                        <div class="badge bg-success fs-6 me-2">
                         ${{ "%.2f"|format(post.price) }}
                     </div>
                     {% endif %}
+                        {% if current_user.is_authenticated and current_user.id == post.user_id %}
+                        <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-outline-warning btn-sm me-1">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -71,18 +81,103 @@
                             <h6><i class="fas fa-paperclip"></i> Attachment</h6>
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-file-code fa-2x text-primary me-3"></i>
-                                <div>
+                                <div class="flex-grow-1">
                                     <strong>{{ post.file_name }}</strong><br>
                                     {% if current_user.is_authenticated %}
+                                        {% if post.is_premium %}
+                                            <!-- Check if user has purchased this premium post -->
+                                            {% set has_purchased = false %}
+                                            {% if current_user.purchases %}
+                                                {% for purchase in current_user.purchases %}
+                                                    {% if purchase.post_id == post.id and purchase.status == 'completed' %}
+                                                        {% set has_purchased = true %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                            
+                                            {% if current_user.id == post.user_id %}
+                                                <!-- Creator's own post -->
+                                                <a href="{{ url_for('download_file', filename=post.file_name) }}" 
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-download"></i> Download (Your Content)
+                                                </a>
+                                            {% elif has_purchased %}
+                                                <!-- User has purchased -->
+                                                <a href="{{ url_for('download_purchased', post_id=post.id) }}" 
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-download"></i> Download
+                                                </a>
+                                            {% else %}
+                                                <!-- User hasn't purchased -->
+                                                <form method="POST" action="{{ url_for('purchase_post', post_id=post.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-shopping-cart"></i> Purchase to Download
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        {% else %}
+                                            <!-- Free content -->
                                     <a href="{{ url_for('download_file', filename=post.file_name) }}" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-download"></i> Download
                                     </a>
+                                        {% endif %}
                                     {% else %}
                                     <small class="text-muted">Login required to download</small>
                                     {% endif %}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Purchase Section for Premium Content -->
+                {% if post.is_premium and current_user.is_authenticated and current_user.id != post.user_id %}
+                <div class="mt-4">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6><i class="fas fa-crown"></i> Premium Content</h6>
+                        </div>
+                        <div class="card-body">
+                            {% set has_purchased = false %}
+                            {% if current_user.purchases %}
+                                {% for purchase in current_user.purchases %}
+                                    {% if purchase.post_id == post.id and purchase.status == 'completed' %}
+                                        {% set has_purchased = true %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            
+                            {% if has_purchased %}
+                                <div class="text-center">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <h5 class="text-success">You own this content!</h5>
+                                    <p class="text-muted">You have already purchased this premium content.</p>
+                                    {% if post.file_name %}
+                                    <a href="{{ url_for('download_purchased', post_id=post.id) }}" 
+                                       class="btn btn-success">
+                                        <i class="fas fa-download"></i> Download Now
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="text-center">
+                                    <h5>Get Access to Premium Content</h5>
+                                    <p class="text-muted">Purchase this content to unlock full access and downloads.</p>
+                                    <div class="mb-3">
+                                        <span class="badge bg-warning text-dark fs-5">${{ "%.2f"|format(post.price) }}</span>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('purchase_post', post_id=post.id) }}">
+                                        <button type="submit" class="btn btn-warning btn-lg">
+                                            <i class="fas fa-shopping-cart"></i> Purchase Now
+                                        </button>
+                                    </form>
+                                    <small class="text-muted mt-2 d-block">
+                                        Secure payment powered by Paystack • 85% goes to the creator
+                                    </small>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -196,4 +291,37 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+{% if current_user.is_authenticated and current_user.id == post.user_id %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete "<strong>{{ post.title }}</strong>"?</p>
+                {% if post.is_premium %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This is premium content. If it has been purchased, it cannot be deleted.
+                </div>
+                {% endif %}
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Post
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

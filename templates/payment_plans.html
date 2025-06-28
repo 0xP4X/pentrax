@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Plans - PentraX{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-credit-card"></i> Choose Your Plan</h3>
+                </div>
+                <div class="card-body">
+                    {% if is_free_mode %}
+                    <div class="alert alert-success" role="alert">
+                        <h5><i class="fas fa-unlock"></i> Free Mode Active!</h5>
+                        <p class="mb-0">All premium features are currently <strong>FREE</strong> for all users. 
+                        You can select any plan to get instant premium access without payment.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        {% for plan in payment_plans %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-{{ 'success' if is_free_mode else 'primary' }}">
+                                <div class="card-header bg-{{ 'success' if is_free_mode else 'primary' }} text-white text-center">
+                                    <h4>{{ plan.display_name }}</h4>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="text-center mb-3">
+                                        {% if is_free_mode %}
+                                            <h2 class="text-success">FREE</h2>
+                                            <small class="text-muted">Normally ${{ "%.2f"|format(plan.price) }}</small>
+                                        {% else %}
+                                            <h2>${{ "%.2f"|format(plan.price) }}</h2>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <ul class="list-unstyled mb-4">
+                                        <li><i class="fas fa-check text-success"></i> {{ plan.duration_days }} days access</li>
+                                        <li><i class="fas fa-check text-success"></i> Premium content access</li>
+                                        <li><i class="fas fa-check text-success"></i> Advanced labs</li>
+                                        <li><i class="fas fa-check text-success"></i> Store access</li>
+                                        <li><i class="fas fa-check text-success"></i> AI Assistant</li>
+                                        {% if plan.features %}
+                                            {% for feature in plan.features %}
+                                            <li><i class="fas fa-check text-success"></i> {{ feature }}</li>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </ul>
+                                    
+                                    <div class="mt-auto">
+                                        <form method="POST" action="{{ url_for('purchase_plan', plan_id=plan.id) }}">
+                                            <button type="submit" class="btn btn-{{ 'success' if is_free_mode else 'primary' }} w-100">
+                                                {% if is_free_mode %}
+                                                    <i class="fas fa-unlock"></i> Get Free Access
+                                                {% else %}
+                                                    <i class="fas fa-credit-card"></i> Purchase Now
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if not payment_plans %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                        <h4>No Payment Plans Available</h4>
+                        <p class="text-muted">Please check back later or contact support.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

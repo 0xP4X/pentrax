@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Splash CSS removed - splash screen disabled -->
 </head>
 <body>
     <!-- Navigation -->
@@ -66,18 +67,25 @@
                     
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle"></i> {{ current_user.username }}
                             </a>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="{{ url_for('profile') }}">
                                     <i class="fas fa-user"></i> Profile</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('create_post') }}">
                                     <i class="fas fa-plus"></i> Create Post</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('my_purchases') }}">
+                                    <i class="fas fa-shopping-bag"></i> My Purchases</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('creator_dashboard') }}">
+                                    <i class="fas fa-chart-line"></i> Creator Dashboard</a></li>
                                 {% if current_user.is_admin %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
                                     <i class="fas fa-cogs"></i> Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_activation_keys') }}">
+                                    <i class="fas fa-key"></i> Activation Keys</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('logout') }}">
@@ -153,6 +161,7 @@
     {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/ai-assistant.js') }}"></script>
     {% endif %}
+    <script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
     
     {% block scripts %}{% endblock %}
 </body>

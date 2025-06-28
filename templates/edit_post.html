@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Post - PentraX{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-edit"></i> Edit Post: {{ post.title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" value="{{ post.title }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select category...</option>
+                                    <option value="tools" {{ 'selected' if post.category == 'tools' }}>
+                                        <i class="fas fa-tools"></i> Tools & Scripts
+                                    </option>
+                                    <option value="bugs" {{ 'selected' if post.category == 'bugs' }}>
+                                        <i class="fas fa-bug"></i> Bugs & CVEs
+                                    </option>
+                                    <option value="ideas" {{ 'selected' if post.category == 'ideas' }}>
+                                        <i class="fas fa-lightbulb"></i> Ideas & Research
+                                    </option>
+                                    <option value="jobs" {{ 'selected' if post.category == 'jobs' }}>
+                                        <i class="fas fa-briefcase"></i> Jobs & Collaborations
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content *</label>
+                        <textarea class="form-control" id="content" name="content" rows="8" required>{{ post.content }}</textarea>
+                        <div class="form-text">
+                            Use Markdown for formatting. Be detailed and helpful!
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" value="{{ post.tags or '' }}" 
+                                       placeholder="security, pentest, tools">
+                                <div class="form-text">
+                                    Separate tags with commas
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price ($)</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       value="{{ "%.2f"|format(post.price) }}" min="0" step="0.01">
+                                <div class="form-text">
+                                    Set to 0 for free content
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_premium" name="is_premium" 
+                                   {{ 'checked' if post.is_premium }}>
+                            <label class="form-check-label" for="is_premium">
+                                <i class="fas fa-crown text-warning"></i> Premium Content
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            Premium content requires payment and appears in the store
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Attachment</label>
+                        {% if post.file_name %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-paperclip"></i> Current file: <strong>{{ post.file_name }}</strong>
+                            <br>
+                            <small>Upload a new file to replace the current one</small>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".txt,.py,.sh,.rb,.pl,.php,.js,.html,.css,.json,.xml,.md,.zip,.tar,.gz">
+                        <div class="form-text">
+                            Allowed: Scripts, documents, archives (Max 16MB)
+                        </div>
+                    </div>
+
+                    {% if post.is_premium %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Premium Content Notice:</strong>
+                        <ul class="mb-0">
+                            <li>Price changes are not allowed if the post has been purchased</li>
+                            <li>File updates will be available to all existing purchasers</li>
+                            <li>Content changes should maintain the value promised to buyers</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Content Guidelines:</strong>
+                        <ul class="mb-0">
+                            <li>Provide clear, detailed descriptions</li>
+                            <li>Include usage instructions for tools</li>
+                            <li>Follow responsible disclosure for vulnerabilities</li>
+                            <li>Be respectful and professional</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const priceInput = document.getElementById('price');
+    const premiumCheckbox = document.getElementById('is_premium');
+    
+    // Update premium status based on price
+    priceInput.addEventListener('input', function() {
+        if (parseFloat(this.value) > 0) {
+            premiumCheckbox.checked = true;
+        }
+    });
+    
+    // Update price when premium is unchecked
+    premiumCheckbox.addEventListener('change', function() {
+        if (!this.checked) {
+            priceInput.value = '0.00';
+        }
+    });
+});
+</script>
+{% endblock %} 

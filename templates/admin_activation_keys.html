@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Activation Keys - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-key text-warning"></i> Manage Activation Keys</h2>
+                <p class="text-muted mb-0">Generate and manage premium activation keys for users</p>
+            </div>
+        </div>
+
+        <!-- Generate Keys Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Generate New Keys</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="plan_type" class="form-label">Plan Type</label>
+                                <select class="form-select" id="plan_type" name="plan_type" required>
+                                    <option value="">Select plan...</option>
+                                    <option value="monthly">Monthly (30 days)</option>
+                                    <option value="yearly">Yearly (365 days)</option>
+                                    <option value="lifetime">Lifetime</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" 
+                                       value="1" min="1" max="100" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price ($)</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       value="0.00" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-magic"></i> Generate Keys
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Keys List -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> All Activation Keys</h5>
+            </div>
+            <div class="card-body">
+                {% if activation_keys %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Plan</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Used By</th>
+                                <th>Created</th>
+                                <th>Expires</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key in activation_keys %}
+                            <tr>
+                                <td>
+                                    <code class="bg-light px-2 py-1 rounded">{{ key.key }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if key.plan_type == 'monthly' else 'success' if key.plan_type == 'yearly' else 'warning' }}">
+                                        {{ key.plan_type.title() }}
+                                    </span>
+                                </td>
+                                <td>${{ "%.2f"|format(key.price) }}</td>
+                                <td>
+                                    {% if key.is_used %}
+                                    <span class="badge bg-secondary">Used</span>
+                                    {% elif key.expires_at and key.expires_at < now %}
+                                    <span class="badge bg-danger">Expired</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if key.used_by %}
+                                    <a href="{{ url_for('user_profile', username=key.user.username) }}" 
+                                       class="text-decoration-none">{{ key.user.username }}</a>
+                                    <br>
+                                    <small class="text-muted">{{ key.used_at.strftime('%Y-%m-%d') }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ key.created_at.strftime('%Y-%m-%d') }}
+                                    <br>
+                                    <small class="text-muted">by {{ key.creator.username }}</small>
+                                </td>
+                                <td>
+                                    {% if key.expires_at %}
+                                    {{ key.expires_at.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                    <span class="text-muted">Never</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not key.is_used %}
+                                    <form method="POST" action="{{ url_for('delete_activation_key', key_id=key.id) }}" 
+                                          class="d-inline" onsubmit="return confirm('Delete this key?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Activation Keys</h5>
+                    <p class="text-muted">Generate your first activation key above.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-key fa-2x mb-2"></i>
+                        <h4>{{ activation_keys|length }}</h4>
+                        <small>Total Keys</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check fa-2x mb-2"></i>
+                        <h4>{{ activation_keys|selectattr('is_used')|list|length }}</h4>
+                        <small>Used Keys</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h4>{{ activation_keys|rejectattr('is_used')|list|length }}</h4>
+                        <small>Available Keys</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                        <h4>${{ "%.2f"|format(activation_keys|sum(attribute='price')) }}</h4>
+                        <small>Total Value</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

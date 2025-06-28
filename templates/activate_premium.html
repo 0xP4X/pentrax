@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Activate Premium - PentraX{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-key text-warning"></i> Activate Premium Access</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-crown fa-4x text-warning mb-3"></i>
+                    <h5>Unlock Premium Features</h5>
+                    <p class="text-muted">Enter your activation key to access the premium store and exclusive content.</p>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="activation_key" class="form-label">Activation Key</label>
+                        <input type="text" class="form-control form-control-lg text-center" 
+                               id="activation_key" name="activation_key" 
+                               placeholder="XXXX-XXXX-XXXX-XXXX" required>
+                        <div class="form-text">
+                            Enter the 16-character activation key provided to you
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-unlock"></i> Activate Premium
+                        </button>
+                    </div>
+                </form>
+
+                <hr>
+
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Premium Benefits</h6>
+                    <ul class="mb-0">
+                        <li>Access to premium tools and scripts</li>
+                        <li>Exclusive cybersecurity resources</li>
+                        <li>Advanced labs and tutorials</li>
+                        <li>Priority support and updates</li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <small class="text-muted">
+                        Don't have an activation key? 
+                        <a href="#" class="text-decoration-none">Contact Admin</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Plans Info -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-list"></i> Available Plans</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-primary">Monthly</h6>
+                            <p class="mb-1">30 days access</p>
+                            <small class="text-muted">Perfect for testing</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-success">Yearly</h6>
+                            <p class="mb-1">365 days access</p>
+                            <small class="text-muted">Best value</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-warning">Lifetime</h6>
+                            <p class="mb-1">Permanent access</p>
+                            <small class="text-muted">One-time payment</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

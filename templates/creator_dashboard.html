@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Creator Dashboard - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-chart-line text-warning"></i> Creator Dashboard</h2>
+                <p class="text-muted mb-0">Manage your content, track earnings, and grow your audience</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                        <h4>${{ "%.2f"|format(total_earnings) }}</h4>
+                        <small>Total Earnings</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-wallet fa-2x mb-2"></i>
+                        <h4>${{ "%.2f"|format(wallet.balance) }}</h4>
+                        <small>Available Balance</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                        <h4>{{ creator_posts|length }}</h4>
+                        <small>Premium Posts</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h4>{{ recent_sales|length }}</h4>
+                        <small>Recent Sales</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Creator Posts -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-crown text-warning"></i> Your Premium Content</h5>
+            </div>
+            <div class="card-body">
+                {% if creator_posts %}
+                <div class="row">
+                    {% for post in creator_posts %}
+                    <div class="col-lg-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title">{{ post.title }}</h6>
+                                        <p class="card-text text-muted">{{ post.content[:100] }}...</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                                    {{ post.category.title() }}
+                                                </span>
+                                                • ${{ "%.2f"|format(post.price) }}
+                                            </small>
+                                            <small class="text-muted">
+                                                {{ post.created_at.strftime('%b %d, %Y') }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 ms-2">
+                                        <div class="btn-group-vertical">
+                                            <a href="{{ url_for('post_detail', post_id=post.id) }}" 
+                                               class="btn btn-outline-primary btn-sm mb-1">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="{{ url_for('edit_post', post_id=post.id) }}" 
+                                               class="btn btn-outline-warning btn-sm mb-1">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal{{ post.id }}">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-crown fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Premium Content Yet</h5>
+                    <p class="text-muted">Start creating premium content to earn money!</p>
+                    <a href="{{ url_for('create_post') }}" class="btn btn-warning">
+                        <i class="fas fa-plus"></i> Create Premium Content
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Sales -->
+        {% if recent_sales %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar text-success"></i> Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Buyer</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td>
+                                    <strong>{{ sale.post.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ sale.post.category.title() }}</small>
+                                </td>
+                                <td>{{ sale.user.username }}</td>
+                                <td>${{ "%.2f"|format(sale.amount) }}</td>
+                                <td>{{ sale.purchase_date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    <span class="badge bg-success">Completed</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Wallet Management -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-wallet text-success"></i> Withdraw Funds</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('withdraw_funds') }}">
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Withdrawal Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" 
+                                           step="0.01" min="10" max="{{ wallet.balance }}" 
+                                           placeholder="Enter amount (min $10)">
+                                </div>
+                                <small class="text-muted">Available balance: ${{ "%.2f"|format(wallet.balance) }}</small>
+                            </div>
+                            <button type="submit" class="btn btn-success" 
+                                    {% if wallet.balance < 10 %}disabled{% endif %}>
+                                <i class="fas fa-money-bill-wave"></i> Request Withdrawal
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-info-circle text-info"></i> Creator Benefits</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Keep 85% of sales revenue
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Instant payouts available
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Detailed sales analytics
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Global marketplace reach
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Built-in promotion tools
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-rocket"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('create_post') }}" class="btn btn-warning w-100 mb-2">
+                            <i class="fas fa-plus"></i> Create Content
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('store') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-store"></i> Browse Store
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="fas fa-user"></i> My Profile
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('my_purchases') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-shopping-bag"></i> My Purchases
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modals -->
+{% for post in creator_posts %}
+<div class="modal fade" id="deleteModal{{ post.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ post.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ post.id }}">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete "<strong>{{ post.title }}</strong>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This is premium content. If it has been purchased, it cannot be deleted.
+                </div>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Post
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %} 

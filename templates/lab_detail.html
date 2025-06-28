@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lab.title }} - Cyber Lab{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-{{ 'success' if completion else 'primary' }}">{{ lab.difficulty.title() }}</span>
+                    <span class="badge bg-info">{{ lab.category.title() }}</span>
+                    {% if lab.is_premium %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-crown"></i> Premium</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <span class="badge bg-success"><i class="fas fa-star"></i> {{ lab.points }} pts</span>
+                    <span class="badge bg-secondary"><i class="fas fa-clock"></i> {{ lab.estimated_time }} mins</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">{{ lab.title }}</h2>
+                <p class="text-muted">{{ lab.description }}</p>
+                <hr>
+                <h5>Instructions</h5>
+                <div class="mb-3">{{ lab.instructions|safe }}</div>
+                {% if lab.tools_needed %}
+                <div class="mb-3">
+                    <strong>Tools Needed:</strong> {{ lab.tools_needed }}
+                </div>
+                {% endif %}
+                {% if lab.learning_objectives %}
+                <div class="mb-3">
+                    <strong>Learning Objectives:</strong> {{ lab.learning_objectives }}
+                </div>
+                {% endif %}
+                {% if lab.solution and completion %}
+                <div class="alert alert-success mt-3">
+                    <strong>Solution:</strong> {{ lab.solution }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Flag Submission -->
+        {% if not completion %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-flag-checkered"></i> Submit Flag</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('submit_flag', lab_id=lab.id) }}">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" name="flag" placeholder="Enter flag (e.g., PENTRAX{...})" required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit
+                        </button>
+                    </div>
+                </form>
+                <form method="POST" action="{{ url_for('reset_lab', lab_id=lab.id) }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-undo"></i> Reset Progress
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-success text-center mb-4">
+            <i class="fas fa-check-circle fa-2x mb-2"></i>
+            <h4>Lab Completed!</h4>
+            <p>You earned <strong>{{ lab.points }}</strong> reputation points.</p>
+            <form method="POST" action="{{ url_for('reset_lab', lab_id=lab.id) }}">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-undo"></i> Reset and Try Again
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Hints -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb"></i> Hint</h5>
+            </div>
+            <div class="card-body">
+                {% if hints_used == 0 and lab.hints %}
+                <form id="hintForm" method="POST" action="{{ url_for('get_hint', lab_id=lab.id) }}">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-question-circle"></i> Show Hint
+                    </button>
+                </form>
+                <div id="hintResult" class="mt-3"></div>
+                {% elif hints_used > 0 and lab.hints %}
+                <div class="alert alert-info">
+                    <strong>Hint:</strong> {{ lab.hints }}
+                </div>
+                {% else %}
+                <div class="text-muted">No hints available for this lab.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quiz Section -->
+        {% if quiz_questions and quiz_questions|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-question-circle"></i> Quiz</h5>
+            </div>
+            <div class="card-body">
+                {% if quiz_attempt %}
+                    <div class="alert alert-info mb-3">
+                        <strong>Your Score:</strong> {{ quiz_attempt.score }} / {{ quiz_questions|length }}<br>
+                        <span class="text-muted">You have already submitted this quiz.</span>
+                    </div>
+                    <ol>
+                    {% for q in quiz_questions %}
+                        <li class="mb-3">
+                            <div><strong>{{ q.question }}</strong></div>
+                            {% for opt in q.options_list %}
+                                <div>
+                                    <input type="radio" disabled {% if user_answers[q.id|string] == opt %}checked{% endif %}> {{ opt }}
+                                    {% if user_answers[q.id|string] == opt %}
+                                        {% if opt == q.correct_answer %}
+                                            <span class="badge bg-success ms-2">Correct</span>
+                                        {% else %}
+                                            <span class="badge bg-danger ms-2">Your Answer</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if opt == q.correct_answer %}
+                                        <span class="badge bg-success ms-2">Answer</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            {% if user_answers[q.id|string] != q.correct_answer %}
+                                <div class="text-danger small">Explanation: {{ q.explanation }}</div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ol>
+                {% else %}
+                    <form method="POST" action="{{ url_for('submit_quiz', lab_id=lab.id) }}">
+                        <ol>
+                        {% for q in quiz_questions %}
+                            <li class="mb-3">
+                                <div><strong>{{ q.question }}</strong></div>
+                                {% for opt in q.options_list %}
+                                    <div>
+                                        <input type="radio" name="q_{{ q.id }}" value="{{ opt }}" required> {{ opt }}
+                                    </div>
+                                {% endfor %}
+                            </li>
+                        {% endfor %}
+                        </ol>
+                        <button type="submit" class="btn btn-primary">Submit Quiz</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Terminal Section for Real-Time Labs -->
+        {% if lab.sandbox_url or lab.sandbox_instructions or lab.required_command or lab.command_success_criteria %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-terminal"></i> Interactive Terminal</h5>
+            </div>
+            <div class="card-body">
+                <div id="terminal" style="width: 100%; height: 400px; background: #222;"></div>
+                <div class="text-muted mt-2">This is a real shell running on the server. <strong>Do not run dangerous commands.</strong></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-list"></i> Other Labs</h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('cyber_labs') }}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="fas fa-arrow-left"></i> Back to Labs
+                </a>
+                <div class="mt-3">
+                    <strong>Category:</strong> {{ lab.category.title() }}<br>
+                    <strong>Difficulty:</strong> {{ lab.difficulty.title() }}<br>
+                    <strong>Points:</strong> {{ lab.points }}<br>
+                    <strong>Estimated Time:</strong> {{ lab.estimated_time }} mins
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='js/xterm.css') }}">
+<script src="{{ url_for('static', filename='js/xterm.js') }}"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+// Only initialize terminal if the terminal div exists
+if (document.getElementById('terminal')) {
+    const term = new Terminal();
+    term.open(document.getElementById('terminal'));
+    const socket = io('/terminals');
+    socket.emit('start_terminal', {});
+    term.onData(data => {
+        socket.emit('input', {input: data});
+    });
+    socket.on('output', function(data) {
+        term.write(data.output);
+    });
+}
+
+// AJAX for hint button
+const hintForm = document.getElementById('hintForm');
+if (hintForm) {
+    hintForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(hintForm.action, {method: 'POST'})
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('hintResult').innerHTML = `<div class='alert alert-info'><strong>Hint:</strong> ${data.hint}</div>`;
+                    hintForm.style.display = 'none';
+                } else {
+                    document.getElementById('hintResult').innerHTML = `<div class='alert alert-warning'>${data.message}</div>`;
+                }
+            });
+    });
+}
+</script>
+{% endblock %} 

@@ -13,206 +13,82 @@
             </div>
         </div>
 
-        <!-- Coming Soon Notice -->
-        <div class="alert alert-info">
-            <h5><i class="fas fa-info-circle"></i> Labs Under Development</h5>
-            <p class="mb-0">
-                Our interactive cyber labs are currently being developed. Soon you'll be able to practice:
-                web application testing, network security, cryptography challenges, and more!
-            </p>
-        </div>
-
-        <!-- Mock Lab Categories -->
-        <div class="row mb-4">
+        <!-- Lab Filters -->
+        <form class="row mb-4" method="get">
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-globe fa-3x text-primary mb-3"></i>
-                        <h5>Web Security</h5>
-                        <p class="text-muted">SQLi, XSS, CSRF challenges</p>
-                        <span class="badge bg-warning">Coming Soon</span>
-                    </div>
-                </div>
+                <select class="form-select" name="category">
+                    <option value="">All Categories</option>
+                    <option value="web">Web Security</option>
+                    <option value="network">Network Security</option>
+                    <option value="crypto">Cryptography</option>
+                    <option value="osint">OSINT</option>
+                </select>
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-network-wired fa-3x text-info mb-3"></i>
-                        <h5>Network Security</h5>
-                        <p class="text-muted">Port scanning, enumeration</p>
-                        <span class="badge bg-warning">Coming Soon</span>
-                    </div>
-                </div>
+                <select class="form-select" name="difficulty">
+                    <option value="">All Difficulties</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-key fa-3x text-success mb-3"></i>
-                        <h5>Cryptography</h5>
-                        <p class="text-muted">Hash cracking, encryption</p>
-                        <span class="badge bg-warning">Coming Soon</span>
-                    </div>
-                </div>
+                <input type="text" class="form-control" name="search" placeholder="Search labs...">
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-search fa-3x text-danger mb-3"></i>
-                        <h5>OSINT</h5>
-                        <p class="text-muted">Information gathering</p>
-                        <span class="badge bg-warning">Coming Soon</span>
-                    </div>
-                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                            </button>
             </div>
-        </div>
+        </form>
 
-        <!-- Mock Terminal Interface -->
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-terminal"></i> Virtual Terminal (Preview)</h5>
-            </div>
-            <div class="card-body">
-                <div class="bg-dark text-light p-3 rounded" style="font-family: 'Courier New', monospace;">
-                    <div class="mb-2">
-                        <span class="text-success">┌──(pentrax㉿kali)-[~/labs]</span><br>
-                        <span class="text-success">└─$</span> <span class="text-white">nmap -sV 192.168.1.1</span>
+        <!-- Lab Listing -->
+        {% if labs %}
+        <div class="row">
+            {% for lab in labs %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-{{ 'success' if lab.id in completed_labs else 'primary' }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-{{ 'success' if lab.id in completed_labs else 'primary' }}">
+                            {{ lab.difficulty.title() }}
+                        </span>
+                        {% if lab.is_premium %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-crown"></i> Premium</span>
+                        {% endif %}
+                        <span class="badge bg-info">{{ lab.category.title() }}</span>
                     </div>
-                    <div class="mb-2">
-                        <span class="text-muted">Starting Nmap 7.93 ( https://nmap.org ) at 2025-06-28 12:00</span><br>
-                        <span class="text-muted">Nmap scan report for gateway (192.168.1.1)</span><br>
-                        <span class="text-muted">Host is up (0.001s latency).</span><br>
-                        <span class="text-info">PORT     STATE SERVICE VERSION</span><br>
-                        <span class="text-warning">22/tcp   open  ssh     OpenSSH 8.9</span><br>
-                        <span class="text-warning">80/tcp   open  http    Apache httpd 2.4.52</span><br>
-                        <span class="text-warning">443/tcp  open  https   Apache httpd 2.4.52</span>
-                    </div>
-                    <div>
-                        <span class="text-success">┌──(pentrax㉿kali)-[~/labs]</span><br>
-                        <span class="text-success">└─$</span> <span class="text-white blink">_</span>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ lab.title }}</h5>
+                        <p class="card-text text-muted flex-grow-1">{{ lab.description[:120] }}...</p>
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> {{ lab.points }} points
+                                • <i class="fas fa-clock"></i> {{ lab.estimated_time }} mins
+                            </small>
+                        </div>
+                        <div class="mt-auto">
+                            {% if lab.id in completed_labs %}
+                            <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-success w-100">
+                                <i class="fas fa-check-circle"></i> Completed
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-primary w-100">
+                                <i class="fas fa-play"></i> Start Lab
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                
-                <div class="mt-3">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Preview Mode:</strong> Interactive terminal functionality will be available soon!
-                    </div>
-                </div>
             </div>
+            {% endfor %}
         </div>
-
-        <!-- Mock Lab Challenges -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <h4><i class="fas fa-trophy"></i> Challenge Preview</h4>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between">
-                            <h6><i class="fas fa-bug text-danger"></i> SQL Injection Basics</h6>
-                            <span class="badge bg-success">Easy</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Learn to identify and exploit basic SQL injection vulnerabilities</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-star"></i> 50 points
-                                • <i class="fas fa-clock"></i> 15 mins
-                            </small>
-                            <button class="btn btn-outline-primary btn-sm" disabled>
-                                <i class="fas fa-play"></i> Coming Soon
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between">
-                            <h6><i class="fas fa-code text-warning"></i> XSS Challenge</h6>
-                            <span class="badge bg-warning text-dark">Medium</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Exploit cross-site scripting vulnerabilities in web applications</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-star"></i> 100 points
-                                • <i class="fas fa-clock"></i> 30 mins
-                            </small>
-                            <button class="btn btn-outline-primary btn-sm" disabled>
-                                <i class="fas fa-play"></i> Coming Soon
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between">
-                            <h6><i class="fas fa-search text-info"></i> Gobuster Enumeration</h6>
-                            <span class="badge bg-info">Easy</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Use Gobuster to discover hidden directories and files</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-star"></i> 75 points
-                                • <i class="fas fa-clock"></i> 20 mins
-                            </small>
-                            <button class="btn btn-outline-primary btn-sm" disabled>
-                                <i class="fas fa-play"></i> Coming Soon
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between">
-                            <h6><i class="fas fa-shield-alt text-danger"></i> Buffer Overflow</h6>
-                            <span class="badge bg-danger">Hard</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Advanced buffer overflow exploitation techniques</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-star"></i> 200 points
-                                • <i class="fas fa-clock"></i> 60 mins
-                                • <i class="fas fa-crown text-warning"></i> Premium
-                            </small>
-                            <button class="btn btn-outline-primary btn-sm" disabled>
-                                <i class="fas fa-play"></i> Coming Soon
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-flask fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No labs available yet.</h4>
+            <p class="text-muted">Labs will appear here as soon as they are published by the admin.</p>
         </div>
-
-        <!-- Newsletter Signup -->
-        <div class="card mt-4">
-            <div class="card-body text-center">
-                <h5><i class="fas fa-bell"></i> Get Notified</h5>
-                <p class="text-muted">Be the first to know when our cyber labs go live!</p>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    Labs will be announced through the platform notifications system.
-                    Stay tuned for updates!
-                </div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -5,6 +5,20 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
+        <!-- Free Mode Banner -->
+        {% if is_free_mode %}
+        <div class="alert alert-success" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-unlock fa-2x me-3"></i>
+                <div>
+                    <h5 class="mb-1">🟢 Free Mode Active!</h5>
+                    <p class="mb-0">All premium content is currently <strong>FREE</strong> for all users. 
+                    You can download any content without payment while this mode is active.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Store Header -->
         <div class="card mb-4">
             <div class="card-body">
@@ -13,14 +27,45 @@
             </div>
         </div>
 
-        <!-- Coming Soon Notice -->
-        <div class="alert alert-warning">
-            <h5><i class="fas fa-construction"></i> Monetization System Under Development</h5>
-            <p class="mb-0">
-                Our payment processing and monetization features are currently being integrated. 
-                Premium content is displayed for preview purposes. Payment integration with Paystack coming soon!
-            </p>
+        <!-- User Actions -->
+        {% if current_user.is_authenticated %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <a href="{{ url_for('my_purchases') }}" class="btn btn-success">
+                    <i class="fas fa-shopping-bag"></i> My Purchases
+                </a>
+                <a href="{{ url_for('creator_dashboard') }}" class="btn btn-warning">
+                    <i class="fas fa-chart-line"></i> Creator Dashboard
+                </a>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{{ url_for('create_post') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Premium Content
+                </a>
+            </div>
         </div>
+
+        <!-- Subscription Status -->
+        {% if current_user.has_active_premium() %}
+        <div class="alert alert-success">
+            <i class="fas fa-crown"></i>
+            <strong>Premium Active!</strong> 
+            {% set subscription = current_user.get_active_subscription() %}
+            {% if subscription %}
+            Your subscription expires on {{ subscription.end_date.strftime('%B %d, %Y') }}
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Premium Required!</strong> 
+            You need an active premium subscription to access the store.
+            <a href="{{ url_for('activate_premium') }}" class="btn btn-warning btn-sm ms-2">
+                <i class="fas fa-key"></i> Activate Premium
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
 
         <!-- Premium Content -->
         {% if premium_posts %}
@@ -38,7 +83,11 @@
                                     <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
                                         {{ post.category.title() }}
                                     </span>
-                                    <strong>${{ "%.2f"|format(post.price) }}</strong>
+                                    {% if is_free_mode %}
+                                        <strong class="text-success">FREE</strong>
+                                    {% else %}
+                                        <strong>${{ "%.2f"|format(post.price) }}</strong>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="card-body d-flex flex-column">
@@ -68,9 +117,45 @@
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye"></i> View Details
                                         </a>
-                                        <button class="btn btn-warning btn-sm" disabled>
-                                            <i class="fas fa-shopping-cart"></i> Purchase (Coming Soon)
+                                        
+                                        {% if current_user.is_authenticated %}
+                                            {% if current_user.id == post.user_id %}
+                                                <!-- Creator's own post -->
+                                                <button class="btn btn-secondary btn-sm" disabled>
+                                                    <i class="fas fa-crown"></i> Your Content
+                                                </button>
+                                            {% else %}
+                                                <!-- Check if user has purchased -->
+                                                {% set has_purchased = false %}
+                                                {% if current_user.purchases %}
+                                                    {% for purchase in current_user.purchases %}
+                                                        {% if purchase.post_id == post.id and purchase.status == 'completed' %}
+                                                            {% set has_purchased = true %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                                
+                                                {% if has_purchased or is_free_mode %}
+                                                    <!-- User has purchased or free mode is active -->
+                                                    <a href="{{ url_for('download_purchased', post_id=post.id) }}" 
+                                                       class="btn btn-success btn-sm">
+                                                        <i class="fas fa-download"></i> Download
+                                                    </a>
+                                                {% else %}
+                                                    <!-- User hasn't purchased -->
+                                                    <form method="POST" action="{{ url_for('purchase_post', post_id=post.id) }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-warning btn-sm">
+                                                            <i class="fas fa-shopping-cart"></i> Purchase
                                         </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <!-- Not logged in -->
+                                            <a href="{{ url_for('login') }}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-sign-in-alt"></i> Login to Purchase
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -95,12 +180,13 @@
         </div>
         {% endif %}
 
-        <!-- Mock Payment Integration Info -->
+        <!-- Payment Integration Info -->
+        {% if not is_free_mode %}
         <div class="row mt-4">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h6><i class="fas fa-credit-card"></i> Payment Methods (Preview)</h6>
+                        <h6><i class="fas fa-credit-card"></i> Payment Methods</h6>
                     </div>
                     <div class="card-body">
                         <div class="text-center">
@@ -154,6 +240,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Categories -->
         <div class="card mt-4">
