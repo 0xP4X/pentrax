@@ -1,0 +1,141 @@
+Here's an advanced, structured product prompt for your PentraX web app — professionally formulated for development or passing to a full-stack dev team, AI assistant, or generator like Replit AI or GPT-Engineer.
+
+🔐🛠️ PentraX: Cybersecurity Collaboration and Innovation Platform
+
+🔷 Goal:
+
+Build a modern, secure web app called PentraX — a community-driven platform for cybersecurity engineers to share tools, report vulnerabilities/bugs, publish ideas, collaborate, and monetize their content (e.g., scripts, zero-days, and research).
+
+🧠 Core Features
+
+🔹 1. User System
+
+Full user authentication & profile
+
+Social-style profiles (name, skills, avatar, banner, about)
+
+Add GitHub account + pull public repos
+
+Display projects and contributions
+
+Follow & connect with other hackers
+
+Badge and reputation system (based on contributions)
+
+🔹 2. AI Assistant
+
+Always-available AI popup assistant
+
+GPT-based, with security-focused prompts
+
+Can help users debug, explain tools, guide through labs
+
+Admin can update/change AI API key at any time
+
+🔹 3. Forum Modules
+
+🔧 Tools – Upload/share CLI tools and payloads
+
+🐛 Bugs – Report and track CVEs and 0-days
+
+💡 Ideas – Share attack vectors, concepts
+
+🧑‍💻 Jobs & Collabs – Freelance gigs, team-ups
+
+📁 Docs & Projects – Attach GitHub repos or paste links
+
+🔹 4. Cyber Labs
+
+Real-time terminal interface (optional Docker backend)
+
+Practice space with challenges (Gobuster, SQLi, XSS, etc.)
+
+Each lab has hints, difficulty level, leaderboard
+
+🔹 5. Monetization Engine
+
+Sell scripts, tools, bug reports, PDFs, training material
+
+Built-in store (like Gumroad for hackers)
+
+Paystack or Stripe integration
+
+Free vs Premium tags for content
+
+Admin cuts % commission on sales
+
+🔹 6. Admin Dashboard
+
+Admin login: admin / password123
+
+View all users, activity, posted tools/labs/scripts
+
+Ban, mute, promote users
+
+Set featured tools and users
+
+Update AI API keys, pricing models
+
+Analytics dashboard: downloads, views, revenue
+
+🔹 7. Notifications & Real-time Updates
+
+New comment, new sale, reply, tag = in-app alert
+
+WebSocket or polling-based real-time updates
+
+Night mode / light mode support
+
+🎨 UI/UX
+
+Inspired by GitHub, Google Developers, and Microsoft Learn
+
+Responsive UI
+
+Built-in light and dark themes
+
+Sidebar + dashboard layout
+
+Markdown editor for posts and docs
+
+⚙️ Tech Stack Suggestion
+
+Frontend: React (with Tailwind CSS + ShadCN), or HTMX/Alpine.js for lighter builds
+
+Backend: Python Flask or FastAPI
+
+Database: PostgreSQL (with Supabase (Admin can update supabase database URL))
+
+AI Assistant: GPT-4 via OpenAI API (configurable)
+
+Auth: JWT + OAuth2 (GitHub login)
+
+Docker: Optional lab containers
+
+Payments: Paystack (Key will be provided by admin later )
+
+Hosting: Render.com, Railway, or Hetzner VPS
+
+🛡️ Security Considerations
+
+HTTPS everywhere
+
+Proper RBAC (admin, premium, free user)
+
+Rate limiting, XSS/CSRF protection
+
+Secure file uploads (validate extensions, scan if needed)
+
+Logs, audit trails in admin panel
+
+💡 Monetization Summary
+
+Paid script uploads (platform gets commission)
+
+Premium lab content or early access
+
+Featured content promotion (paid pinning)
+
+GitHub sponsor integration
+
+Optional SaaS APIs for automation tools
