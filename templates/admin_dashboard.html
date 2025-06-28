@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-cogs"></i> Admin Dashboard</h3>
+                    <div class="btn-group">
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-users"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('admin_settings') }}" class="btn btn-outline-info">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                        <a href="{{ url_for('admin_analytics') }}" class="btn btn-outline-success">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="mb-0">{{ total_users }}</h2>
+                                <p class="mb-0">Total Users</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="mb-0">{{ total_posts }}</h2>
+                                <p class="mb-0">Total Posts</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-file-alt fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="mb-0">{{ premium_users }}</h2>
+                                <p class="mb-0">Premium Users</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-crown fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="mb-0">${{ "%.2f"|format(revenue) }}</h2>
+                                <p class="mb-0">Platform Revenue</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-dollar-sign fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Stats -->
+        <div class="row mb-4">
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-danger">{{ banned_users }}</h4>
+                        <small class="text-muted">Banned Users</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-primary">{{ total_downloads }}</h4>
+                        <small class="text-muted">Downloads</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-success">{{ total_views }}</h4>
+                        <small class="text-muted">Total Views</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-warning">{{ recent_actions|length }}</h4>
+                        <small class="text-muted">Recent Actions</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-info">{{ recent_users|length }}</h4>
+                        <small class="text-muted">New Users</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-secondary">{{ recent_posts|length }}</h4>
+                        <small class="text-muted">New Posts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Management -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> User Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-danger ms-1">Admin</span>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">{{ user.created_at.strftime('%b %d, %Y') }}</small>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.is_premium %}
+                                    <span class="badge bg-warning text-dark">Premium</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Free</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.username != 'admin' %}
+                                    <a href="{{ url_for('toggle_user_status', user_id=user.id) }}" 
+                                       class="btn btn-sm btn-outline-warning">
+                                        {% if user.is_premium %}Revoke Premium{% else %}Make Premium{% endif %}
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Posts Management -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Recent Posts</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Post</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in posts %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" 
+                                           class="text-decoration-none">{{ post.title[:30] }}...</a>
+                                    </strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ post.created_at.strftime('%b %d, %Y') }}
+                                        • <i class="fas fa-eye"></i> {{ post.views }}
+                                    </small>
+                                </td>
+                                <td>{{ post.author.username }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                        {{ post.category.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('toggle_featured', post_id=post.id) }}" 
+                                       class="btn btn-sm btn-outline-warning">
+                                        {% if post.is_featured %}
+                                        <i class="fas fa-star-half-alt"></i> Unfeature
+                                        {% else %}
+                                        <i class="fas fa-star"></i> Feature
+                                        {% endif %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cog"></i> System Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Configuration Notes</h6>
+                    <ul class="mb-0">
+                        <li><strong>AI Assistant:</strong> OpenAI API key managed via environment variables</li>
+                        <li><strong>Database:</strong> PostgreSQL connection configured via DATABASE_URL</li>
+                        <li><strong>File Uploads:</strong> Maximum 16MB, stored in uploads/ directory</li>
+                        <li><strong>Payments:</strong> Paystack integration ready (keys via environment)</li>
+                    </ul>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Statistics</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Active Users:</strong> {{ users|selectattr('created_at')|list|length }}</li>
+                            <li><strong>Premium Users:</strong> {{ users|selectattr('is_premium')|list|length }}</li>
+                            <li><strong>Tools Shared:</strong> {{ posts|selectattr('category', 'equalto', 'tools')|list|length }}</li>
+                            <li><strong>Bug Reports:</strong> {{ posts|selectattr('category', 'equalto', 'bugs')|list|length }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Recent Activity</h6>
+                        <ul class="list-unstyled">
+                            {% for post in posts[:5] %}
+                            <li class="mb-1">
+                                <small class="text-muted">{{ post.created_at.strftime('%m/%d') }}</small>
+                                - {{ post.author.username }} posted in {{ post.category }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

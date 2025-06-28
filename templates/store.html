@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Store - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Store Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-store text-warning"></i> PentraX Store</h2>
+                <p class="text-muted mb-0">Discover premium tools, scripts, and resources from the cybersecurity community</p>
+            </div>
+        </div>
+
+        <!-- Coming Soon Notice -->
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-construction"></i> Monetization System Under Development</h5>
+            <p class="mb-0">
+                Our payment processing and monetization features are currently being integrated. 
+                Premium content is displayed for preview purposes. Payment integration with Paystack coming soon!
+            </p>
+        </div>
+
+        <!-- Premium Content -->
+        {% if premium_posts %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-crown text-warning"></i> Premium Content ({{ premium_posts|length }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for post in premium_posts %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                        {{ post.category.title() }}
+                                    </span>
+                                    <strong>${{ "%.2f"|format(post.price) }}</strong>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">{{ post.title }}</h6>
+                                <p class="card-text text-muted flex-grow-1">
+                                    {{ post.content[:120] }}...
+                                </p>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        by <strong>{{ post.author.username }}</strong>
+                                        • {{ post.created_at.strftime('%b %d, %Y') }}
+                                    </small>
+                                </div>
+                                
+                                {% if post.file_name %}
+                                <div class="mb-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-paperclip"></i> Includes: {{ post.file_name }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mt-auto">
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                        <button class="btn btn-warning btn-sm" disabled>
+                                            <i class="fas fa-shopping-cart"></i> Purchase (Coming Soon)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-store fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Premium Content Yet</h4>
+                <p class="text-muted">Be the first to offer premium tools or resources!</p>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('create_post') }}" class="btn btn-warning">
+                    <i class="fas fa-plus"></i> Create Premium Content
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mock Payment Integration Info -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-credit-card"></i> Payment Methods (Preview)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <i class="fab fa-cc-visa fa-2x text-primary me-2"></i>
+                            <i class="fab fa-cc-mastercard fa-2x text-warning me-2"></i>
+                            <i class="fab fa-paypal fa-2x text-info me-2"></i>
+                            <i class="fas fa-mobile-alt fa-2x text-success"></i>
+                        </div>
+                        <p class="text-muted text-center mt-2">
+                            Secure payments powered by Paystack
+                        </p>
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-shield-alt"></i>
+                                All transactions will be secured with industry-standard encryption
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-chart-line"></i> Creator Benefits</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Keep 85% of sales revenue
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Instant payouts available
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Detailed sales analytics
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Global marketplace reach
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                Built-in promotion tools
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-tags"></i> Browse by Category</h6>
+            </div>
+            <div class="row g-0">
+                <div class="col-md-3">
+                    <div class="card-body text-center border-end">
+                        <i class="fas fa-tools fa-2x text-primary mb-2"></i>
+                        <h6>Security Tools</h6>
+                        <small class="text-muted">Scripts & Utilities</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-body text-center border-end">
+                        <i class="fas fa-bug fa-2x text-danger mb-2"></i>
+                        <h6>Exploit Code</h6>
+                        <small class="text-muted">PoCs & Research</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-body text-center border-end">
+                        <i class="fas fa-book fa-2x text-success mb-2"></i>
+                        <h6>Tutorials</h6>
+                        <small class="text-muted">Guides & Courses</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-body text-center">
+                        <i class="fas fa-database fa-2x text-info mb-2"></i>
+                        <h6>Datasets</h6>
+                        <small class="text-muted">Research Data</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

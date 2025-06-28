@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Cyber Labs - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-flask text-success"></i> Cyber Labs</h2>
+                <p class="text-muted mb-0">Practice your cybersecurity skills with hands-on challenges and scenarios</p>
+            </div>
+        </div>
+
+        <!-- Coming Soon Notice -->
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> Labs Under Development</h5>
+            <p class="mb-0">
+                Our interactive cyber labs are currently being developed. Soon you'll be able to practice:
+                web application testing, network security, cryptography challenges, and more!
+            </p>
+        </div>
+
+        <!-- Mock Lab Categories -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-globe fa-3x text-primary mb-3"></i>
+                        <h5>Web Security</h5>
+                        <p class="text-muted">SQLi, XSS, CSRF challenges</p>
+                        <span class="badge bg-warning">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-network-wired fa-3x text-info mb-3"></i>
+                        <h5>Network Security</h5>
+                        <p class="text-muted">Port scanning, enumeration</p>
+                        <span class="badge bg-warning">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-key fa-3x text-success mb-3"></i>
+                        <h5>Cryptography</h5>
+                        <p class="text-muted">Hash cracking, encryption</p>
+                        <span class="badge bg-warning">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-search fa-3x text-danger mb-3"></i>
+                        <h5>OSINT</h5>
+                        <p class="text-muted">Information gathering</p>
+                        <span class="badge bg-warning">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mock Terminal Interface -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-terminal"></i> Virtual Terminal (Preview)</h5>
+            </div>
+            <div class="card-body">
+                <div class="bg-dark text-light p-3 rounded" style="font-family: 'Courier New', monospace;">
+                    <div class="mb-2">
+                        <span class="text-success">┌──(pentrax㉿kali)-[~/labs]</span><br>
+                        <span class="text-success">└─$</span> <span class="text-white">nmap -sV 192.168.1.1</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted">Starting Nmap 7.93 ( https://nmap.org ) at 2025-06-28 12:00</span><br>
+                        <span class="text-muted">Nmap scan report for gateway (192.168.1.1)</span><br>
+                        <span class="text-muted">Host is up (0.001s latency).</span><br>
+                        <span class="text-info">PORT     STATE SERVICE VERSION</span><br>
+                        <span class="text-warning">22/tcp   open  ssh     OpenSSH 8.9</span><br>
+                        <span class="text-warning">80/tcp   open  http    Apache httpd 2.4.52</span><br>
+                        <span class="text-warning">443/tcp  open  https   Apache httpd 2.4.52</span>
+                    </div>
+                    <div>
+                        <span class="text-success">┌──(pentrax㉿kali)-[~/labs]</span><br>
+                        <span class="text-success">└─$</span> <span class="text-white blink">_</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Preview Mode:</strong> Interactive terminal functionality will be available soon!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mock Lab Challenges -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4><i class="fas fa-trophy"></i> Challenge Preview</h4>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between">
+                            <h6><i class="fas fa-bug text-danger"></i> SQL Injection Basics</h6>
+                            <span class="badge bg-success">Easy</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Learn to identify and exploit basic SQL injection vulnerabilities</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> 50 points
+                                • <i class="fas fa-clock"></i> 15 mins
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" disabled>
+                                <i class="fas fa-play"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between">
+                            <h6><i class="fas fa-code text-warning"></i> XSS Challenge</h6>
+                            <span class="badge bg-warning text-dark">Medium</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Exploit cross-site scripting vulnerabilities in web applications</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> 100 points
+                                • <i class="fas fa-clock"></i> 30 mins
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" disabled>
+                                <i class="fas fa-play"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between">
+                            <h6><i class="fas fa-search text-info"></i> Gobuster Enumeration</h6>
+                            <span class="badge bg-info">Easy</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Use Gobuster to discover hidden directories and files</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> 75 points
+                                • <i class="fas fa-clock"></i> 20 mins
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" disabled>
+                                <i class="fas fa-play"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between">
+                            <h6><i class="fas fa-shield-alt text-danger"></i> Buffer Overflow</h6>
+                            <span class="badge bg-danger">Hard</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Advanced buffer overflow exploitation techniques</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-star"></i> 200 points
+                                • <i class="fas fa-clock"></i> 60 mins
+                                • <i class="fas fa-crown text-warning"></i> Premium
+                            </small>
+                            <button class="btn btn-outline-primary btn-sm" disabled>
+                                <i class="fas fa-play"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Newsletter Signup -->
+        <div class="card mt-4">
+            <div class="card-body text-center">
+                <h5><i class="fas fa-bell"></i> Get Notified</h5>
+                <p class="text-muted">Be the first to know when our cyber labs go live!</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Labs will be announced through the platform notifications system.
+                    Stay tuned for updates!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.blink {
+    animation: blink 1s infinite;
+}
+</style>
+{% endblock %}

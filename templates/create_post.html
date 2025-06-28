@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Create Post - PentraX{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-plus"></i> Create New Post</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select category...</option>
+                                    <option value="tools" {{ 'selected' if request.args.get('category') == 'tools' }}>
+                                        <i class="fas fa-tools"></i> Tools & Scripts
+                                    </option>
+                                    <option value="bugs" {{ 'selected' if request.args.get('category') == 'bugs' }}>
+                                        <i class="fas fa-bug"></i> Bugs & CVEs
+                                    </option>
+                                    <option value="ideas" {{ 'selected' if request.args.get('category') == 'ideas' }}>
+                                        <i class="fas fa-lightbulb"></i> Ideas & Research
+                                    </option>
+                                    <option value="jobs" {{ 'selected' if request.args.get('category') == 'jobs' }}>
+                                        <i class="fas fa-briefcase"></i> Jobs & Collaborations
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content *</label>
+                        <textarea class="form-control" id="content" name="content" rows="10" required
+                                  placeholder="Describe your tool, bug report, idea, or job posting. Use markdown for formatting."></textarea>
+                        <div class="form-text">
+                            <i class="fab fa-markdown"></i> Markdown supported
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" 
+                                       placeholder="python, security, web, api">
+                                <div class="form-text">Separate tags with commas</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price (USD)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price" name="price" 
+                                           min="0" step="0.01" value="0.00">
+                                </div>
+                                <div class="form-text">Set to 0 for free content</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Attachment</label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".txt,.py,.sh,.rb,.pl,.php,.js,.html,.css,.json,.xml,.md,.zip,.tar,.gz">
+                        <div class="form-text">
+                            Allowed: Scripts, documents, archives (Max 16MB)
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Content Guidelines:</strong>
+                        <ul class="mb-0">
+                            <li>Provide clear, detailed descriptions</li>
+                            <li>Include usage instructions for tools</li>
+                            <li>Follow responsible disclosure for vulnerabilities</li>
+                            <li>Be respectful and professional</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-resize textarea
+    document.getElementById('content').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+    
+    // Category-specific placeholders
+    document.getElementById('category').addEventListener('change', function() {
+        const content = document.getElementById('content');
+        const placeholders = {
+            'tools': 'Describe your security tool or script:\n\n## Overview\nWhat does this tool do?\n\n## Installation\nHow to install and setup\n\n## Usage\nHow to use the tool\n\n## Examples\nProvide usage examples',
+            'bugs': 'Report a security vulnerability:\n\n## Summary\nBrief description of the vulnerability\n\n## Affected Systems\nWhat systems/software are affected\n\n## Impact\nPotential impact and severity\n\n## Proof of Concept\nSteps to reproduce\n\n## Remediation\nSuggested fixes',
+            'ideas': 'Share your security research or idea:\n\n## Concept\nDescribe your idea or research\n\n## Technical Details\nExplain the technical aspects\n\n## Potential Impact\nWhat could this achieve?\n\n## Next Steps\nWhat needs to be done?',
+            'jobs': 'Post a job or collaboration opportunity:\n\n## Position/Project\nWhat are you looking for?\n\n## Requirements\nSkills and experience needed\n\n## Compensation\nBudget or payment details\n\n## Contact\nHow to apply or get in touch'
+        };
+        
+        if (placeholders[this.value]) {
+            content.placeholder = placeholders[this.value];
+        }
+    });
+</script>
+{% endblock %}

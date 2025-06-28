@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Hero Section -->
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <h1 class="card-title"><i class="fas fa-shield-alt"></i> Welcome to PentraX</h1>
+                <p class="card-text">The premier platform for cybersecurity professionals to collaborate, share tools, and advance the security community.</p>
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-user-plus"></i> Join the Community
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Featured Posts -->
+        {% if featured_posts %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-star text-warning"></i> Featured Content</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for post in featured_posts %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none">
+                                        {{ post.title }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                        {{ post.category.title() }}
+                                    </span>
+                                    by {{ post.author.username }}
+                                </small>
+                                <p class="card-text mt-2">{{ post.content[:100] }}...</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Posts -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_posts %}
+                    {% for post in recent_posts %}
+                    <div class="d-flex mb-3 pb-3 border-bottom">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none">
+                                    {{ post.title }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                    {{ post.category.title() }}
+                                </span>
+                                by <a href="{{ url_for('user_profile', username=post.author.username) }}" class="text-decoration-none">{{ post.author.username }}</a>
+                                • {{ post.created_at.strftime('%b %d, %Y') }}
+                                • <i class="fas fa-eye"></i> {{ post.views }}
+                                {% if post.comments %}
+                                • <i class="fas fa-comments"></i> {{ post.comments|length }}
+                                {% endif %}
+                            </small>
+                            <p class="mt-2 mb-0 text-muted">{{ post.content[:150] }}...</p>
+                        </div>
+                        {% if post.is_premium %}
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-crown"></i> Premium
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No posts yet. Be the first to share something!</p>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('create_post') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create First Post
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Platform Stats</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ recent_posts|length }}</h4>
+                        <small class="text-muted">Recent Posts</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ featured_posts|length }}</h4>
+                        <small class="text-muted">Featured</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        {% if current_user.is_authenticated %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-rocket"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_post') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Post
+                    </a>
+                    <a href="{{ url_for('cyber_labs') }}" class="btn btn-outline-info">
+                        <i class="fas fa-flask"></i> Try Labs
+                    </a>
+                    <a href="{{ url_for('store') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-store"></i> Browse Store
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Categories -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-tags"></i> Explore Categories</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('forum', category='tools') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tools text-primary"></i> Tools & Scripts
+                    <span class="badge bg-primary rounded-pill float-end">New</span>
+                </a>
+                <a href="{{ url_for('forum', category='bugs') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-bug text-danger"></i> Bugs & CVEs
+                    <span class="badge bg-danger rounded-pill float-end">Hot</span>
+                </a>
+                <a href="{{ url_for('forum', category='ideas') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-lightbulb text-success"></i> Ideas & Research
+                </a>
+                <a href="{{ url_for('forum', category='jobs') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-briefcase text-info"></i> Jobs & Collaborations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

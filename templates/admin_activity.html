@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Log - PentraX Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-history"></i> User Activity Log</h3>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if actions.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Target</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action in actions.items %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">{{ action.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">{{ action.user.username }}</span>
+                                </td>
+                                <td>
+                                    {% if action.action_type == 'login' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-sign-in-alt"></i> Login
+                                        </span>
+                                    {% elif action.action_type == 'post_create' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-plus"></i> Post Created
+                                        </span>
+                                    {% elif action.action_type == 'file_download' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-download"></i> File Download
+                                        </span>
+                                    {% elif action.action_type == 'comment_create' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-comment"></i> Comment
+                                        </span>
+                                    {% elif action.action_type == 'profile_update' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-user-edit"></i> Profile Update
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-question"></i> {{ action.action_type }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if action.target_type and action.target_id %}
+                                        <small class="text-muted">{{ action.target_type }} #{{ action.target_id }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <code class="small">{{ action.ip_address or 'Unknown' }}</code>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if actions.pages > 1 %}
+                <nav aria-label="Activity pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if actions.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_activity', page=actions.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in actions.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != actions.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_activity', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if actions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_activity', page=actions.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Activity Recorded</h5>
+                    <p class="text-muted">User actions will appear here once the platform is being used.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

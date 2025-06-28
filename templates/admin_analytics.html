@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - PentraX Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-chart-line"></i> Platform Analytics</h3>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Analytics -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h2>{{ total_users }}</h2>
+                        <p class="mb-0">Total Users</p>
+                        <small>{{ new_users_today }} new today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h2>{{ premium_users }}</h2>
+                        <p class="mb-0">Premium Users</p>
+                        <small>{{ "%.1f"|format((premium_users/total_users*100) if total_users > 0 else 0) }}% of total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h2>{{ banned_users }}</h2>
+                        <p class="mb-0">Banned Users</p>
+                        <small>{{ "%.1f"|format((banned_users/total_users*100) if total_users > 0 else 0) }}% of total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h2>{{ total_views }}</h2>
+                        <p class="mb-0">Total Views</p>
+                        <small>Across all posts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Analytics -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-file-alt"></i> Content Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h3 class="text-primary">{{ total_posts }}</h3>
+                                <p class="mb-0">Total Posts</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h3 class="text-warning">{{ premium_posts }}</h3>
+                                <p class="mb-0">Premium Posts</p>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="text-success">{{ featured_posts }}</h3>
+                                <p class="mb-0">Featured Posts</p>
+                            </div>
+                            <div class="col-6">
+                                <h3 class="text-info">{{ total_downloads }}</h3>
+                                <p class="mb-0">Downloads</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-pie"></i> Category Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Tools</span>
+                                    <span class="badge bg-primary">{{ tools_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ (tools_count/total_posts*100) if total_posts > 0 else 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Bugs</span>
+                                    <span class="badge bg-danger">{{ bugs_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ (bugs_count/total_posts*100) if total_posts > 0 else 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between">
+                                    <span>Ideas</span>
+                                    <span class="badge bg-success">{{ ideas_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {{ (ideas_count/total_posts*100) if total_posts > 0 else 0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between">
+                                    <span>Jobs</span>
+                                    <span class="badge bg-warning">{{ jobs_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ (jobs_count/total_posts*100) if total_posts > 0 else 0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Analytics -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-dollar-sign"></i> Revenue Analytics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h3 class="text-success">${{ "%.2f"|format(total_revenue) }}</h3>
+                                <p class="mb-0">Total Sales Volume</p>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h3 class="text-primary">${{ "%.2f"|format(platform_revenue) }}</h3>
+                                <p class="mb-0">Platform Revenue</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Platform takes {{ "%.0f"|format((platform_revenue/total_revenue*100) if total_revenue > 0 else 15) }}% commission
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-trophy"></i> Top Performing Posts</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if popular_posts %}
+                        <div class="list-group list-group-flush">
+                            {% for post in popular_posts[:5] %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <small class="text-muted">{{ post.category.title() }}</small>
+                                    <div class="fw-bold">{{ post.title[:30] }}{% if post.title|length > 30 %}...{% endif %}</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ post.views }} views</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center">No posts available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Metrics -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-area"></i> Platform Health Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 text-center mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-success">
+                                        {{ "%.1f"|format((total_views/total_posts) if total_posts > 0 else 0) }}
+                                    </h4>
+                                    <small class="text-muted">Avg Views per Post</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 text-center mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-info">
+                                        {{ "%.1f"|format((total_downloads/total_posts) if total_posts > 0 else 0) }}
+                                    </h4>
+                                    <small class="text-muted">Downloads per Post</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 text-center mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-warning">
+                                        {{ "%.1f"|format((premium_posts/total_posts*100) if total_posts > 0 else 0) }}%
+                                    </h4>
+                                    <small class="text-muted">Premium Content Rate</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 text-center mb-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-primary">
+                                        {{ "%.1f"|format((total_revenue/premium_posts) if premium_posts > 0 else 0) }}
+                                    </h4>
+                                    <small class="text-muted">Avg Premium Price ($)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }} - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- User Profile Card -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <div class="avatar-placeholder mb-3">
+                    <i class="fas fa-user-circle fa-5x text-muted"></i>
+                </div>
+                <h4>{{ user.username }}</h4>
+                {% if user.is_admin %}
+                <span class="badge bg-danger mb-2">Administrator</span>
+                {% endif %}
+                {% if user.is_premium %}
+                <span class="badge bg-warning text-dark mb-2">Premium</span>
+                {% endif %}
+                <p class="text-muted">{{ user.email }}</p>
+                
+                {% if current_user.is_authenticated and current_user.id != user.id %}
+                <!-- Follow/Unfollow buttons would go here -->
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('follow_user', username=user.username) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-plus"></i> Follow
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- User Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-primary">{{ user_posts|length }}</h5>
+                        <small class="text-muted">Posts</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success">{{ user.reputation }}</h5>
+                        <small class="text-muted">Reputation</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6 class="text-info">{{ user.followers.count() }}</h6>
+                        <small class="text-muted">Followers</small>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-warning">{{ user.following.count() }}</h6>
+                        <small class="text-muted">Following</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Information -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> About</h6>
+            </div>
+            <div class="card-body">
+                {% if user.bio %}
+                <div class="mb-3">
+                    <strong>Bio:</strong>
+                    <p class="text-muted">{{ user.bio }}</p>
+                </div>
+                {% endif %}
+                
+                {% if user.skills %}
+                <div class="mb-3">
+                    <strong>Skills:</strong>
+                    <p class="text-muted">{{ user.skills }}</p>
+                </div>
+                {% endif %}
+                
+                {% if user.github_username %}
+                <div class="mb-3">
+                    <strong>GitHub:</strong>
+                    <p>
+                        <a href="https://github.com/{{ user.github_username }}" 
+                           target="_blank" class="text-decoration-none">
+                            <i class="fab fa-github"></i> {{ user.github_username }}
+                        </a>
+                    </p>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Member Since:</strong>
+                    <p class="text-muted">{{ user.created_at.strftime('%B %Y') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- User Posts -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Posts by {{ user.username }} ({{ user_posts|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if user_posts %}
+                    {% for post in user_posts %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">
+                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none">
+                                            {{ post.title }}
+                                        </a>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
+                                            {{ post.category.title() }}
+                                        </span>
+                                        {% if post.is_featured %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star"></i> Featured
+                                        </span>
+                                        {% endif %}
+                                        {% if post.is_premium %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-crown"></i> Premium
+                                        </span>
+                                        {% endif %}
+                                        {% if post.file_name %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-paperclip"></i> Attachment
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text text-muted">{{ post.content[:150] }}...</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> {{ post.created_at.strftime('%b %d, %Y') }}
+                                        • <i class="fas fa-eye"></i> {{ post.views }}
+                                        • <i class="fas fa-comments"></i> {{ post.comments|length }}
+                                    </small>
+                                </div>
+                                {% if post.price > 0 %}
+                                <div class="flex-shrink-0">
+                                    <div class="badge bg-success fs-6">
+                                        ${{ "%.2f"|format(post.price) }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No posts yet</h5>
+                        <p class="text-muted">{{ user.username }} hasn't shared anything yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

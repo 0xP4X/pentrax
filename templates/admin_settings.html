@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Settings - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-cog"></i> Admin Settings</h3>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <!-- API Keys Section -->
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-key text-primary"></i> API Keys
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="openai_api_key" class="form-label">OpenAI API Key</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-robot"></i></span>
+                                    <input type="password" class="form-control" id="openai_api_key" name="openai_api_key" 
+                                           value="{{ settings.get('openai_api_key', '') }}" 
+                                           placeholder="sk-...">
+                                </div>
+                                <div class="form-text">Required for AI Assistant functionality</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paystack_public_key" class="form-label">Paystack Public Key</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-credit-card"></i></span>
+                                    <input type="text" class="form-control" id="paystack_public_key" name="paystack_public_key" 
+                                           value="{{ settings.get('paystack_public_key', '') }}" 
+                                           placeholder="pk_test_...">
+                                </div>
+                                <div class="form-text">For processing payments</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paystack_secret_key" class="form-label">Paystack Secret Key</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="paystack_secret_key" name="paystack_secret_key" 
+                                           value="{{ settings.get('paystack_secret_key', '') }}" 
+                                           placeholder="sk_test_...">
+                                </div>
+                                <div class="form-text">Keep this secret and secure</div>
+                            </div>
+                        </div>
+
+                        <!-- Platform Settings Section -->
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-globe text-success"></i> Platform Settings
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="platform_name" class="form-label">Platform Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                    <input type="text" class="form-control" id="platform_name" name="platform_name" 
+                                           value="{{ settings.get('platform_name', 'PentraX') }}" 
+                                           placeholder="PentraX">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="commission_rate" class="form-label">Commission Rate (%)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-percentage"></i></span>
+                                    <input type="number" class="form-control" id="commission_rate" name="commission_rate" 
+                                           value="{{ settings.get('commission_rate', '15') }}" 
+                                           min="0" max="100" step="0.1" placeholder="15">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Platform commission on premium content sales</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="max_file_size" class="form-label">Max File Upload Size (MB)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-file"></i></span>
+                                    <input type="number" class="form-control" id="max_file_size" name="max_file_size" 
+                                           value="{{ settings.get('max_file_size', '16') }}" 
+                                           min="1" max="100" placeholder="16">
+                                    <span class="input-group-text">MB</span>
+                                </div>
+                                <div class="form-text">Maximum size for file uploads</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Platform Status -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-info-circle text-info"></i> Platform Status
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>AI Assistant</h6>
+                                            {% if settings.get('openai_api_key') %}
+                                                <span class="badge bg-success">Configured</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Not Configured</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Payments</h6>
+                                            {% if settings.get('paystack_public_key') and settings.get('paystack_secret_key') %}
+                                                <span class="badge bg-success">Ready</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Partial</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>File Uploads</h6>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Database</h6>
+                                            <span class="badge bg-success">Connected</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <div class="text-muted">
+                                    <small><i class="fas fa-info-circle"></i> Changes will take effect immediately</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
