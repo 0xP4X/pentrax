@@ -69,7 +69,7 @@ The application will be available at `http://localhost:5000`
 
 - **Username**: admin
 - **Password**: password123
-- **Email**: admin@pentrax.com
+- **Email**: admpentrax@gmail.com
 
 ⚠️ **Important**: Change the default admin password in production!
 

@@ -13,6 +13,7 @@ from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
 import json
 import requests
+import hashlib
 
 @app.context_processor
 def inject_user():
@@ -38,6 +39,15 @@ def login():
             if user.is_permanently_banned():
                 flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
                 return render_template('login.html')
+            
+            # Admin device lock: generate fingerprint
+            if user.is_admin:
+                user_agent = request.headers.get('User-Agent', '')
+                ip = request.remote_addr or ''
+                fingerprint = hashlib.sha256((user_agent + ip).encode()).hexdigest()
+                user.admin_device_fingerprint = fingerprint
+                db.session.commit()
+                session['admin_device_fingerprint'] = fingerprint
             
             # Allow temporarily banned and muted users to log in
             # They will be redirected to ban notification by the before_request middleware
@@ -2213,3 +2223,21 @@ def admin_contact_status(contact_id):
         flash(f'Contact status updated to {new_status}.', 'success')
     
     return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+
+@app.before_request
+def enforce_admin_device_lock():
+    if current_user.is_authenticated and current_user.is_admin:
+        if request.path.startswith('/admin'):
+            user_agent = request.headers.get('User-Agent', '')
+            ip = request.remote_addr or ''
+            fingerprint = hashlib.sha256((user_agent + ip).encode()).hexdigest()
+            # Strict: session and db fingerprint must match
+            if (
+                not current_user.admin_device_fingerprint or
+                current_user.admin_device_fingerprint != fingerprint or
+                session.get('admin_device_fingerprint') != fingerprint
+            ):
+                logout_user()
+                session.pop('admin_device_fingerprint', None)
+                flash('Admin access denied: device mismatch or session invalidated. Please log in from your authorized device.', 'error')
+                return redirect(url_for('login'))
