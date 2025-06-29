@@ -24,6 +24,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     padding-top: 80px; /* Account for fixed navbar */
+    padding-left: 64px;
 }
 
 /* Enhanced Navbar */
@@ -905,4 +906,55 @@ body {
 [data-bs-theme="dark"] .multi-choice-option:hover,
 [data-bs-theme="dark"] .feature-card:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Side Footer Styles */
+.side-footer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 64px;
+    background: linear-gradient(135deg, #0d1117 60%, #161b22 100%);
+    border-right: 1px solid #222831;
+    z-index: 1040;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+    transition: background 0.3s;
+}
+.side-footer a {
+    color: #bfc9d1;
+    transition: color 0.2s, transform 0.2s;
+}
+.side-footer a:hover {
+    color: #0d6efd;
+    transform: scale(1.15);
+}
+.side-footer-top i {
+    color: #0d6efd;
+    filter: drop-shadow(0 2px 6px #0d6efd33);
+}
+.side-footer-bottom {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+}
+@media (max-width: 991.98px) {
+    .side-footer { display: none !important; }
+}
+@media (max-width: 1200px) {
+    .side-footer { width: 52px; }
+    .side-footer-top i, .side-footer a i { font-size: 1.2rem !important; }
+}
+@media (max-width: 991.98px) {
+    body { padding-left: 0; }
+}
+[data-bs-theme="dark"] .side-footer {
+    background: linear-gradient(135deg, #0d1117 60%, #161b22 100%);
+    border-right: 1px solid #222831;
+}
+
+@media (min-width: 992px) {
+    .navbar-offset {
+        margin-left: 64px;
+    }
 }

@@ -16,9 +16,9 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
+        <div class="container-fluid navbar-offset">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="fas fa-shield-alt text-primary"></i> PentraX
+                PentraX
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -185,6 +185,24 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Side Footer -->
+    <div class="side-footer d-none d-md-flex flex-column align-items-center justify-content-between py-4 px-2">
+        <div class="side-footer-top mb-3" style="margin-top: -5px;">
+            <a href="https://pentrax.com" class="mb-3 d-block" target="_blank" title="PentraX Home">
+                <i class="fas fa-shield-alt fa-2x text-primary"></i>
+            </a>
+        </div>
+        <div class="side-footer-middle flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+            <a href="https://twitter.com/" target="_blank" class="mb-3" title="Twitter"><i class="fab fa-twitter fa-lg"></i></a>
+            <a href="https://github.com/" target="_blank" class="mb-3" title="GitHub"><i class="fab fa-github fa-lg"></i></a>
+            <a href="mailto:admin@pentrax.com" class="mb-3" title="Email"><i class="fas fa-envelope fa-lg"></i></a>
+        </div>
+        <div class="side-footer-bottom text-center small text-muted">
+            <span>&copy; {{ current_year }} PentraX</span>
+        </div>
+    </div>
+    <!-- End Side Footer -->
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

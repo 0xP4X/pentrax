@@ -12,6 +12,7 @@ import eventlet
 # import pty  # Commented out for Windows compatibility
 # import select  # Commented out for Windows compatibility
 import subprocess
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -64,6 +65,10 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # Import routes
 from routes import *
+
+@app.context_processor
+def inject_now():
+    return {'current_year': datetime.now().year}
 
 # Terminal functionality commented out for Windows compatibility
 # @socketio.on('start_terminal', namespace='/terminals')
