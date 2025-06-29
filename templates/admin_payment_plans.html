@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Payment Plans - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-credit-card text-primary"></i> Manage Payment Plans</h2>
+                <p class="text-muted mb-0">Edit, activate, or deactivate subscription plans for users</p>
+            </div>
+        </div>
+
+        <!-- Add New Plan Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Add New Payment Plan</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="action" value="add">
+                    <div class="row">
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="monthly" required>
+                            <div class="form-text">Unique (e.g. monthly, yearly, lifetime)</div>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Display Name <span class="text-danger">*</span></label>
+                            <input type="text" name="display_name" class="form-control" placeholder="Monthly Plan" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Price ($) <span class="text-danger">*</span></label>
+                            <input type="number" name="price" class="form-control" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Duration (days) <span class="text-danger">*</span></label>
+                            <input type="number" name="duration_days" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Features</label>
+                            <input type="text" name="features" class="form-control" placeholder="Comma separated">
+                            <div class="form-text">e.g. Premium Store, AI Assistant</div>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" name="description" class="form-control" placeholder="Plan description">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Plan</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> All Payment Plans</h5>
+            </div>
+            <div class="card-body">
+                {% if payment_plans %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Display Name</th>
+                                <th>Price ($)</th>
+                                <th>Duration</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in payment_plans %}
+                            <tr>
+                                <td>{{ plan.name.title() }}</td>
+                                <td>{{ plan.display_name }}</td>
+                                <td>
+                                    <form method="POST" class="d-flex align-items-center" style="gap: 0.5rem;">
+                                        <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                                        <input type="number" name="price" value="{{ '%.2f'|format(plan.price) }}" min="0" step="0.01" class="form-control form-control-sm" style="width: 90px;">
+                                        <button type="submit" class="btn btn-sm btn-success">Update</button>
+                                    </form>
+                                </td>
+                                <td>{{ plan.duration_days }} days</td>
+                                <td>{{ plan.description or '-' }}</td>
+                                <td>
+                                    {% if plan.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('toggle_payment_plan', plan_id=plan.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-{{ 'danger' if plan.is_active else 'primary' }}">
+                                            <i class="fas fa-{{ 'times' if plan.is_active else 'check' }}"></i> {{ 'Deactivate' if plan.is_active else 'Activate' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                    <h4>No Payment Plans Available</h4>
+                    <p class="text-muted">Please add payment plans in the database.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -9,9 +9,10 @@ from sqlalchemy import or_, desc
 from app import app, db
 from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact
 from ai_assistant import get_ai_response
-from utils import allowed_file, create_notification
+from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
 import json
+import requests
 
 @app.context_processor
 def inject_user():
@@ -1446,7 +1447,9 @@ def activate_premium():
         flash(f'Premium activated successfully! Your subscription expires on {end_date.strftime("%B %d, %Y")}.', 'success')
         return redirect(url_for('store'))
     
-    return render_template('activate_premium.html')
+    # Always fetch active payment plans for display
+    payment_plans = PaymentPlan.query.filter_by(is_active=True).order_by(PaymentPlan.duration_days).all()
+    return render_template('activate_premium.html', payment_plans=payment_plans, is_free_mode=is_platform_free_mode())
 
 @app.route('/contact', methods=['GET', 'POST'])
 @login_required
@@ -1593,27 +1596,59 @@ def admin_payment_plans():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
+        # If adding a new plan
+        if request.form.get('action') == 'add':
+            try:
+                name = request.form.get('name', '').strip().lower()
+                display_name = request.form.get('display_name', '').strip()
+                price = float(request.form.get('price', 0))
+                duration_days = int(request.form.get('duration_days', 0))
+                description = request.form.get('description', '').strip()
+                features = request.form.get('features', '').strip()
+                features_list = [f.strip() for f in features.split(',') if f.strip()]
+
+                if not name or not display_name or price < 0 or duration_days <= 0:
+                    flash('Please fill all required fields and ensure values are valid.', 'error')
+                    return redirect(url_for('admin_payment_plans'))
+
+                # Check for duplicate name
+                if PaymentPlan.query.filter_by(name=name).first():
+                    flash('A plan with this name already exists.', 'error')
+                    return redirect(url_for('admin_payment_plans'))
+
+                plan = PaymentPlan(
+                    name=name,
+                    display_name=display_name,
+                    price=price,
+                    duration_days=duration_days,
+                    description=description,
+                    features=features_list,
+                    is_active=True
+                )
+                db.session.add(plan)
+                db.session.commit()
+                flash(f'Payment plan "{display_name}" added successfully!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error adding plan: {str(e)}', 'error')
+            return redirect(url_for('admin_payment_plans'))
+        # Otherwise, update price as before
         try:
             plan_id = request.form.get('plan_id')
             new_price = float(request.form.get('price', 0))
-            
             if new_price < 0:
                 flash('Price cannot be negative.', 'error')
                 return redirect(url_for('admin_payment_plans'))
-            
             plan = PaymentPlan.query.get_or_404(plan_id)
             plan.price = new_price
             plan.updated_at = datetime.utcnow()
-            
             db.session.commit()
             flash(f'Price updated for {plan.display_name} to ${new_price:.2f}', 'success')
-            
         except ValueError as e:
             flash(f'Invalid price: {str(e)}', 'error')
         except Exception as e:
             db.session.rollback()
             flash(f'Error updating plan: {str(e)}', 'error')
-        
         return redirect(url_for('admin_payment_plans'))
     
     # Get all payment plans
@@ -1739,18 +1774,21 @@ def purchase_plan(plan_id):
         }
         
         # Initialize payment
-        response = payment_service.initialize_payment(payment_data)
-        
-        if response.get('status'):
-            # Store payment info in session for verification
+        paystack_url = f"https://api.paystack.co/transaction/initialize"
+        headers = {
+            'Authorization': f'Bearer {payment_service.paystack_secret_key}',
+            'Content-Type': 'application/json'
+        }
+        data = payment_data.copy()
+        response = requests.post(paystack_url, headers=headers, json=data)
+        result = response.json()
+        if result.get('status'):
             session['pending_plan_payment'] = {
                 'reference': reference,
                 'plan_id': plan.id,
                 'amount': plan.price
             }
-            
-            # Redirect to Paystack payment page
-            return redirect(response['data']['authorization_url'])
+            return redirect(result['data']['authorization_url'])
         else:
             flash('Payment initialization failed. Please try again.', 'error')
             return redirect(url_for('view_plans'))
@@ -1772,32 +1810,45 @@ def plan_payment_callback():
         
         # Verify payment
         verification = payment_service.verify_payment(reference)
-        
-        if verification.get('status') and verification['data']['status'] == 'success':
+        print('Paystack verification response:', verification)
+        # Accept both 'success' and 'completed' as valid statuses, or verification['success']
+        valid_status = False
+        if verification.get('success'):
+            valid_status = True
+        elif verification.get('status'):
+            data_status = verification.get('data', {}).get('status', '').lower()
+            if data_status in ['success', 'completed']:
+                valid_status = True
+        if valid_status:
             # Get pending payment info from session
             pending_payment = session.get('pending_plan_payment')
-            
+            plan = None
+            # Try to recover plan_id if session is missing or mismatched
             if not pending_payment or pending_payment['reference'] != reference:
-                flash('Payment verification failed.', 'error')
-                return redirect(url_for('view_plans'))
-            
-            # Get the plan
-            plan = PaymentPlan.query.get(pending_payment['plan_id'])
-            if not plan:
-                flash('Plan not found.', 'error')
-                return redirect(url_for('view_plans'))
-            
+                # Try to get plan_id from Paystack metadata
+                metadata = verification['data'].get('metadata', {})
+                plan_id = metadata.get('plan_id')
+                if not plan_id:
+                    # Try to extract from reference (format: plan_<plan_id>_<user_id>_<random>)
+                    try:
+                        parts = reference.split('_')
+                        plan_id = int(parts[1])
+                    except Exception:
+                        flash('Payment verification failed: could not determine plan.', 'error')
+                        return redirect(url_for('view_plans'))
+                plan = PaymentPlan.query.get(plan_id)
+                if not plan:
+                    flash('Plan not found.', 'error')
+                    return redirect(url_for('view_plans'))
+            else:
+                plan = PaymentPlan.query.get(pending_payment['plan_id'])
             # Generate activation key for this user
             import secrets
             import string
-            
-            # Generate unique key
             while True:
                 key = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(16))
                 if not ActivationKey.query.filter_by(key=key).first():
                     break
-            
-            # Create activation key
             activation_key = ActivationKey(
                 key=key,
                 plan_type=plan.name,
@@ -1806,8 +1857,11 @@ def plan_payment_callback():
                 created_by=1,  # Admin user ID
                 expires_at=datetime.utcnow() + timedelta(days=30)
             )
-            
-            # Create subscription
+            activation_key.is_used = True
+            activation_key.used_by = current_user.id
+            activation_key.used_at = datetime.utcnow()
+            db.session.add(activation_key)
+            db.session.flush()  # Ensure activation_key.id is set
             end_date = datetime.utcnow() + timedelta(days=plan.duration_days)
             subscription = PremiumSubscription(
                 user_id=current_user.id,
@@ -1816,26 +1870,37 @@ def plan_payment_callback():
                 end_date=end_date,
                 amount_paid=plan.price
             )
-            
-            # Mark key as used
-            activation_key.is_used = True
-            activation_key.used_by = current_user.id
-            activation_key.used_at = datetime.utcnow()
-            
-            # Update user premium status
             current_user.is_premium = True
-            
-            db.session.add(activation_key)
             db.session.add(subscription)
             db.session.commit()
-            
-            # Clear session
+            # Clear session if present
             session.pop('pending_plan_payment', None)
-            
+            # Send activation key email to user
+            subject = f"Your PentraX Premium Activation Key & Subscription Details"
+            body = f"""Dear {current_user.username},\n\nThank you for your purchase of the {plan.display_name} on PentraX!\n\nYour activation key: {key}\nPlan: {plan.display_name}\nDuration: {plan.duration_days} days\nAmount Paid: ${plan.price:.2f}\n\nYour premium access is now active.\n\nIf you need to activate on another device, use the activation key above.\n\nBest regards,\nPentraX Team"""
+            html_body = f"""
+            <html>
+            <body>
+                <h2 style='color:#007bff;'>PentraX Premium Activated!</h2>
+                <p>Dear <strong>{current_user.username}</strong>,</p>
+                <p>Thank you for your purchase of the <strong>{plan.display_name}</strong> on PentraX!</p>
+                <div style='background:#f8f9fa;padding:15px;border-left:4px solid #007bff;margin:20px 0;'>
+                    <strong>Activation Key:</strong> <code style='font-size:1.2em'>{key}</code><br>
+                    <strong>Plan:</strong> {plan.display_name}<br>
+                    <strong>Duration:</strong> {plan.duration_days} days<br>
+                    <strong>Amount Paid:</strong> ${plan.price:.2f}
+                </div>
+                <p>Your premium access is now <span style='color:green;font-weight:bold;'>active</span>.</p>
+                <p>If you need to activate on another device, use the activation key above.</p>
+                <p>Best regards,<br>PentraX Team</p>
+            </body>
+            </html>
+            """
+            send_email(current_user.email, subject, body, html_body)
             flash(f'Payment successful! Your {plan.display_name} is now active. Activation Key: {key}', 'success')
             return redirect(url_for('store'))
         else:
-            flash('Payment verification failed.', 'error')
+            flash(f'Payment verification failed. Response: {verification}', 'error')
             return redirect(url_for('view_plans'))
             
     except Exception as e:
