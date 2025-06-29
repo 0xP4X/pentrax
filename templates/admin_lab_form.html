@@ -19,7 +19,7 @@
             <textarea class="form-control" id="description" name="description" rows="2" required>{{ lab.description if lab else '' }}</textarea>
         </div>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="difficulty" class="form-label">Difficulty</label>
                 <select class="form-select" id="difficulty" name="difficulty" required>
                     <option value="easy" {% if lab and lab.difficulty=='easy' %}selected{% endif %}>Easy</option>
@@ -27,11 +27,20 @@
                     <option value="hard" {% if lab and lab.difficulty=='hard' %}selected{% endif %}>Hard</option>
                 </select>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
+                <label for="lab_type" class="form-label">Lab Type</label>
+                <select class="form-select" id="lab_type" name="lab_type" required>
+                    <option value="standard" {% if lab and lab.lab_type=='standard' %}selected{% endif %}>Standard</option>
+                    <option value="terminal" {% if lab and lab.lab_type=='terminal' %}selected{% endif %}>Terminal-Based</option>
+                    <option value="sandbox" {% if lab and lab.lab_type=='sandbox' %}selected{% endif %}>Sandbox</option>
+                    <option value="quiz" {% if lab and lab.lab_type=='quiz' %}selected{% endif %}>Quiz</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
                 <label for="points" class="form-label">Points</label>
                 <input type="number" class="form-control" id="points" name="points" required value="{{ lab.points if lab else 0 }}">
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
                 <label for="estimated_time" class="form-label">Estimated Time (min)</label>
                 <input type="number" class="form-control" id="estimated_time" name="estimated_time" value="{{ lab.estimated_time if lab else 0 }}">
             </div>
@@ -68,6 +77,131 @@
             <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if lab is none or lab.is_active %}checked{% endif %}>
             <label class="form-check-label" for="is_active">Active?</label>
         </div>
+        
+        <!-- Terminal Lab Configuration -->
+        <div id="terminal-config" style="display: none;">
+            <hr>
+            <h4 class="mt-4">Terminal Lab Configuration</h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="terminal_instructions" class="form-label">Terminal Instructions</label>
+                    <textarea class="form-control" id="terminal_instructions" name="terminal_instructions" rows="3">{{ lab.terminal_instructions if lab else '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="terminal_shell" class="form-label">Terminal Shell</label>
+                    <select class="form-select" id="terminal_shell" name="terminal_shell">
+                        <option value="bash" {% if lab and lab.terminal_shell=='bash' %}selected{% endif %}>Bash</option>
+                        <option value="powershell" {% if lab and lab.terminal_shell=='powershell' %}selected{% endif %}>PowerShell</option>
+                        <option value="cmd" {% if lab and lab.terminal_shell=='cmd' %}selected{% endif %}>CMD</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="terminal_timeout" class="form-label">Timeout (seconds)</label>
+                    <input type="number" class="form-control" id="terminal_timeout" name="terminal_timeout" value="{{ lab.terminal_timeout if lab else 300 }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="allow_command_hints" name="allow_command_hints" {% if lab is none or lab.allow_command_hints %}checked{% endif %}>
+                        <label class="form-check-label" for="allow_command_hints">Allow Command Hints</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="strict_order" name="strict_order" {% if lab is none or lab.strict_order %}checked{% endif %}>
+                        <label class="form-check-label" for="strict_order">Strict Command Order</label>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="allow_retry" name="allow_retry" {% if lab is none or lab.allow_retry %}checked{% endif %}>
+                    <label class="form-check-label" for="allow_retry">Allow Command Retry</label>
+                </div>
+            </div>
+            
+            <!-- Terminal Commands Section -->
+            <h5 class="mt-4">Terminal Commands</h5>
+            <div class="mb-3">
+                {% if lab and lab.terminal_commands %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Command</th>
+                                    <th>Expected Output</th>
+                                    <th>Points</th>
+                                    <th>Hint</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for cmd in lab.terminal_commands|sort(attribute='order') %}
+                                <tr>
+                                    <td>{{ cmd.order }}</td>
+                                    <td><code>{{ cmd.command }}</code></td>
+                                    <td>{{ cmd.expected_output or 'Any' }}</td>
+                                    <td>{{ cmd.points }}</td>
+                                    <td>{{ cmd.hint or 'None' }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-warning edit-command" data-command-id="{{ cmd.id }}">Edit</button>
+                                        <form method="post" action="{{ url_for('admin_delete_terminal_command', command_id=cmd.id, lab_id=lab.id) }}" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this command?')">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-muted">No terminal commands yet.</div>
+                {% endif %}
+            </div>
+            
+            <!-- Add Terminal Command Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h6>Add Terminal Command</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_add_terminal_command', lab_id=lab.id if lab else 0) }}">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <input type="number" class="form-control" name="order" placeholder="Order" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="command" placeholder="Command" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="number" class="form-control" name="points" placeholder="Points" value="1" min="1" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="expected_output" placeholder="Expected Output (optional)">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" name="hint" placeholder="Hint (optional)">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" class="form-control" name="description" placeholder="Description (optional)">
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_optional" id="is_optional">
+                                <label class="form-check-label" for="is_optional">Optional Command</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">Add Command</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
         <hr>
         <!-- Quiz Questions Section -->
         <h4 class="mt-4">Quiz Questions</h4>
@@ -133,4 +267,22 @@
         <a href="{{ url_for('admin_labs') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labTypeSelect = document.getElementById('lab_type');
+    const terminalConfig = document.getElementById('terminal-config');
+    
+    function toggleTerminalConfig() {
+        if (labTypeSelect.value === 'terminal') {
+            terminalConfig.style.display = 'block';
+        } else {
+            terminalConfig.style.display = 'none';
+        }
+    }
+    
+    labTypeSelect.addEventListener('change', toggleTerminalConfig);
+    toggleTerminalConfig(); // Initial call
+});
+</script>
 {% endblock %} 

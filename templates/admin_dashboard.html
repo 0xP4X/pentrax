@@ -17,6 +17,9 @@
                         <a href="{{ url_for('admin_labs') }}" class="btn btn-success me-2">
                             <i class="fas fa-flask"></i> Manage Labs
                         </a>
+                        <a href="{{ url_for('admin_contacts') }}" class="btn btn-warning me-2">
+                            <i class="fas fa-envelope"></i> Contact Messages
+                        </a>
                         <a href="{{ url_for('admin_settings') }}" class="btn btn-info me-2">
                             <i class="fas fa-cog"></i> Settings
                         </a>
@@ -139,6 +142,14 @@
                     <div class="card-body">
                         <h4 class="text-secondary">{{ recent_posts|length }}</h4>
                         <small class="text-muted">New Posts</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h4 class="text-warning">{{ pending_contacts }}</h4>
+                        <small class="text-muted">Pending Contacts</small>
                     </div>
                 </div>
             </div>

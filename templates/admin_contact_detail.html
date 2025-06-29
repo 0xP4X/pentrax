@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Contact Detail - PentraX{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-envelope"></i> Contact Detail</h3>
+                    <div>
+                        <a href="{{ url_for('admin_contacts') }}" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Contacts
+                        </a>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Contact Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-user"></i> User Information</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ contact.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ contact.user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Submitted:</strong></td>
+                                <td>{{ contact.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-info-circle"></i> Contact Details</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Subject:</strong></td>
+                                <td>{{ contact.subject }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if contact.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif contact.status == 'read' %}
+                                        <span class="badge bg-info">Read</span>
+                                    {% elif contact.status == 'replied' %}
+                                        <span class="badge bg-success">Replied</span>
+                                    {% elif contact.status == 'closed' %}
+                                        <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if contact.replied_at %}
+                            <tr>
+                                <td><strong>Replied:</strong></td>
+                                <td>{{ contact.replied_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if contact.admin %}
+                            <tr>
+                                <td><strong>Replied by:</strong></td>
+                                <td>{{ contact.admin.username }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Original Message -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5><i class="fas fa-comment"></i> Original Message</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <pre style="white-space: pre-wrap; font-family: inherit;">{{ contact.message }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Update -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5><i class="fas fa-edit"></i> Update Status</h5>
+                        <form method="POST" action="{{ url_for('admin_contact_status', contact_id=contact.id) }}" class="d-inline">
+                            <div class="input-group" style="max-width: 300px;">
+                                <select name="status" class="form-select">
+                                    <option value="pending" {{ 'selected' if contact.status == 'pending' else '' }}>Pending</option>
+                                    <option value="read" {{ 'selected' if contact.status == 'read' else '' }}>Read</option>
+                                    <option value="replied" {{ 'selected' if contact.status == 'replied' else '' }}>Replied</option>
+                                    <option value="closed" {{ 'selected' if contact.status == 'closed' else '' }}>Closed</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-save"></i> Update
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Reply Section -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5><i class="fas fa-reply"></i> Send Reply</h5>
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Email Reply</h6>
+                            <p class="mb-0">Send an email reply to the user. The reply will be sent to <strong>{{ contact.email }}</strong> and will include the original message for context.</p>
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('admin_contact_reply', contact_id=contact.id) }}">
+                            <div class="mb-3">
+                                <label for="reply_message" class="form-label">Reply Message</label>
+                                <textarea class="form-control" id="reply_message" name="reply_message" rows="8" 
+                                          placeholder="Type your reply message here...">{{ contact.admin_notes or '' }}</textarea>
+                                <div class="form-text">
+                                    This message will be sent as an email reply to the user. 
+                                    You can include any relevant information, instructions, or follow-up questions.
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <div class="text-muted">
+                                    <small><i class="fas fa-info-circle"></i> Make sure your SMTP settings are configured in Admin Settings before sending emails.</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Send Reply
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Previous Reply (if exists) -->
+                {% if contact.admin_notes and contact.status == 'replied' %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5><i class="fas fa-history"></i> Previous Reply</h5>
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <small>Replied on {{ contact.replied_at.strftime('%Y-%m-%d %H:%M:%S') }} by {{ contact.admin.username }}</small>
+                            </div>
+                            <div class="card-body">
+                                <pre style="white-space: pre-wrap; font-family: inherit;">{{ contact.admin_notes }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

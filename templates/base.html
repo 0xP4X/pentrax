@@ -66,16 +66,44 @@
                     </li>
                     
                     {% if current_user.is_authenticated %}
+                        <!-- Ban Status Indicator -->
+                        {% if current_user.is_permanently_banned() %}
+                            <li class="nav-item">
+                                <span class="badge bg-danger me-2">
+                                    <i class="fas fa-ban"></i> Banned
+                                </span>
+                            </li>
+                        {% elif current_user.is_temporarily_banned() %}
+                            <li class="nav-item">
+                                <span class="badge bg-warning me-2">
+                                    <i class="fas fa-clock"></i> Suspended
+                                </span>
+                            </li>
+                        {% elif current_user.is_muted_user() %}
+                            <li class="nav-item">
+                                <span class="badge bg-info me-2">
+                                    <i class="fas fa-microphone-slash"></i> Muted
+                                </span>
+                            </li>
+                        {% endif %}
+                        
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle"></i> {{ current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                {% if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user() %}
+                                    <li><a class="dropdown-item text-danger" href="{{ url_for('ban_notification') }}">
+                                        <i class="fas fa-exclamation-triangle"></i> Account Status</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
                                 <li><a class="dropdown-item" href="{{ url_for('profile') }}">
                                     <i class="fas fa-user"></i> Profile</a></li>
+                                {% if current_user.can_post() %}
                                 <li><a class="dropdown-item" href="{{ url_for('create_post') }}">
                                     <i class="fas fa-plus"></i> Create Post</a></li>
+                                {% endif %}
                                 <li><a class="dropdown-item" href="{{ url_for('my_purchases') }}">
                                     <i class="fas fa-shopping-bag"></i> My Purchases</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('creator_dashboard') }}">
@@ -84,6 +112,8 @@
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
                                     <i class="fas fa-cogs"></i> Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
+                                    <i class="fas fa-envelope"></i> Contact Messages</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin_activation_keys') }}">
                                     <i class="fas fa-key"></i> Activation Keys</a></li>
                                 {% endif %}

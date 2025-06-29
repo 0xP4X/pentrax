@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification
 from payment_service import PaymentService
@@ -33,6 +33,13 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password_hash, password):
+            # Only block permanently banned users from logging in
+            if user.is_permanently_banned():
+                flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
+                return render_template('login.html')
+            
+            # Allow temporarily banned and muted users to log in
+            # They will be redirected to ban notification by the before_request middleware
             login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('index'))
@@ -140,6 +147,11 @@ def post_detail(post_id):
 @app.route('/create_post', methods=['GET', 'POST'])
 @login_required
 def create_post():
+    # Check if user is banned
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned():
+        flash('You cannot create posts while your account is suspended.', 'error')
+        return redirect(url_for('ban_notification'))
+    
     if request.method == 'POST':
         title = request.form['title']
         content = request.form['content']
@@ -181,6 +193,11 @@ def create_post():
 @app.route('/add_comment/<int:post_id>', methods=['POST'])
 @login_required
 def add_comment(post_id):
+    # Check if user is banned or muted
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+        flash('You cannot comment while your account is suspended or muted.', 'error')
+        return redirect(url_for('ban_notification'))
+    
     content = request.form['content']
     post = Post.query.get_or_404(post_id)
     
@@ -229,12 +246,16 @@ def ai_chat():
 def cyber_labs():
     # Filter labs based on user access
     if current_user.is_authenticated:
-        if current_user.has_active_premium():
+        if current_user.is_permanently_banned() or current_user.is_temporarily_banned():
+            flash('You cannot access labs while your account is suspended.', 'error')
+            return redirect(url_for('ban_notification'))
+        
+        if current_user.has_active_premium() or is_platform_free_mode():
             labs = Lab.query.filter_by(is_active=True).all()
         else:
             labs = Lab.query.filter_by(is_active=True, is_premium=False).all()
     else:
-        labs = Lab.query.filter_by(is_active=True, is_premium=False).limit(3).all()
+        labs = Lab.query.filter_by(is_active=True, is_premium=False).all()
     
     # Get user's completed labs
     completed_labs = []
@@ -246,12 +267,21 @@ def cyber_labs():
 @app.route('/lab/<int:lab_id>')
 @login_required
 def lab_detail(lab_id):
+    # Check if user is banned
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned():
+        flash('You cannot access labs while your account is suspended.', 'error')
+        return redirect(url_for('ban_notification'))
+    
     lab = Lab.query.get_or_404(lab_id)
     
     # Check access permissions
     if lab.is_premium and not current_user.has_active_premium():
         flash('This lab requires premium access. Upgrade your account to continue.', 'warning')
         return redirect(url_for('cyber_labs'))
+    
+    # Redirect terminal labs to terminal interface
+    if lab.lab_type == 'terminal':
+        return render_template('terminal_lab.html', lab=lab)
     
     # Check if user has completed this lab
     completion = LabCompletion.query.filter_by(user_id=current_user.id, lab_id=lab_id).first()
@@ -577,6 +607,10 @@ def admin_dashboard():
     total_downloads = UserAction.query.filter_by(action_type='file_download').count()
     total_views = sum(post.views for post in Post.query.all())
     
+    # Contact statistics
+    pending_contacts = Contact.query.filter_by(status='pending').count()
+    total_contacts = Contact.query.count()
+    
     # Recent activity
     recent_users = User.query.order_by(desc(User.created_at)).limit(10).all()
     recent_posts = Post.query.order_by(desc(Post.created_at)).limit(10).all()
@@ -591,7 +625,8 @@ def admin_dashboard():
                          total_downloads=total_downloads, total_views=total_views,
                          revenue=revenue, recent_users=recent_users,
                          recent_posts=recent_posts, posts=recent_posts,
-                         recent_actions=recent_actions, users=recent_users)
+                         recent_actions=recent_actions, users=recent_users,
+                         pending_contacts=pending_contacts, total_contacts=total_contacts)
 
 @app.route('/admin/toggle_feature/<int:post_id>')
 @login_required
@@ -702,6 +737,11 @@ def admin_settings():
         else:
             flash('Failed to update platform free mode setting.', 'error')
         
+        # Handle SMTP security radio button
+        smtp_security = request.form.get('smtp_security', 'tls')
+        smtp_use_tls = 'true' if smtp_security == 'tls' else 'false'
+        smtp_use_ssl = 'true' if smtp_security == 'ssl' else 'false'
+
         # Update API keys and settings
         settings_to_update = [
             ('openai_api_key', 'OpenAI API Key for AI Assistant'),
@@ -709,12 +749,26 @@ def admin_settings():
             ('paystack_secret_key', 'Paystack Secret Key for Payments'),
             ('commission_rate', 'Platform Commission Rate (%)'),
             ('platform_name', 'Platform Name'),
-            ('max_file_size', 'Maximum File Upload Size (MB)')
+            ('max_file_size', 'Maximum File Upload Size (MB)'),
+            # SMTP Settings
+            ('smtp_server', 'SMTP Server Address'),
+            ('smtp_port', 'SMTP Port Number'),
+            ('smtp_username', 'SMTP Username/Email'),
+            ('smtp_password', 'SMTP Password/App Password'),
+            ('smtp_from_email', 'SMTP From Email Address'),
+            ('smtp_from_name', 'SMTP From Name'),
+            ('smtp_use_tls', 'SMTP Use TLS'),
+            ('smtp_use_ssl', 'SMTP Use SSL')
         ]
         
         for key, description in settings_to_update:
-            value = request.form.get(key)
-            if value:
+            if key == 'smtp_use_tls':
+                value = smtp_use_tls
+            elif key == 'smtp_use_ssl':
+                value = smtp_use_ssl
+            else:
+                value = request.form.get(key)
+            if value is not None:
                 setting = AdminSettings.query.filter_by(key=key).first()
                 if setting:
                     setting.value = value
@@ -736,6 +790,85 @@ def admin_settings():
     # Get current settings
     settings = {s.key: s.value for s in AdminSettings.query.all()}
     return render_template('admin_settings.html', settings=settings, is_free_mode=is_platform_free_mode())
+
+@app.route('/admin/test-smtp', methods=['POST'])
+@login_required
+def test_smtp_connection():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Access denied.'})
+    
+    try:
+        # Get SMTP settings from form
+        smtp_settings = {
+            'smtp_server': request.form.get('smtp_server'),
+            'smtp_port': request.form.get('smtp_port'),
+            'smtp_username': request.form.get('smtp_username'),
+            'smtp_password': request.form.get('smtp_password'),
+            'smtp_use_tls': request.form.get('smtp_use_tls') == 'true',
+            'smtp_use_ssl': request.form.get('smtp_use_ssl') == 'true'
+        }
+        
+        # Validate required fields
+        required_fields = ['smtp_server', 'smtp_port', 'smtp_username', 'smtp_password']
+        for field in required_fields:
+            if not smtp_settings[field]:
+                return jsonify({
+                    'success': False, 
+                    'message': f'Missing required field: {field}'
+                })
+        
+        # Test connection
+        import smtplib
+        import ssl
+        
+        try:
+            # Create SMTP connection
+            if smtp_settings['smtp_use_ssl']:
+                server = smtplib.SMTP_SSL(smtp_settings['smtp_server'], int(smtp_settings['smtp_port']))
+            else:
+                server = smtplib.SMTP(smtp_settings['smtp_server'], int(smtp_settings['smtp_port']))
+            
+            # Start TLS if required
+            if smtp_settings['smtp_use_tls']:
+                server.starttls(context=ssl.create_default_context())
+            
+            # Login
+            server.login(smtp_settings['smtp_username'], smtp_settings['smtp_password'])
+            
+            # Close connection
+            server.quit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'SMTP connection test successful! Your email configuration is working correctly.'
+            })
+            
+        except smtplib.SMTPAuthenticationError:
+            return jsonify({
+                'success': False,
+                'message': 'Authentication failed. Please check your username and password/app password.'
+            })
+        except smtplib.SMTPConnectError:
+            return jsonify({
+                'success': False,
+                'message': 'Connection failed. Please check your SMTP server and port settings.'
+            })
+        except smtplib.SMTPException as e:
+            return jsonify({
+                'success': False,
+                'message': f'SMTP error: {str(e)}'
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Connection test failed: {str(e)}'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Test failed: {str(e)}'
+        })
 
 @app.route('/admin/analytics')
 @login_required
@@ -835,78 +968,70 @@ def unfollow_user(username):
 @app.route('/like_post/<int:post_id>', methods=['POST'])
 @login_required
 def like_post(post_id):
+    # Check if user is banned or muted
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+        return jsonify({'success': False, 'message': 'You cannot like posts while your account is suspended or muted.'})
+    
     post = Post.query.get_or_404(post_id)
     
-    # Check if already liked
+    # Check if user already liked this post
     existing_like = PostLike.query.filter_by(user_id=current_user.id, post_id=post_id).first()
     
     if existing_like:
         # Unlike the post
         db.session.delete(existing_like)
-        post.likes = max(0, post.likes - 1)
-        action_type = 'unliked'
-        liked = False
+        post.likes -= 1
+        db.session.commit()
+        return jsonify({'success': True, 'liked': False, 'count': post.likes})
     else:
         # Like the post
         like = PostLike(user_id=current_user.id, post_id=post_id)
         db.session.add(like)
         post.likes += 1
-        action_type = 'liked'
-        liked = True
+        db.session.commit()
         
         # Create notification for post author
-        if post.author != current_user:
-            create_notification(post.user_id, 'Post Liked', f'{current_user.username} liked your post "{post.title}"')
-    
-    # Log the action
-    action = UserAction(
-        user_id=current_user.id,
-        action_type=f'post_{action_type}',
-        target_type='post',
-        target_id=post_id,
-        ip_address=request.remote_addr,
-        user_agent=request.headers.get('User-Agent')
-    )
-    db.session.add(action)
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'liked': liked,
-        'like_count': post.likes
-    })
+        if post.user_id != current_user.id:
+            create_notification(
+                post.user_id,
+                'Post Liked',
+                f'{current_user.username} liked your post "{post.title}"'
+            )
+        
+        return jsonify({'success': True, 'liked': True, 'count': post.likes})
 
 @app.route('/like_comment/<int:comment_id>', methods=['POST'])
 @login_required
 def like_comment(comment_id):
+    # Check if user is banned or muted
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+        return jsonify({'success': False, 'message': 'You cannot like comments while your account is suspended or muted.'})
+    
     comment = Comment.query.get_or_404(comment_id)
     
-    # Check if already liked
+    # Check if user already liked this comment
     existing_like = CommentLike.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
     
     if existing_like:
         # Unlike the comment
         db.session.delete(existing_like)
-        comment.likes = max(0, getattr(comment, 'likes', 0) - 1)
-        liked = False
+        db.session.commit()
+        return jsonify({'success': True, 'liked': False})
     else:
         # Like the comment
         like = CommentLike(user_id=current_user.id, comment_id=comment_id)
         db.session.add(like)
-        comment.likes = getattr(comment, 'likes', 0) + 1
-        liked = True
+        db.session.commit()
         
         # Create notification for comment author
-        if comment.author != current_user:
-            create_notification(comment.user_id, 'Comment Liked', f'{current_user.username} liked your comment')
-    
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'liked': liked,
-        'like_count': getattr(comment, 'likes', 0)
-    })
+        if comment.user_id != current_user.id:
+            create_notification(
+                comment.user_id,
+                'Comment Liked',
+                f'{current_user.username} liked your comment'
+            )
+        
+        return jsonify({'success': True, 'liked': True})
 
 # Admin: List Labs
 @app.route('/admin/labs')
@@ -930,6 +1055,7 @@ def admin_create_lab():
             description=data['description'],
             difficulty=data['difficulty'],
             category=data['category'],
+            lab_type=data.get('lab_type', 'standard'),
             points=int(data['points']),
             hints=data.get('hints', ''),
             solution=data.get('solution', ''),
@@ -943,7 +1069,15 @@ def admin_create_lab():
             sandbox_url=data.get('sandbox_url', ''),
             sandbox_instructions=data.get('sandbox_instructions', ''),
             required_command=data.get('required_command', ''),
-            command_success_criteria=data.get('command_success_criteria', '')
+            command_success_criteria=data.get('command_success_criteria', ''),
+            # Terminal lab fields
+            terminal_enabled=(data.get('lab_type') == 'terminal'),
+            terminal_instructions=data.get('terminal_instructions', ''),
+            terminal_shell=data.get('terminal_shell', 'bash'),
+            terminal_timeout=int(data.get('terminal_timeout', 300)),
+            allow_command_hints=('allow_command_hints' in data),
+            strict_order=('strict_order' in data),
+            allow_retry=('allow_retry' in data)
         )
         db.session.add(lab)
         db.session.commit()
@@ -964,6 +1098,7 @@ def admin_edit_lab(lab_id):
         lab.description = data['description']
         lab.difficulty = data['difficulty']
         lab.category = data['category']
+        lab.lab_type = data.get('lab_type', 'standard')
         lab.points = int(data['points'])
         lab.hints = data.get('hints', '')
         lab.solution = data.get('solution', '')
@@ -978,6 +1113,14 @@ def admin_edit_lab(lab_id):
         lab.sandbox_instructions = data.get('sandbox_instructions', '')
         lab.required_command = data.get('required_command', '')
         lab.command_success_criteria = data.get('command_success_criteria', '')
+        # Terminal lab fields
+        lab.terminal_enabled = (data.get('lab_type') == 'terminal')
+        lab.terminal_instructions = data.get('terminal_instructions', '')
+        lab.terminal_shell = data.get('terminal_shell', 'bash')
+        lab.terminal_timeout = int(data.get('terminal_timeout', 300))
+        lab.allow_command_hints = ('allow_command_hints' in data)
+        lab.strict_order = ('strict_order' in data)
+        lab.allow_retry = ('allow_retry' in data)
         db.session.commit()
         flash('Lab updated!', 'success')
         return redirect(url_for('admin_labs'))
@@ -1038,6 +1181,126 @@ def admin_delete_quiz_question(lab_id, question_id):
     db.session.commit()
     flash('Quiz question deleted.', 'info')
     return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+# Terminal Command Management Routes
+@app.route('/admin/labs/<int:lab_id>/add_terminal_command', methods=['POST'])
+@login_required
+def admin_add_terminal_command(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        order = int(request.form.get('order', 1))
+        command = request.form.get('command', '').strip()
+        expected_output = request.form.get('expected_output', '').strip()
+        points = int(request.form.get('points', 1))
+        hint = request.form.get('hint', '').strip()
+        description = request.form.get('description', '').strip()
+        is_optional = 'is_optional' in request.form
+        
+        if not command:
+            flash('Command is required.', 'error')
+            return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+        
+        # Create terminal command
+        terminal_command = LabTerminalCommand(
+            lab_id=lab_id,
+            command=command,
+            expected_output=expected_output if expected_output else None,
+            order=order,
+            points=points,
+            hint=hint if hint else None,
+            description=description if description else None,
+            is_optional=is_optional
+        )
+        
+        db.session.add(terminal_command)
+        db.session.commit()
+        
+        flash('Terminal command added successfully!', 'success')
+        
+    except ValueError as e:
+        flash(f'Invalid input: {str(e)}', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/edit_terminal_command/<int:command_id>', methods=['POST'])
+@login_required
+def admin_edit_terminal_command(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    
+    try:
+        command.order = int(request.form.get('order', command.order))
+        command.command = request.form.get('command', '').strip()
+        command.expected_output = request.form.get('expected_output', '').strip()
+        command.points = int(request.form.get('points', command.points))
+        command.hint = request.form.get('hint', '').strip()
+        command.description = request.form.get('description', '').strip()
+        command.is_optional = 'is_optional' in request.form
+        
+        if not command.command:
+            flash('Command is required.', 'error')
+            return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+        
+        db.session.commit()
+        flash('Terminal command updated successfully!', 'success')
+        
+    except ValueError as e:
+        flash(f'Invalid input: {str(e)}', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/delete_terminal_command/<int:command_id>', methods=['POST'])
+@login_required
+def admin_delete_terminal_command(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    
+    try:
+        db.session.delete(command)
+        db.session.commit()
+        flash('Terminal command deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/reorder_terminal_commands', methods=['POST'])
+@login_required
+def admin_reorder_terminal_commands(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    try:
+        command_orders = request.get_json()
+        if not command_orders:
+            return jsonify({'success': False, 'message': 'No data provided'})
+        
+        for command_id, new_order in command_orders.items():
+            command = LabTerminalCommand.query.get(command_id)
+            if command and command.lab_id == lab_id:
+                command.order = new_order
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Commands reordered successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error reordering commands: {str(e)}'})
 
 # Error handlers
 @app.errorhandler(404)
@@ -1184,6 +1447,41 @@ def activate_premium():
         return redirect(url_for('store'))
     
     return render_template('activate_premium.html')
+
+@app.route('/contact', methods=['GET', 'POST'])
+@login_required
+def contact():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        
+        # Validation
+        if not all([name, email, subject, message]):
+            flash('Please fill in all fields.', 'error')
+            return redirect(url_for('contact'))
+        
+        if len(message) < 10:
+            flash('Message must be at least 10 characters long.', 'error')
+            return redirect(url_for('contact'))
+        
+        # Create contact message
+        contact_msg = Contact(
+            user_id=current_user.id,
+            name=name,
+            email=email,
+            subject=subject,
+            message=message
+        )
+        
+        db.session.add(contact_msg)
+        db.session.commit()
+        
+        flash('Your message has been sent successfully! We will get back to you within 24 hours.', 'success')
+        return redirect(url_for('contact'))
+    
+    return render_template('contact.html')
 
 @app.route('/admin/activation-keys', methods=['GET', 'POST'])
 @login_required
@@ -1543,3 +1841,310 @@ def plan_payment_callback():
     except Exception as e:
         flash(f'Payment verification error: {str(e)}', 'error')
         return redirect(url_for('view_plans'))
+
+# Terminal Lab Routes
+@app.route('/lab/<int:lab_id>/terminal/session', methods=['POST'])
+@login_required
+def create_terminal_session(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    # Check if user has access to this lab
+    if lab.is_premium and not current_user.is_premium and not is_platform_free_mode():
+        return jsonify({'success': False, 'message': 'Premium lab requires premium subscription'})
+    
+    # Check if lab is terminal-based
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        # Create or get existing session
+        existing_session = LabTerminalSession.query.filter_by(
+            user_id=current_user.id,
+            lab_id=lab_id,
+            is_completed=False
+        ).first()
+        
+        if existing_session:
+            session = existing_session
+        else:
+            session = terminal_service.create_terminal_session(current_user.id, lab_id)
+        
+        if not session:
+            return jsonify({'success': False, 'message': 'Failed to create session'})
+        
+        return jsonify({
+            'success': True,
+            'session': {
+                'session_id': session.session_id,
+                'current_step': session.current_step,
+                'total_steps': session.total_steps,
+                'completed_steps': session.completed_steps,
+                'total_points': session.total_points,
+                'max_points': session.max_points,
+                'is_completed': session.is_completed
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/lab/<int:lab_id>/terminal/command', methods=['POST'])
+@login_required
+def execute_terminal_command(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    command = data.get('command')
+    
+    if not session_id or not command:
+        return jsonify({'success': False, 'message': 'Missing session_id or command'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        # Validate command
+        result = terminal_service.validate_command(session_id, command)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/lab/<int:lab_id>/terminal/current-command', methods=['POST'])
+@login_required
+def get_current_terminal_command(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Missing session_id'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        command = terminal_service.get_current_command(session_id)
+        
+        if command:
+            return jsonify({
+                'success': True,
+                'command': {
+                    'id': command.id,
+                    'order': command.order,
+                    'command': command.command,
+                    'description': command.description,
+                    'points': command.points,
+                    'hint': command.hint,
+                    'is_optional': command.is_optional
+                }
+            })
+        else:
+            return jsonify({'success': False, 'message': 'No current command found'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/lab/<int:lab_id>/terminal/hint', methods=['POST'])
+@login_required
+def get_terminal_hint(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    if not lab.allow_command_hints:
+        return jsonify({'success': False, 'message': 'Hints are not enabled for this lab'})
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Missing session_id'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        command = terminal_service.get_current_command(session_id)
+        
+        if command and command.hint:
+            return jsonify({'success': True, 'hint': command.hint})
+        else:
+            return jsonify({'success': False, 'message': 'No hint available'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/lab/<int:lab_id>/terminal/reset', methods=['POST'])
+@login_required
+def reset_terminal_session(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Missing session_id'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        success = terminal_service.reset_session(session_id)
+        
+        return jsonify({'success': success, 'message': 'Session reset successfully' if success else 'Failed to reset session'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/lab/<int:lab_id>/terminal/progress', methods=['POST'])
+@login_required
+def get_terminal_progress(lab_id):
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if lab.lab_type != 'terminal':
+        return jsonify({'success': False, 'message': 'This lab is not terminal-based'})
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Missing session_id'})
+    
+    try:
+        from terminal_service import TerminalService
+        terminal_service = TerminalService()
+        
+        progress = terminal_service.get_session_progress(session_id)
+        
+        if progress:
+            return jsonify({'success': True, 'progress': progress})
+        else:
+            return jsonify({'success': False, 'message': 'Session not found'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/ban-notification')
+@login_required
+def ban_notification():
+    """Show ban notification page for banned users"""
+    return render_template('ban_notification.html')
+
+@app.before_request
+def check_user_ban_status():
+    """Check if user is banned and redirect to ban notification if necessary"""
+    if current_user.is_authenticated:
+        # Skip ban check for admin users
+        if current_user.is_admin:
+            return
+        
+        # Skip ban check for ban notification page itself
+        if request.endpoint == 'ban_notification':
+            return
+        
+        # Check if user is banned or muted
+        if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+            # Allow access to logout and ban notification
+            if request.endpoint in ['logout', 'ban_notification']:
+                return
+            
+            # Redirect to ban notification for all other routes
+            return redirect(url_for('ban_notification'))
+
+@app.route('/admin/contacts')
+@login_required
+def admin_contacts():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    # Get all contact submissions with user info
+    contacts = Contact.query.order_by(desc(Contact.created_at)).all()
+    return render_template('admin_contacts.html', contacts=contacts)
+
+@app.route('/admin/contacts/<int:contact_id>')
+@login_required
+def admin_contact_detail(contact_id):
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    return render_template('admin_contact_detail.html', contact=contact)
+
+@app.route('/admin/contacts/<int:contact_id>/reply', methods=['POST'])
+@login_required
+def admin_contact_reply(contact_id):
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    reply_message = request.form.get('reply_message', '').strip()
+    
+    if not reply_message:
+        flash('Reply message cannot be empty.', 'error')
+        return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+    
+    try:
+        from utils import send_contact_reply
+        
+        # Send email reply
+        email_sent = send_contact_reply(
+            contact_email=contact.email,
+            contact_name=contact.name,
+            original_subject=contact.subject,
+            reply_message=reply_message,
+            admin_name=current_user.username
+        )
+        
+        if email_sent:
+            # Update contact status
+            contact.status = 'replied'
+            contact.replied_at = datetime.utcnow()
+            contact.replied_by = current_user.id
+            contact.admin_notes = reply_message
+            db.session.commit()
+            
+            flash('Reply sent successfully!', 'success')
+        else:
+            flash('Failed to send email reply. Please check your SMTP configuration.', 'error')
+            
+    except Exception as e:
+        flash(f'Error sending reply: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+
+@app.route('/admin/contacts/<int:contact_id>/status', methods=['POST'])
+@login_required
+def admin_contact_status(contact_id):
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    new_status = request.form.get('status', 'pending')
+    
+    if new_status in ['pending', 'read', 'replied', 'closed']:
+        contact.status = new_status
+        db.session.commit()
+        flash(f'Contact status updated to {new_status}.', 'success')
+    
+    return redirect(url_for('admin_contact_detail', contact_id=contact_id))

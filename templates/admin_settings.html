@@ -141,6 +141,154 @@
                         </div>
                     </div>
 
+                    <!-- SMTP Email Configuration Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-envelope text-info"></i> SMTP Email Configuration
+                            </h5>
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> Email Configuration</h6>
+                                <p class="mb-0">Configure SMTP settings to enable email functionality for replying to user contacts and sending notifications.</p>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="smtp_server" class="form-label">SMTP Server</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-server"></i></span>
+                                            <input type="text" class="form-control" id="smtp_server" name="smtp_server" 
+                                                   value="{{ settings.get('smtp_server', '') }}" 
+                                                   placeholder="smtp.gmail.com">
+                                        </div>
+                                        <div class="form-text">SMTP server address (e.g., smtp.gmail.com, smtp.outlook.com)</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="smtp_port" class="form-label">SMTP Port</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
+                                            <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                                                   value="{{ settings.get('smtp_port', '587') }}" 
+                                                   placeholder="587">
+                                        </div>
+                                        <div class="form-text">Common ports: 587 (TLS), 465 (SSL), 25 (unencrypted)</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="smtp_username" class="form-label">SMTP Username/Email</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="email" class="form-control" id="smtp_username" name="smtp_username" 
+                                                   value="{{ settings.get('smtp_username', '') }}" 
+                                                   placeholder="your-email@gmail.com">
+                                        </div>
+                                        <div class="form-text">Your email address or username</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="smtp_password" class="form-label">SMTP Password/App Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                                                   value="{{ settings.get('smtp_password', '') }}" 
+                                                   placeholder="Your password or app password">
+                                        </div>
+                                        <div class="form-text">Password or app-specific password (for Gmail, use App Password)</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="smtp_from_email" class="form-label">From Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-at"></i></span>
+                                            <input type="email" class="form-control" id="smtp_from_email" name="smtp_from_email" 
+                                                   value="{{ settings.get('smtp_from_email', '') }}" 
+                                                   placeholder="noreply@pentrax.com">
+                                        </div>
+                                        <div class="form-text">Email address that will appear as sender (can be different from username)</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="smtp_from_name" class="form-label">From Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                            <input type="text" class="form-control" id="smtp_from_name" name="smtp_from_name" 
+                                                   value="{{ settings.get('smtp_from_name', 'PentraX Support') }}" 
+                                                   placeholder="PentraX Support">
+                                        </div>
+                                        <div class="form-text">Display name for outgoing emails</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Security Settings</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="smtp_security_tls" name="smtp_security" value="tls" {% if settings.get('smtp_use_tls', 'true') == 'true' %}checked{% endif %}>
+                                            <label class="form-check-label" for="smtp_security_tls">
+                                                Use TLS (recommended for port 587)
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="smtp_security_ssl" name="smtp_security" value="ssl" {% if settings.get('smtp_use_ssl', 'false') == 'true' %}checked{% endif %}>
+                                            <label class="form-check-label" for="smtp_security_ssl">
+                                                Use SSL (for port 465)
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Choose the appropriate security setting for your SMTP server</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-outline-info" onclick="testSmtpConnection()">
+                                            <i class="fas fa-test-tube"></i> Test SMTP Connection
+                                        </button>
+                                        <div id="smtp-test-result" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMTP Provider Examples -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card bg-light">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Common SMTP Providers</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6>Gmail</h6>
+                                                    <ul class="list-unstyled small">
+                                                        <li><strong>Server:</strong> smtp.gmail.com</li>
+                                                        <li><strong>Port:</strong> 587 (TLS) or 465 (SSL)</li>
+                                                        <li><strong>Note:</strong> Use App Password, not regular password</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>Outlook/Hotmail</h6>
+                                                    <ul class="list-unstyled small">
+                                                        <li><strong>Server:</strong> smtp-mail.outlook.com</li>
+                                                        <li><strong>Port:</strong> 587 (TLS)</li>
+                                                        <li><strong>Note:</strong> Enable "Less secure apps" or use App Password</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6>Yahoo</h6>
+                                                    <ul class="list-unstyled small">
+                                                        <li><strong>Server:</strong> smtp.mail.yahoo.com</li>
+                                                        <li><strong>Port:</strong> 587 (TLS) or 465 (SSL)</li>
+                                                        <li><strong>Note:</strong> Generate App Password in Yahoo settings</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Current Platform Status -->
                     <div class="row mt-4">
                         <div class="col-12">
@@ -148,7 +296,7 @@
                                 <i class="fas fa-info-circle text-info"></i> Platform Status
                             </h5>
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
                                             <h6>AI Assistant</h6>
@@ -160,7 +308,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
                                             <h6>Payments</h6>
@@ -172,7 +320,19 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h6>Email System</h6>
+                                            {% if settings.get('smtp_server') and settings.get('smtp_username') and settings.get('smtp_password') %}
+                                                <span class="badge bg-success">Configured</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Not Configured</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
                                             <h6>File Uploads</h6>
@@ -180,7 +340,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
                                             <h6>Access Mode</h6>
@@ -214,4 +374,36 @@
         </div>
     </div>
 </div>
+
+<script>
+function testSmtpConnection() {
+    const resultDiv = document.getElementById('smtp-test-result');
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Testing SMTP connection...</div>';
+    
+    // Get form data
+    const formData = new FormData();
+    formData.append('smtp_server', document.getElementById('smtp_server').value);
+    formData.append('smtp_port', document.getElementById('smtp_port').value);
+    formData.append('smtp_username', document.getElementById('smtp_username').value);
+    formData.append('smtp_password', document.getElementById('smtp_password').value);
+    formData.append('smtp_use_tls', document.getElementById('smtp_security_tls').checked ? 'true' : 'false');
+    formData.append('smtp_use_ssl', document.getElementById('smtp_security_ssl').checked ? 'true' : 'false');
+    
+    fetch('{{ url_for("test_smtp_connection") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Test failed: ' + error.message + '</div>';
+    });
+}
+</script>
 {% endblock %}

@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% block title %}Account Status - {{ current_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-danger text-white text-center">
+                    <h3 class="mb-0">
+                        {% if current_user.is_permanently_banned() %}
+                            🚫 Account Permanently Banned
+                        {% elif current_user.is_temporarily_banned() %}
+                            ⏰ Account Temporarily Suspended
+                        {% elif current_user.is_muted_user() %}
+                            🔇 Account Muted
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    {% if current_user.is_permanently_banned() %}
+                        <div class="mb-4">
+                            <i class="fas fa-ban fa-4x text-danger mb-3"></i>
+                            <h4 class="text-danger">Your account has been permanently banned</h4>
+                            <p class="text-muted">This action is irreversible and your account will no longer be able to access the platform.</p>
+                        </div>
+                        
+                        <div class="alert alert-danger">
+                            <h5>Reason for Ban:</h5>
+                            <p class="mb-0">{{ current_user.get_ban_reason() or 'No reason provided' }}</p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <p class="text-muted">
+                                If you believe this ban was issued in error, you may contact the administrators for review.
+                            </p>
+                            <a href="mailto:admin@pentrax.com" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope"></i> Contact Support
+                            </a>
+                        </div>
+                        
+                    {% elif current_user.is_temporarily_banned() %}
+                        <div class="mb-4">
+                            <i class="fas fa-clock fa-4x text-warning mb-3"></i>
+                            <h4 class="text-warning">Your account has been temporarily suspended</h4>
+                            <p class="text-muted">Your account will be restored after the suspension period ends.</p>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h5>Reason for Suspension:</h5>
+                            <p class="mb-0">{{ current_user.get_ban_reason() or 'No reason provided' }}</p>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Suspension Ends:</h6>
+                                        <p class="mb-0 text-primary">
+                                            {{ current_user.get_ban_expiry_date().strftime('%B %d, %Y at %I:%M %p') if current_user.get_ban_expiry_date() else 'Unknown' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Time Remaining:</h6>
+                                        <p class="mb-0 text-primary" id="countdown">
+                                            <span id="days">0</span> days, 
+                                            <span id="hours">0</span> hours, 
+                                            <span id="minutes">0</span> minutes
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <p class="text-muted">
+                                During this suspension, you cannot:
+                            </p>
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-times text-danger"></i> Create new posts</li>
+                                <li><i class="fas fa-times text-danger"></i> Comment on posts</li>
+                                <li><i class="fas fa-times text-danger"></i> Access labs</li>
+                                <li><i class="fas fa-times text-danger"></i> Purchase content</li>
+                            </ul>
+                        </div>
+                        
+                    {% elif current_user.is_muted_user() %}
+                        <div class="mb-4">
+                            <i class="fas fa-microphone-slash fa-4x text-info mb-3"></i>
+                            <h4 class="text-info">Your account has been muted</h4>
+                            <p class="text-muted">You can still browse and access content, but you cannot interact with the community.</p>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h5>Reason for Mute:</h5>
+                            <p class="mb-0">{{ current_user.get_ban_reason() or 'No reason provided' }}</p>
+                        </div>
+                        
+                        {% if current_user.get_ban_expiry_date() %}
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Mute Ends:</h6>
+                                        <p class="mb-0 text-primary">
+                                            {{ current_user.get_ban_expiry_date().strftime('%B %d, %Y at %I:%M %p') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6>Time Remaining:</h6>
+                                        <p class="mb-0 text-primary" id="countdown">
+                                            <span id="days">0</span> days, 
+                                            <span id="hours">0</span> hours, 
+                                            <span id="minutes">0</span> minutes
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-4">
+                            <p class="text-muted">
+                                While muted, you can:
+                            </p>
+                            <ul class="list-unstyled text-success">
+                                <li><i class="fas fa-check text-success"></i> Browse posts and content</li>
+                                <li><i class="fas fa-check text-success"></i> Access labs (if you have permission)</li>
+                                <li><i class="fas fa-check text-success"></i> Purchase content</li>
+                                <li><i class="fas fa-check text-success"></i> View your profile</li>
+                            </ul>
+                            
+                            <p class="text-muted">
+                                But you cannot:
+                            </p>
+                            <ul class="list-unstyled text-danger">
+                                <li><i class="fas fa-times text-danger"></i> Create new posts</li>
+                                <li><i class="fas fa-times text-danger"></i> Comment on posts</li>
+                                <li><i class="fas fa-times text-danger"></i> Like posts or comments</li>
+                                <li><i class="fas fa-times text-danger"></i> Send messages to other users</li>
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-home"></i> Go to Homepage
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_temporarily_banned() or (current_user.is_muted_user() and current_user.get_ban_expiry_date()) %}
+<script>
+// Live countdown timer
+function updateCountdown() {
+    const expiryDate = new Date('{{ current_user.get_ban_expiry_date().isoformat() if current_user.get_ban_expiry_date() else "" }}');
+    const now = new Date();
+    const diff = expiryDate - now;
+    
+    if (diff <= 0) {
+        // Ban has expired, reload page
+        document.getElementById('countdown').innerHTML = '<span class="text-success">Expired - Refreshing...</span>';
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
+        return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    // Update the countdown display
+    const countdownElement = document.getElementById('countdown');
+    if (days > 0) {
+        countdownElement.innerHTML = `
+            <span id="days">${days}</span> day${days !== 1 ? 's' : ''}, 
+            <span id="hours">${hours.toString().padStart(2, '0')}</span> hour${hours !== 1 ? 's' : ''}, 
+            <span id="minutes">${minutes.toString().padStart(2, '0')}</span> minute${minutes !== 1 ? 's' : ''}, 
+            <span id="seconds">${seconds.toString().padStart(2, '0')}</span> second${seconds !== 1 ? 's' : ''}
+        `;
+    } else if (hours > 0) {
+        countdownElement.innerHTML = `
+            <span id="hours">${hours}</span> hour${hours !== 1 ? 's' : ''}, 
+            <span id="minutes">${minutes.toString().padStart(2, '0')}</span> minute${minutes !== 1 ? 's' : ''}, 
+            <span id="seconds">${seconds.toString().padStart(2, '0')}</span> second${seconds !== 1 ? 's' : ''}
+        `;
+    } else if (minutes > 0) {
+        countdownElement.innerHTML = `
+            <span id="minutes">${minutes}</span> minute${minutes !== 1 ? 's' : ''}, 
+            <span id="seconds">${seconds.toString().padStart(2, '0')}</span> second${seconds !== 1 ? 's' : ''}
+        `;
+    } else {
+        countdownElement.innerHTML = `
+            <span id="seconds">${seconds}</span> second${seconds !== 1 ? 's' : ''}
+        `;
+    }
+    
+    // Add pulsing effect when less than 1 hour remaining
+    if (diff < 3600000) { // Less than 1 hour
+        countdownElement.classList.add('text-warning', 'fw-bold');
+        countdownElement.style.animation = 'pulse 1s infinite';
+    }
+    
+    // Add urgent effect when less than 5 minutes remaining
+    if (diff < 300000) { // Less than 5 minutes
+        countdownElement.classList.remove('text-warning');
+        countdownElement.classList.add('text-danger', 'fw-bold');
+        countdownElement.style.animation = 'pulse 0.5s infinite';
+    }
+}
+
+// Add CSS for pulse animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .countdown-urgent {
+        animation: pulse 0.5s infinite !important;
+    }
+`;
+document.head.appendChild(style);
+
+// Update countdown every second for live effect
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// Also update the expiry date display to show current timezone
+document.addEventListener('DOMContentLoaded', function() {
+    const expiryDate = new Date('{{ current_user.get_ban_expiry_date().isoformat() if current_user.get_ban_expiry_date() else "" }}');
+    if (expiryDate) {
+        const expiryElement = document.querySelector('.card-body p:contains("Expires at")');
+        if (expiryElement) {
+            expiryElement.innerHTML = `
+                <strong>Expires at:</strong> 
+                <span class="text-primary">${expiryDate.toLocaleString()}</span>
+                <br><small class="text-muted">(Your local timezone)</small>
+            `;
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %} 

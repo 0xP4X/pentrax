@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Admin - PentraX{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-envelope text-primary"></i> Contact Admin</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-headset fa-4x text-primary mb-3"></i>
+                    <h5>Need Help?</h5>
+                    <p class="text-muted">Contact our admin team for support, activation keys, or any questions about PentraX.</p>
+                </div>
+
+                {% if current_user.is_authenticated %}
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ current_user.username }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ current_user.email }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Select a subject...</option>
+                            <option value="Activation Key Request">Activation Key Request</option>
+                            <option value="Technical Support">Technical Support</option>
+                            <option value="Premium Access">Premium Access</option>
+                            <option value="Bug Report">Bug Report</option>
+                            <option value="Feature Request">Feature Request</option>
+                            <option value="Account Issues">Account Issues</option>
+                            <option value="Payment Issues">Payment Issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="6" 
+                                  placeholder="Please describe your issue or request in detail..." required></textarea>
+                        <div class="form-text">
+                            Be as specific as possible to help us assist you better.
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Please Log In</h6>
+                    <p class="mb-0">You need to be logged in to contact the admin. Please <a href="{{ url_for('login') }}" class="alert-link">log in</a> or <a href="{{ url_for('register') }}" class="alert-link">register</a> first.</p>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                            <h6>Response Time</h6>
+                            <p class="mb-1">Within 24 hours</p>
+                            <small class="text-muted">Usually faster</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                            <h6>Secure</h6>
+                            <p class="mb-1">Encrypted messages</p>
+                            <small class="text-muted">Your data is safe</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="fas fa-users fa-2x text-warning mb-2"></i>
+                            <h6>Expert Support</h6>
+                            <p class="mb-1">Cybersecurity experts</p>
+                            <small class="text-muted">Professional help</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-question-circle"></i> Frequently Asked Questions</h6>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq1">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                How do I get an activation key?
+                            </button>
+                        </h2>
+                        <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Activation keys are provided by our admin team. Contact us with your request and we will process it within 24 hours.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq2">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                What payment methods do you accept?
+                            </button>
+                        </h2>
+                        <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We accept various payment methods including credit cards, PayPal, and cryptocurrency. Contact us for specific payment arrangements.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq3">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                How long does premium access last?
+                            </button>
+                        </h2>
+                        <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Premium access duration depends on your plan: Monthly (30 days), Yearly (365 days), or Lifetime (permanent access).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

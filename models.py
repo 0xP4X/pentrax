@@ -25,7 +25,7 @@ class User(UserMixin, db.Model):
     comments = db.relationship('Comment', backref='author', lazy=True)
     followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
-    
+
     def has_active_premium(self):
         """Check if user has an active premium subscription"""
         # Check if platform is in free mode
@@ -56,6 +56,82 @@ class User(UserMixin, db.Model):
         ).filter(
             PremiumSubscription.end_date > datetime.utcnow()
         ).first()
+    
+    def get_active_ban(self):
+        """Get the user's active ban if any"""
+        return UserBan.query.filter_by(
+            user_id=self.id,
+            is_active=True
+        ).filter(
+            (UserBan.expires_at > datetime.utcnow()) | (UserBan.expires_at.is_(None))
+        ).first()
+    
+    def is_temporarily_banned(self):
+        """Check if user is temporarily banned"""
+        active_ban = self.get_active_ban()
+        if active_ban and active_ban.ban_type == 'temporary' and active_ban.expires_at:
+            return active_ban.expires_at > datetime.utcnow()
+        return False
+    
+    def is_permanently_banned(self):
+        """Check if user is permanently banned"""
+        active_ban = self.get_active_ban()
+        if active_ban and active_ban.ban_type == 'permanent':
+            return True
+        return False
+    
+    def is_muted_user(self):
+        """Check if user is muted"""
+        active_ban = self.get_active_ban()
+        if active_ban and active_ban.ban_type == 'mute':
+            return True
+        return False
+    
+    def get_ban_expiry_date(self):
+        """Get the expiry date of the current ban"""
+        active_ban = self.get_active_ban()
+        if active_ban and active_ban.expires_at:
+            return active_ban.expires_at
+        return None
+    
+    def get_ban_reason(self):
+        """Get the reason for the current ban"""
+        active_ban = self.get_active_ban()
+        if active_ban:
+            return active_ban.reason
+        return None
+    
+    def get_ban_duration_remaining(self):
+        """Get the remaining duration of the ban in seconds"""
+        active_ban = self.get_active_ban()
+        if active_ban and active_ban.expires_at:
+            remaining = active_ban.expires_at - datetime.utcnow()
+            return max(0, int(remaining.total_seconds()))
+        return None
+    
+    def can_post(self):
+        """Check if user can create posts"""
+        if self.is_admin:
+            return True
+        if self.is_permanently_banned() or self.is_temporarily_banned():
+            return False
+        return True
+    
+    def can_comment(self):
+        """Check if user can comment"""
+        if self.is_admin:
+            return True
+        if self.is_permanently_banned() or self.is_temporarily_banned() or self.is_muted_user():
+            return False
+        return True
+    
+    def can_access_labs(self):
+        """Check if user can access labs"""
+        if self.is_admin:
+            return True
+        if self.is_permanently_banned() or self.is_temporarily_banned():
+            return False
+        return True
 
 class Follow(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -117,6 +193,15 @@ class Lab(db.Model):
     # New fields for real-time hacking labs
     required_command = db.Column(db.Text)  # Command user must run
     command_success_criteria = db.Column(db.Text)  # Output or flag to check for success
+    # New fields for terminal-based labs
+    lab_type = db.Column(db.String(20), default='standard')  # standard, terminal, sandbox, quiz
+    terminal_enabled = db.Column(db.Boolean, default=False)  # Whether terminal is enabled
+    terminal_instructions = db.Column(db.Text)  # Instructions for terminal lab
+    terminal_shell = db.Column(db.String(20), default='bash')  # bash, powershell, cmd, etc.
+    terminal_timeout = db.Column(db.Integer, default=300)  # Timeout in seconds
+    allow_command_hints = db.Column(db.Boolean, default=True)  # Show hints for commands
+    strict_order = db.Column(db.Boolean, default=True)  # Commands must be in order
+    allow_retry = db.Column(db.Boolean, default=True)  # Allow retrying commands
 
 class LabCompletion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -373,3 +458,73 @@ def set_platform_free_mode(enabled):
     except Exception as e:
         db.session.rollback()
         return False
+
+class LabTerminalCommand(db.Model):
+    """Model for terminal commands that users must execute in order"""
+    id = db.Column(db.Integer, primary_key=True)
+    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
+    command = db.Column(db.Text, nullable=False)  # The command user must enter
+    expected_output = db.Column(db.Text)  # Expected output or success criteria
+    order = db.Column(db.Integer, nullable=False)  # Order of execution
+    points = db.Column(db.Integer, default=1)  # Points for this command
+    hint = db.Column(db.Text)  # Hint for this command
+    description = db.Column(db.Text)  # What this command does
+    is_optional = db.Column(db.Boolean, default=False)  # Optional command
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    lab = db.relationship('Lab', backref='terminal_commands')
+
+class LabTerminalAttempt(db.Model):
+    """Model for tracking user's terminal command attempts"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
+    command_id = db.Column(db.Integer, db.ForeignKey('lab_terminal_command.id'), nullable=False)
+    user_command = db.Column(db.Text, nullable=False)  # What user actually typed
+    user_output = db.Column(db.Text)  # Output from user's command
+    is_correct = db.Column(db.Boolean, default=False)  # Whether command was correct
+    points_earned = db.Column(db.Integer, default=0)  # Points earned for this command
+    attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='terminal_attempts')
+    lab = db.relationship('Lab', backref='terminal_attempts')
+    command = db.relationship('LabTerminalCommand', backref='attempts')
+
+class LabTerminalSession(db.Model):
+    """Model for tracking user's terminal session progress"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
+    session_id = db.Column(db.String(100), unique=True, nullable=False)  # Unique session ID
+    current_step = db.Column(db.Integer, default=1)  # Current command step
+    total_steps = db.Column(db.Integer, default=0)  # Total commands in lab
+    completed_steps = db.Column(db.Integer, default=0)  # Completed commands
+    total_points = db.Column(db.Integer, default=0)  # Total points earned
+    max_points = db.Column(db.Integer, default=0)  # Maximum possible points
+    is_completed = db.Column(db.Boolean, default=False)  # Whether lab is completed
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    
+    user = db.relationship('User', backref='terminal_sessions')
+    lab = db.relationship('Lab', backref='terminal_sessions')
+
+class Contact(db.Model):
+    """Model for contact form submissions"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, read, replied, closed
+    admin_notes = db.Column(db.Text)  # Admin's internal notes
+    replied_at = db.Column(db.DateTime)
+    replied_by = db.Column(db.Integer, db.ForeignKey('user.id'))  # Admin who replied
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='contact_messages')
+    admin = db.relationship('User', foreign_keys=[replied_by])
+    
+    def __repr__(self):
+        return f'<Contact {self.id}: {self.subject}>'

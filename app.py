@@ -114,5 +114,5 @@ if __name__ == '__main__':
             db.session.add(admin_user)
             db.session.commit()
             logging.info("Admin user created with username: admin, password: password123")
-    
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000) 
+
+        socketio.run(app, debug=True, host='0.0.0.0', port=5000) 
