@@ -20,7 +20,6 @@ class User(UserMixin, db.Model):
     reputation = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    admin_device_fingerprint = db.Column(db.String(256))  # Stores hash of admin device info
     
     # Relationships
     posts = db.relationship('Post', backref='author', lazy=True)

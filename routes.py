@@ -42,15 +42,6 @@ def login():
                 flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
                 return render_template('login.html')
             
-            # Admin device lock: generate fingerprint
-            if user.is_admin:
-                user_agent = request.headers.get('User-Agent', '')
-                # The IP address is removed from the fingerprint to avoid issues with dynamic IPs
-                fingerprint = hashlib.sha256(user_agent.encode()).hexdigest()
-                user.admin_device_fingerprint = fingerprint
-                db.session.commit()
-                session['admin_device_fingerprint'] = fingerprint
-            
             # Allow temporarily banned and muted users to log in
             # They will be redirected to ban notification by the before_request middleware
             login_user(user)
@@ -2248,7 +2239,7 @@ def admin_contact_status(contact_id):
         db.session.commit()
         flash(f'Contact status updated to {new_status}.', 'success')
     
-    return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+    return redirect(url_for('admin_contact_detail', contact_id=contact.id))
 
 @app.before_request
 def enforce_admin_device_lock():
