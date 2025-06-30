@@ -36,7 +36,7 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
         
-        if user and check_password_hash(user.password_hash, password):
+        if user and user.check_password(password):
             # Only block permanently banned users from logging in
             if user.is_permanently_banned():
                 flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
@@ -45,8 +45,8 @@ def login():
             # Admin device lock: generate fingerprint
             if user.is_admin:
                 user_agent = request.headers.get('User-Agent', '')
-                ip = request.remote_addr or ''
-                fingerprint = hashlib.sha256((user_agent + ip).encode()).hexdigest()
+                # The IP address is removed from the fingerprint to avoid issues with dynamic IPs
+                fingerprint = hashlib.sha256(user_agent.encode()).hexdigest()
                 user.admin_device_fingerprint = fingerprint
                 db.session.commit()
                 session['admin_device_fingerprint'] = fingerprint
