@@ -6,76 +6,77 @@
 <div class="row">
     <div class="col-md-4">
         <!-- Profile Card -->
-        <div class="card mb-4">
-            <div class="card-body text-center">
-                <div class="avatar-placeholder mb-3">
-                    <i class="fas fa-user-circle fa-5x text-muted"></i>
-                </div>
-                <h4>{{ current_user.username }}</h4>
-                {% if current_user.is_admin %}
-                <span class="badge bg-danger mb-2">Administrator</span>
-                {% endif %}
-                {% if current_user.has_active_premium() %}
-                <span class="badge bg-warning text-dark mb-2">Premium Active</span>
-                {% set subscription = current_user.get_active_subscription() %}
-                {% if subscription %}
-                <div class="small text-muted mb-2">
-                    Expires: {{ subscription.end_date.strftime('%B %d, %Y') }}
-                </div>
-                {% endif %}
-                {% elif current_user.is_premium %}
-                <span class="badge bg-secondary mb-2">Premium Expired</span>
-                <div class="mb-2">
-                    <a href="{{ url_for('activate_premium') }}" class="btn btn-warning btn-sm">
-                        <i class="fas fa-key"></i> Renew Premium
-                    </a>
-                </div>
+        <div class="card mb-4 text-center p-3">
+            <div class="profile-avatar mb-3 mx-auto">
+                {% if current_user.avatar_url %}
+                    <img src="{{ current_user.avatar_url }}" alt="Avatar" class="rounded-circle img-thumbnail" style="width:120px;height:120px;object-fit:cover;">
                 {% else %}
-                <div class="mb-2">
-                    <a href="{{ url_for('activate_premium') }}" class="btn btn-warning btn-sm">
-                        <i class="fas fa-crown"></i> Get Premium
-                    </a>
-                </div>
-                {% endif %}
-                <p class="text-muted">{{ current_user.email }}</p>
-                
-                {% if not edit_mode %}
-                <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
+                    <div class="avatar-placeholder mb-3">
+                        <i class="fas fa-user-circle fa-5x text-muted"></i>
+                    </div>
                 {% endif %}
             </div>
+            <h4 class="fw-bold">{{ current_user.username }}</h4>
+            {% if current_user.is_admin %}
+            <span class="badge bg-danger mb-2">Administrator</span>
+            {% endif %}
+            {% if current_user.has_active_premium() %}
+            <span class="badge bg-warning text-dark mb-2">Premium Active</span>
+            {% set subscription = current_user.get_active_subscription() %}
+            {% if subscription %}
+            <div class="small text-muted mb-2">
+                Expires: {{ subscription.end_date.strftime('%B %d, %Y') }}
+            </div>
+            {% endif %}
+            {% elif current_user.is_premium %}
+            <span class="badge bg-secondary mb-2">Premium Expired</span>
+            <div class="mb-2">
+                <a href="{{ url_for('activate_premium') }}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-key"></i> Renew Premium
+                </a>
+            </div>
+            {% else %}
+            <div class="mb-2">
+                <a href="{{ url_for('activate_premium') }}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-crown"></i> Get Premium
+                </a>
+            </div>
+            {% endif %}
+            <p class="text-muted">{{ current_user.email }}</p>
+            {% if not edit_mode %}
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+            {% endif %}
         </div>
 
         <!-- Profile Info -->
-        <div class="card">
+        <div class="card mt-4">
             <div class="card-header">
                 <h6><i class="fas fa-info-circle"></i> Profile Information</h6>
             </div>
             <div class="card-body">
                 {% if edit_mode %}
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3 text-center">
+                        <label for="avatar" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                    </div>
                     <div class="mb-3">
                         <label for="bio" class="form-label">Bio</label>
                         <textarea class="form-control" id="bio" name="bio" rows="3">{{ current_user.bio or '' }}</textarea>
                     </div>
-                    
                     <div class="mb-3">
                         <label for="skills" class="form-label">Skills</label>
-                        <input type="text" class="form-control" id="skills" name="skills" 
-                               value="{{ current_user.skills or '' }}" 
-                               placeholder="Python, Penetration Testing, OSINT...">
+                        <input type="text" class="form-control" id="skills" name="skills" value="{{ current_user.skills or '' }}" placeholder="Python, Penetration Testing, OSINT...">
                     </div>
-                    
                     <div class="mb-3">
                         <label for="github_username" class="form-label">GitHub Username</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fab fa-github"></i></span>
-                            <input type="text" class="form-control" id="github_username" name="github_username" 
-                                   value="{{ current_user.github_username or '' }}">
+                            <input type="text" class="form-control" id="github_username" name="github_username" value="{{ current_user.github_username or '' }}">
                         </div>
                     </div>
-                    
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Save Changes
@@ -88,34 +89,77 @@
                     <strong>Bio:</strong>
                     <p class="text-muted">{{ current_user.bio or 'No bio provided' }}</p>
                 </div>
-                
                 <div class="mb-3">
                     <strong>Skills:</strong>
                     <p class="text-muted">{{ current_user.skills or 'No skills listed' }}</p>
                 </div>
-                
                 {% if current_user.github_username %}
                 <div class="mb-3">
-                    <strong>GitHub:</strong>
-                    <p>
-                        <a href="https://github.com/{{ current_user.github_username }}" 
-                           target="_blank" class="text-decoration-none">
-                            <i class="fab fa-github"></i> {{ current_user.github_username }}
-                        </a>
-                    </p>
+                    <a href="https://github.com/{{ current_user.github_username }}" target="_blank" class="btn btn-dark w-100">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
                 </div>
                 {% endif %}
-                
                 <div class="mb-3">
                     <strong>Reputation:</strong>
                     <span class="badge bg-success">{{ current_user.reputation }}</span>
                 </div>
-                
                 <div class="mb-3">
                     <strong>Member Since:</strong>
                     <p class="text-muted">{{ current_user.created_at.strftime('%B %Y') }}</p>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Followers/Following -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-users"></i> Social</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Followers:</strong> <span class="badge bg-primary">{{ current_user.followers.count() }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Following:</strong> <span class="badge bg-info">{{ current_user.following.count() }}</span>
+                </div>
+                <div class="mb-2">
+                    <a class="btn btn-outline-primary btn-sm w-100 mb-1" data-bs-toggle="collapse" href="#followersList" role="button" aria-expanded="false" aria-controls="followersList">
+                        Show Followers
+                    </a>
+                    <div class="collapse" id="followersList">
+                        <ul class="list-group list-group-flush">
+                        {% for f in current_user.followers %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('user_profile', username=f.follower.username) }}">
+                                    <i class="fas fa-user"></i> {{ f.follower.username }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">No followers yet.</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <a class="btn btn-outline-info btn-sm w-100 mb-1" data-bs-toggle="collapse" href="#followingList" role="button" aria-expanded="false" aria-controls="followingList">
+                        Show Following
+                    </a>
+                    <div class="collapse" id="followingList">
+                        <ul class="list-group list-group-flush">
+                        {% for f in current_user.following %}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('user_profile', username=f.followed.username) }}">
+                                    <i class="fas fa-user"></i> {{ f.followed.username }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">Not following anyone yet.</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -261,4 +305,14 @@
 </div>
 {% endfor %}
 
+<style>
+.profile-avatar img {
+    border: 4px solid #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s;
+}
+.profile-avatar img:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+}
+</style>
 {% endblock %}

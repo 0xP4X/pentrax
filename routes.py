@@ -127,11 +127,19 @@ def edit_profile():
         current_user.bio = request.form.get('bio', '')
         current_user.skills = request.form.get('skills', '')
         current_user.github_username = request.form.get('github_username', '')
-        
+        # Handle avatar upload
+        if 'avatar' in request.files:
+            avatar = request.files['avatar']
+            if avatar and avatar.filename:
+                from werkzeug.utils import secure_filename
+                import os
+                filename = secure_filename(f"{current_user.username}_avatar_{avatar.filename}")
+                avatar_path = os.path.join('uploads', filename)
+                avatar.save(avatar_path)
+                current_user.avatar_url = '/' + avatar_path.replace('\\', '/')
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('profile'))
-    
     return render_template('profile.html', edit_mode=True)
 
 @app.route('/user/<username>')

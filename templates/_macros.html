@@ -1,0 +1,18 @@
+{% macro category_bar(active_category, page) %}
+<ul class="nav nav-pills mb-4 justify-content-center category-bar">
+    {% set categories = [
+        ('tools', 'fa-tools', 'Tools'),
+        ('bugs', 'fa-bug', 'Bugs'),
+        ('ideas', 'fa-lightbulb', 'Ideas'),
+        ('jobs', 'fa-briefcase', 'Jobs')
+    ] %}
+    {% for cat, icon, label in categories %}
+    <li class="nav-item">
+        <a class="nav-link {% if active_category == cat %}active{% endif %}"
+           href="{{ url_for(page, category=cat) }}">
+            <i class="fas {{ icon }}"></i> {{ label }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %} 
