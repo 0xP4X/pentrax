@@ -2243,18 +2243,17 @@ def admin_contact_status(contact_id):
 
 @app.before_request
 def enforce_admin_device_lock():
-    if current_user.is_authenticated and current_user.is_admin:
-        if request.path.startswith('/admin'):
-            user_agent = request.headers.get('User-Agent', '')
-            ip = request.remote_addr or ''
-            fingerprint = hashlib.sha256((user_agent + ip).encode()).hexdigest()
-            # Strict: session and db fingerprint must match
-            if (
-                not current_user.admin_device_fingerprint or
-                current_user.admin_device_fingerprint != fingerprint or
-                session.get('admin_device_fingerprint') != fingerprint
-            ):
-                logout_user()
-                session.pop('admin_device_fingerprint', None)
-                flash('Admin access denied: device mismatch or session invalidated. Please log in from your authorized device.', 'error')
-                return redirect(url_for('login'))
+    if current_user.is_authenticated and current_user.is_admin and \
+       request.endpoint and not request.endpoint.startswith('static'):
+        
+        # Allow access to logout and ban notification pages
+        if request.endpoint in ['logout', 'ban_notification']:
+            return
+
+        stored_fingerprint = current_user.admin_device_fingerprint
+        session_fingerprint = session.get('admin_device_fingerprint')
+        
+        if not stored_fingerprint or not session_fingerprint or stored_fingerprint != session_fingerprint:
+            logout_user()
+            flash('Admin access denied: device mismatch or session invalidated. Please log in from your authorized device.', 'error')
+            return redirect(url_for('login'))
