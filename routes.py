@@ -14,6 +14,8 @@ from payment_service import PaymentService
 import json
 import requests
 import hashlib
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, validators
 
 @app.context_processor
 def inject_user():
@@ -95,6 +97,30 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', [validators.DataRequired()])
+    new_password = PasswordField('New Password', [
+        validators.DataRequired(),
+        validators.EqualTo('confirm_new_password', message='Passwords must match')
+    ])
+    confirm_new_password = PasswordField('Confirm New Password')
+    submit = SubmitField('Change Password')
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        user = current_user
+        if check_password_hash(user.password_hash, form.current_password.data):
+            user.password_hash = generate_password_hash(form.new_password.data)
+            db.session.commit()
+            flash('Your password has been changed successfully!', 'success')
+            return redirect(url_for('profile'))
+        else:
+            flash('Incorrect current password.', 'error')
+    return render_template('change_password.html', form=form)
 
 # Profile routes
 @app.route('/profile')

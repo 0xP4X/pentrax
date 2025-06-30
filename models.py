@@ -2,6 +2,7 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,6 +27,12 @@ class User(UserMixin, db.Model):
     comments = db.relationship('Comment', backref='author', lazy=True)
     followers = db.relationship('Follow', foreign_keys='Follow.followed_id', backref='followed', lazy='dynamic')
     following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy='dynamic')
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     def has_active_premium(self):
         """Check if user has an active premium subscription"""
