@@ -288,4 +288,30 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('%cWelcome to PentraX! 🛡️', 'color: #0d6efd; font-size: 20px; font-weight: bold;');
     console.log('%cThis platform is built for cybersecurity professionals.', 'color: #6c757d; font-size: 14px;');
     console.log('%cInterested in contributing? Check out our GitHub!', 'color: #198754; font-size: 14px;');
+    
+    // Message badge update functionality
+    function updateMessageBadge() {
+        const badge = document.getElementById('message-badge');
+        if (badge) {
+            fetch('/messages/api/unread_count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating message badge:', error);
+                });
+        }
+    }
+    
+    // Update message badge on page load
+    updateMessageBadge();
+    
+    // Update message badge every 30 seconds
+    setInterval(updateMessageBadge, 30000);
 });

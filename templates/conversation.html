@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.username }} - PentraX{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0 h-100">
+    <div class="row g-0 h-100">
+        <!-- Sidebar - Conversation List (Hidden on mobile) -->
+        <div class="col-md-4 col-lg-3 border-end bg-light d-none d-md-block" style="height: calc(100vh - 80px);">
+            <!-- Header -->
+            <div class="d-flex align-items-center p-3 border-bottom bg-white">
+                <div class="flex-grow-1">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="fas fa-comments text-primary me-2"></i>
+                        Messages
+                    </h5>
+                    <small class="text-muted">{{ conversations|length if conversations else 0 }} conversation{{ 's' if (conversations|length if conversations else 0) != 1 else '' }}</small>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="p-3 border-bottom bg-white">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-0 bg-light" placeholder="Search conversations...">
+                </div>
+            </div>
+
+            <!-- Conversations List -->
+            <div class="conversation-list" style="height: calc(100vh - 200px); overflow-y: auto;">
+                <!-- This would be populated with conversation list -->
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="col-md-8 col-lg-9 d-flex flex-column" style="height: calc(100vh - 80px);">
+            <!-- Chat Header -->
+            <div class="d-flex align-items-center p-3 border-bottom bg-white">
+                <div class="d-flex align-items-center flex-grow-1">
+                    <!-- Back Button (Mobile) -->
+                    <a href="{{ url_for('messages') }}" class="btn btn-link text-muted d-md-none me-3">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    
+                    <!-- Avatar -->
+                    <div class="position-relative me-3">
+                        {% if other_user.avatar_url %}
+                            <img src="{{ other_user.avatar_url }}" alt="{{ other_user.username }}" 
+                                 class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-gradient-primary d-flex align-items-center justify-content-center" 
+                                 style="width: 45px; height: 45px;">
+                                <span class="text-white fw-bold">{{ other_user.username[0].upper() }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Online Status -->
+                        <div class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-white" 
+                             style="width: 12px; height: 12px;"></div>
+                    </div>
+                    
+                    <!-- User Info -->
+                    <div>
+                        <h6 class="mb-0 fw-semibold text-dark">{{ other_user.username }}</h6>
+                        <small class="text-success">
+                            <i class="fas fa-circle me-1"></i>Online
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Header Actions -->
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link text-muted me-2" title="Voice Call">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                    <button class="btn btn-link text-muted me-2" title="Video Call">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('user_profile', username=other_user.username) }}">
+                                <i class="fas fa-user me-2"></i>View Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-search me-2"></i>Search</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-ban me-2"></i>Block</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="messages-container" class="flex-grow-1 bg-light p-3" style="overflow-y: auto;">
+                {% if messages %}
+                    <div class="messages-wrapper">
+                        {% for message in messages %}
+                            <div class="message-wrapper mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}">
+                                <div class="d-inline-block max-w-75">
+                                    <div class="message-bubble {% if message.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+                                        <div class="message-content">
+                                            {{ message.content }}
+                                        </div>
+                                        <div class="message-meta">
+                                            <small class="text-muted">{{ message.created_at.strftime('%H:%M') }}</small>
+                                            {% if message.sender_id == current_user.id %}
+                                                <span class="ms-2">
+                                                    {% if message.is_read %}
+                                                        <i class="fas fa-check-double text-primary"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-check-double text-muted"></i>
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-comments fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted mb-2">No messages yet</h5>
+                        <p class="text-muted">Start the conversation with {{ other_user.username }}!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Message Input -->
+            <div class="border-top bg-white p-3">
+                <form method="POST" action="{{ url_for('send_message', conversation_id=conversation.id) }}" class="message-form">
+                    <div class="d-flex align-items-end gap-2">
+                        <div class="flex-grow-1">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-link text-muted border-0" title="Attach file">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <textarea name="content" 
+                                          placeholder="Type a message..." 
+                                          class="form-control border-0 message-input"
+                                          rows="1"
+                                          required></textarea>
+                                <button type="button" class="btn btn-link text-muted border-0" title="Emoji">
+                                    <i class="far fa-smile"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-circle send-btn" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 100%;
+    word-wrap: break-word;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.message-sent {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-received {
+    background: white;
+    color: #333;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 4px;
+}
+
+.message-content {
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 0.75rem;
+}
+
+.message-sent .message-meta {
+    color: rgba(255,255,255,0.8);
+}
+
+.message-received .message-meta {
+    color: #6c757d;
+}
+
+.max-w-75 {
+    max-width: 75%;
+}
+
+.message-input {
+    resize: none;
+    min-height: 40px;
+    max-height: 120px;
+    padding: 10px 15px;
+    border-radius: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.message-input:focus {
+    background-color: white;
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.send-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.send-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Custom scrollbar for messages */
+#messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+#messages-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#messages-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#messages-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for new messages */
+.message-wrapper {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .max-w-75 {
+        max-width: 85%;
+    }
+    
+    .message-bubble {
+        padding: 10px 14px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messages-container');
+    const textarea = document.querySelector('.message-input');
+    const form = document.querySelector('.message-form');
+    
+    // Auto-resize textarea
+    function autoResize() {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+    
+    textarea.addEventListener('input', autoResize);
+    
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    scrollToBottom();
+    
+    // Auto-focus textarea
+    textarea.focus();
+    
+    // Handle Enter key to send message
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.submit();
+        }
+    });
+    
+    // Mark conversation as read
+    fetch('/messages/api/mark_read/{{ conversation.id }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+    
+    // Update message badge
+    fetch('/messages/api/unread_count')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('message-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        });
+});
+</script>
+{% endblock %} 

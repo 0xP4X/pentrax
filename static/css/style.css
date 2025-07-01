@@ -10,6 +10,18 @@
     --danger-color: #dc3545;
     --dark-color: #212529;
     --light-color: #f8f9fa;
+    --pentrax-primary: #0d6efd;
+    --pentrax-secondary: #764ba2;
+    --pentrax-bg-light: #f8f9fa;
+    --pentrax-bg-dark: #181c24;
+    --pentrax-chat-bg: #f4f7fb;
+    --pentrax-chat-bg-dark: #181c24;
+    --pentrax-bubble-sent: linear-gradient(135deg, #0d6efd 0%, #764ba2 100%);
+    --pentrax-bubble-received: #ffe066;
+    --pentrax-bubble-received-dark: #bfa900;
+    --pentrax-border: #64ce0e;
+    --pentrax-border-dark: #232a36;
+    --pentrax-accent: #0dcaf0;
 }
 
 /* Dark theme variables */
@@ -17,6 +29,9 @@
     --bs-body-bg: #0d1117;
     --bs-body-color: #e6edf3;
     --bs-border-color: #30363d;
+    --pentrax-chat-bg: var(--pentrax-chat-bg-dark);
+    --pentrax-bubble-received: var(--pentrax-bubble-received-dark);
+    --pentrax-border: var(--pentrax-border-dark);
 }
 
 /* Global Styles */
@@ -957,4 +972,145 @@ body {
     .navbar-offset {
         margin-left: 64px;
     }
+}
+
+/* WhatsApp-like Messaging Styles */
+.messaging-container {
+    height: calc(100vh - 80px);
+    background: var(--pentrax-chat-bg);
+}
+
+[data-bs-theme="dark"] .messaging-container {
+    background: var(--pentrax-chat-bg-dark);
+}
+
+.conversation-item {
+    background: transparent;
+    border-bottom: 1px solid var(--pentrax-border);
+    transition: background 0.2s;
+}
+
+.conversation-item:hover, .conversation-item.active {
+    background: rgba(13,110,253,0.07) !important;
+}
+
+[data-bs-theme="dark"] .conversation-item:hover,
+[data-bs-theme="dark"] .conversation-item.active {
+    background: rgba(255,255,255,0.07) !important;
+}
+
+.message-bubble {
+    border-radius: 18px;
+    box-shadow: 0 1px 4px rgba(13,110,253,0.04);
+    margin-bottom: 2px;
+    padding: 12px 18px;
+    font-size: 1rem;
+    line-height: 1.5;
+    word-break: break-word;
+    max-width: 80vw;
+}
+.message-sent {
+    background: var(--pentrax-bubble-sent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+}
+.message-received {
+    background: var(--pentrax-bubble-received);
+    color: #232a36;
+    border: 1px solid var(--pentrax-border);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+}
+[data-bs-theme="dark"] .message-received {
+    color: #181c24;
+}
+
+.message-meta {
+    font-size: 0.8rem;
+    color: var(--pentrax-accent);
+    margin-top: 2px;
+    text-align: right;
+}
+
+.send-btn {
+    background: var(--pentrax-bubble-sent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.send-btn:hover {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0d6efd 100%);
+    box-shadow: 0 4px 16px rgba(13,110,253,0.15);
+}
+
+.message-input {
+    background: var(--pentrax-bg-light);
+    border: 1px solid var(--pentrax-border);
+    color: #232a36;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 1rem;
+    transition: border 0.2s, background 0.2s;
+}
+[data-bs-theme="dark"] .message-input {
+    background: #232a36;
+    color: #e6edf3;
+    border: 1px solid var(--pentrax-border-dark);
+}
+.message-input:focus {
+    border-color: var(--pentrax-primary);
+    background: #fff;
+}
+[data-bs-theme="dark"] .message-input:focus {
+    background: #181c24;
+}
+
+/* Sidebar header and search */
+.conversation-list .input-group-text {
+    background: var(--pentrax-bg-light);
+    border: none;
+}
+[data-bs-theme="dark"] .conversation-list .input-group-text {
+    background: #232a36;
+}
+
+/* Avatars and status */
+.rounded-circle {
+    border: 2px solid var(--pentrax-border);
+}
+[data-bs-theme="dark"] .rounded-circle {
+    border: 2px solid var(--pentrax-border-dark);
+}
+.online-indicator, .position-absolute.bg-success {
+    background: #0dcaf0 !important;
+    border: 2px solid #fff;
+}
+[data-bs-theme="dark"] .online-indicator, [data-bs-theme="dark"] .position-absolute.bg-success {
+    border: 2px solid #181c24;
+}
+
+/* Misc */
+.bg-gradient-primary {
+    background: var(--pentrax-bubble-sent) !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--pentrax-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--pentrax-secondary);
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .message-bubble { max-width: 95vw; }
 }

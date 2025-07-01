@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, Conversation, ConversationParticipant, Message, MessageReadReceipt
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
@@ -146,7 +146,17 @@ def edit_profile():
 def user_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     user_posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.created_at)).all()
-    return render_template('user_profile.html', user=user, user_posts=user_posts)
+    # Followers: users who follow this user
+    followers = [f.follower for f in user.followers]
+    # Following: users this user follows
+    following = [f.followed for f in user.following]
+    return render_template(
+        'user_profile.html',
+        user=user,
+        user_posts=user_posts,
+        followers=followers,
+        following=following
+    )
 
 # Forum routes
 @app.route('/forum/<category>')
@@ -2248,3 +2258,218 @@ def admin_contact_status(contact_id):
         flash(f'Contact status updated to {new_status}.', 'success')
     
     return redirect(url_for('admin_contact_detail', contact_id=contact.id))
+
+# Messaging System Routes
+@app.route('/messages')
+@login_required
+def messages():
+    """Show user's conversations"""
+    # Get all conversations where user is a participant
+    user_conversations = ConversationParticipant.query.filter_by(
+        user_id=current_user.id, 
+        is_active=True
+    ).all()
+    
+    conversations = []
+    for participant in user_conversations:
+        conversation = participant.conversation
+        # Get the other participant
+        other_participant = ConversationParticipant.query.filter(
+            ConversationParticipant.conversation_id == conversation.id,
+            ConversationParticipant.user_id != current_user.id
+        ).first()
+        
+        if other_participant:
+            # Get last message
+            last_message = Message.query.filter_by(
+                conversation_id=conversation.id
+            ).order_by(Message.created_at.desc()).first()
+            
+            # Get unread count
+            unread_count = Message.query.filter(
+                Message.conversation_id == conversation.id,
+                Message.sender_id != current_user.id,
+                Message.is_read == False
+            ).count()
+            
+            conversations.append({
+                'conversation': conversation,
+                'other_user': other_participant.user,
+                'last_message': last_message,
+                'unread_count': unread_count
+            })
+    
+    # Sort by last message time
+    conversations.sort(key=lambda x: x['last_message'].created_at if x['last_message'] else x['conversation'].created_at, reverse=True)
+    
+    return render_template('messages.html', conversations=conversations)
+
+@app.route('/messages/new/<username>')
+@login_required
+def new_message(username):
+    """Start a new conversation with a user"""
+    other_user = User.query.filter_by(username=username).first_or_404()
+    
+    if other_user.id == current_user.id:
+        flash('You cannot message yourself', 'error')
+        return redirect(url_for('messages'))
+    
+    # Check if conversation already exists
+    existing_conversation = db.session.query(Conversation).join(ConversationParticipant).filter(
+        ConversationParticipant.user_id.in_([current_user.id, other_user.id])
+    ).group_by(Conversation.id).having(
+        db.func.count(ConversationParticipant.user_id) == 2
+    ).first()
+    
+    if existing_conversation:
+        return redirect(url_for('conversation', conversation_id=existing_conversation.id))
+    
+    # Create new conversation
+    conversation = Conversation()
+    db.session.add(conversation)
+    db.session.flush()  # Get the ID
+    
+    # Add participants
+    participant1 = ConversationParticipant(
+        conversation_id=conversation.id,
+        user_id=current_user.id
+    )
+    participant2 = ConversationParticipant(
+        conversation_id=conversation.id,
+        user_id=other_user.id
+    )
+    
+    db.session.add(participant1)
+    db.session.add(participant2)
+    db.session.commit()
+    
+    return redirect(url_for('conversation', conversation_id=conversation.id))
+
+@app.route('/messages/<int:conversation_id>')
+@login_required
+def conversation(conversation_id):
+    """Show a specific conversation"""
+    # Check if user is participant
+    participant = ConversationParticipant.query.filter_by(
+        conversation_id=conversation_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    conversation = Conversation.query.get_or_404(conversation_id)
+    
+    # Get the other participant
+    other_participant = ConversationParticipant.query.filter(
+        ConversationParticipant.conversation_id == conversation_id,
+        ConversationParticipant.user_id != current_user.id
+    ).first()
+    
+    if not other_participant:
+        flash('Conversation not found', 'error')
+        return redirect(url_for('messages'))
+    
+    # Get messages
+    messages = Message.query.filter_by(
+        conversation_id=conversation_id
+    ).order_by(Message.created_at).all()
+    
+    # Mark messages as read
+    unread_messages = Message.query.filter(
+        Message.conversation_id == conversation_id,
+        Message.sender_id != current_user.id,
+        Message.is_read == False
+    ).all()
+    
+    for message in unread_messages:
+        message.is_read = True
+        # Add read receipt
+        receipt = MessageReadReceipt(
+            message_id=message.id,
+            user_id=current_user.id
+        )
+        db.session.add(receipt)
+    
+    db.session.commit()
+    
+    return render_template('conversation.html', 
+                         conversation=conversation,
+                         other_user=other_participant.user,
+                         messages=messages,
+                         conversations=[])  # Add empty conversations list for sidebar
+
+@app.route('/messages/<int:conversation_id>/send', methods=['POST'])
+@login_required
+def send_message(conversation_id):
+    """Send a message in a conversation"""
+    # Check if user is participant
+    participant = ConversationParticipant.query.filter_by(
+        conversation_id=conversation_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    content = request.form.get('content', '').strip()
+    if not content:
+        flash('Message cannot be empty', 'error')
+        return redirect(url_for('conversation', conversation_id=conversation_id))
+    
+    # Create message
+    message = Message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=content
+    )
+    
+    db.session.add(message)
+    
+    # Update conversation timestamp
+    conversation = Conversation.query.get(conversation_id)
+    conversation.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return redirect(url_for('conversation', conversation_id=conversation_id))
+
+@app.route('/messages/api/unread_count')
+@login_required
+def unread_message_count():
+    """API endpoint to get unread message count"""
+    count = db.session.query(Message).join(
+        ConversationParticipant, 
+        Message.conversation_id == ConversationParticipant.conversation_id
+    ).filter(
+        ConversationParticipant.user_id == current_user.id,
+        ConversationParticipant.is_active == True,
+        Message.sender_id != current_user.id,
+        Message.is_read == False
+    ).count()
+    
+    return jsonify({'count': count})
+
+@app.route('/messages/api/mark_read/<int:conversation_id>', methods=['POST'])
+@login_required
+def mark_conversation_read(conversation_id):
+    """Mark all messages in a conversation as read"""
+    # Check if user is participant
+    participant = ConversationParticipant.query.filter_by(
+        conversation_id=conversation_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Mark messages as read
+    unread_messages = Message.query.filter(
+        Message.conversation_id == conversation_id,
+        Message.sender_id != current_user.id,
+        Message.is_read == False
+    ).all()
+    
+    for message in unread_messages:
+        message.is_read = True
+        # Add read receipt
+        receipt = MessageReadReceipt(
+            message_id=message.id,
+            user_id=current_user.id
+        )
+        db.session.add(receipt)
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})

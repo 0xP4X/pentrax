@@ -534,4 +534,49 @@ class Contact(db.Model):
     admin = db.relationship('User', foreign_keys=[replied_by])
     
     def __repr__(self):
-        return f'<Contact {self.id}: {self.subject}>'
+        return f'<Contact {self.subject}>'
+
+# Messaging System Models
+class Conversation(db.Model):
+    """Model for conversations between users"""
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    participants = db.relationship('ConversationParticipant', backref='conversation', cascade='all, delete-orphan')
+    messages = db.relationship('Message', backref='conversation', cascade='all, delete-orphan', order_by='Message.created_at')
+
+class ConversationParticipant(db.Model):
+    """Model for conversation participants"""
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    user = db.relationship('User', backref='conversation_participations')
+
+class Message(db.Model):
+    """Model for individual messages"""
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    sender = db.relationship('User', backref='sent_messages')
+    read_receipts = db.relationship('MessageReadReceipt', backref='message', cascade='all, delete-orphan')
+
+class MessageReadReceipt(db.Model):
+    """Model for tracking message read receipts"""
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    read_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='message_read_receipts')
