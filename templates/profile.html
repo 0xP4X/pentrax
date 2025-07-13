@@ -60,7 +60,20 @@
                 <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3 text-center">
                         <label for="avatar" class="form-label">Profile Picture</label>
-                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                        <div class="current-avatar mb-2">
+                            {% if current_user.avatar_url %}
+                                <img src="{{ current_user.avatar_url }}" alt="Current Avatar" class="rounded-circle img-thumbnail" style="width:80px;height:80px;object-fit:cover;">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user-circle fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" onchange="previewImage(this)">
+                        <div id="imagePreview" class="mt-2" style="display:none;">
+                            <img id="previewImg" class="rounded-circle img-thumbnail" style="width:80px;height:80px;object-fit:cover;">
+                        </div>
+                        <small class="text-muted">Max size: 5MB. Supported formats: PNG, JPG, JPEG, GIF, WebP</small>
                     </div>
                     <div class="mb-3">
                         <label for="bio" class="form-label">Bio</label>
@@ -132,8 +145,13 @@
                         <ul class="list-group list-group-flush">
                         {% for f in current_user.followers %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('user_profile', username=f.follower.username) }}">
-                                    <i class="fas fa-user"></i> {{ f.follower.username }}
+                                <a href="{{ url_for('user_profile', username=f.follower.username) }}" class="d-flex align-items-center">
+                                    {% if f.follower.avatar_url %}
+                                        <img src="{{ f.follower.avatar_url }}" class="rounded-circle me-2" style="width:20px;height:20px;object-fit:cover;">
+                                    {% else %}
+                                        <i class="fas fa-user me-2"></i>
+                                    {% endif %}
+                                    {{ f.follower.username }}
                                 </a>
                             </li>
                         {% else %}
@@ -150,8 +168,13 @@
                         <ul class="list-group list-group-flush">
                         {% for f in current_user.following %}
                             <li class="list-group-item">
-                                <a href="{{ url_for('user_profile', username=f.followed.username) }}">
-                                    <i class="fas fa-user"></i> {{ f.followed.username }}
+                                <a href="{{ url_for('user_profile', username=f.followed.username) }}" class="d-flex align-items-center">
+                                    {% if f.followed.avatar_url %}
+                                        <img src="{{ f.followed.avatar_url }}" class="rounded-circle me-2" style="width:20px;height:20px;object-fit:cover;">
+                                    {% else %}
+                                        <i class="fas fa-user me-2"></i>
+                                    {% endif %}
+                                    {{ f.followed.username }}
                                 </a>
                             </li>
                         {% else %}
@@ -315,4 +338,24 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.16);
 }
 </style>
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}

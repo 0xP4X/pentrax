@@ -98,9 +98,14 @@
                         {% endif %}
                         
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle"></i> {{ current_user.username }}
+                                {% if current_user.avatar_url %}
+                                    <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;">
+                                {% else %}
+                                    <i class="fas fa-user-circle me-2"></i>
+                                {% endif %}
+                                {{ current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 {% if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user() %}

@@ -170,16 +170,44 @@ def edit_profile():
         current_user.bio = request.form.get('bio', '')
         current_user.skills = request.form.get('skills', '')
         current_user.github_username = request.form.get('github_username', '')
-        # Handle avatar upload
+        
+        # Handle avatar upload with validation
         if 'avatar' in request.files:
             avatar = request.files['avatar']
             if avatar and avatar.filename:
+                # Check file type
+                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                file_ext = avatar.filename.rsplit('.', 1)[1].lower() if '.' in avatar.filename else ''
+                
+                if file_ext not in allowed_extensions:
+                    flash('Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WebP images only.', 'error')
+                    return render_template('profile.html', edit_mode=True)
+                
+                # Check file size (max 5MB)
+                if len(avatar.read()) > 5 * 1024 * 1024:
+                    flash('File too large. Please upload an image smaller than 5MB.', 'error')
+                    return render_template('profile.html', edit_mode=True)
+                
+                # Reset file pointer
+                avatar.seek(0)
+                
                 from werkzeug.utils import secure_filename
                 import os
-                filename = secure_filename(f"{current_user.username}_avatar_{avatar.filename}")
-                avatar_path = os.path.join('uploads', filename)
+                from datetime import datetime
+                
+                # Generate unique filename with timestamp
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = secure_filename(f"{current_user.username}_avatar_{timestamp}.{file_ext}")
+                avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                
+                # Save the file
                 avatar.save(avatar_path)
-                current_user.avatar_url = '/' + avatar_path.replace('\\', '/')
+                
+                # Update avatar URL
+                current_user.avatar_url = f'/uploads/{filename}'
+                
+                flash('Profile picture updated successfully!', 'success')
+        
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('profile'))
@@ -2967,3 +2995,10 @@ def mark_conversation_read(conversation_id):
     db.session.commit()
     
     return jsonify({'success': True})
+
+# Add this route after the existing routes, before the error handlers
+@app.route('/uploads/<filename>')
+def serve_upload(filename):
+    """Serve uploaded files including avatar images"""
+    from flask import send_from_directory
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)

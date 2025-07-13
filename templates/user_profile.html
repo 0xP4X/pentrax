@@ -8,8 +8,14 @@
         <!-- User Profile Card -->
         <div class="card mb-4">
             <div class="card-body text-center">
-                <div class="avatar-placeholder mb-3">
-                    <i class="fas fa-user-circle fa-5x text-muted"></i>
+                <div class="profile-avatar mb-3 mx-auto">
+                    {% if user.avatar_url %}
+                        <img src="{{ user.avatar_url }}" alt="{{ user.username }}'s Avatar" class="rounded-circle img-thumbnail" style="width:120px;height:120px;object-fit:cover;border:3px solid #007bff;">
+                    {% else %}
+                        <div class="avatar-placeholder mb-3">
+                            <i class="fas fa-user-circle fa-5x text-muted"></i>
+                        </div>
+                    {% endif %}
                 </div>
                 <h4>{{ user.username }}</h4>
                 {% if user.is_admin %}
@@ -76,11 +82,11 @@
                 <ul class="list-unstyled mt-2">
                   {% for u in followers %}
                     <li>
-                      <a href="{{ url_for('user_profile', username=u.username) }}">
+                      <a href="{{ url_for('user_profile', username=u.username) }}" class="d-flex align-items-center">
                         {% if u.avatar_url %}
-                          <img src="{{ u.avatar_url }}" class="rounded-circle" style="width:24px;height:24px;object-fit:cover;">
+                          <img src="{{ u.avatar_url }}" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;">
                         {% else %}
-                          <span class="badge bg-secondary">{{ u.username[0]|upper }}</span>
+                          <span class="badge bg-secondary me-2">{{ u.username[0]|upper }}</span>
                         {% endif %}
                         {{ u.username }}
                       </a>
@@ -95,11 +101,11 @@
                 <ul class="list-unstyled mt-2">
                   {% for u in following %}
                     <li>
-                      <a href="{{ url_for('user_profile', username=u.username) }}">
+                      <a href="{{ url_for('user_profile', username=u.username) }}" class="d-flex align-items-center">
                         {% if u.avatar_url %}
-                          <img src="{{ u.avatar_url }}" class="rounded-circle" style="width:24px;height:24px;object-fit:cover;">
+                          <img src="{{ u.avatar_url }}" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;">
                         {% else %}
-                          <span class="badge bg-secondary">{{ u.username[0]|upper }}</span>
+                          <span class="badge bg-secondary me-2">{{ u.username[0]|upper }}</span>
                         {% endif %}
                         {{ u.username }}
                       </a>
