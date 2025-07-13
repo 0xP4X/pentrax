@@ -78,8 +78,11 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+        # Log in the user automatically after registration
+        login_user(user)
+        
+        # Redirect to onboarding for new users
+        return redirect(url_for('onboarding'))
     
     return render_template('register.html')
 
@@ -88,6 +91,46 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@app.route('/onboarding')
+@login_required
+def onboarding():
+    """Show onboarding for new users"""
+    return render_template('onboarding.html')
+
+@app.route('/complete-onboarding', methods=['POST'])
+@login_required
+def complete_onboarding():
+    """Complete onboarding and save user profile data"""
+    try:
+        data = request.get_json()
+        
+        # Update user profile with onboarding data
+        if data.get('bio'):
+            current_user.bio = data['bio']
+        if data.get('skills'):
+            current_user.skills = data['skills']
+        if data.get('github_username'):
+            current_user.github_username = data['github_username']
+        
+        # Mark user as having completed onboarding
+        # You can add a field to track this if needed
+        # current_user.onboarding_completed = True
+        
+        db.session.commit()
+        
+        # Create welcome notification
+        create_notification(
+            current_user.id,
+            'Welcome to PentraX! 🚀',
+            'Your account is now ready. Start exploring our cybersecurity labs and connect with the community!'
+        )
+        
+        return jsonify({'success': True, 'message': 'Onboarding completed successfully!'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('Current Password', [validators.DataRequired()])

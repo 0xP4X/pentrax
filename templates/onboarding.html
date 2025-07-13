@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to PentraX - Onboarding{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="onboarding-container">
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar"></div>
+        </div>
+        <div class="step-indicators">
+            <span class="step active" data-step="1">1</span>
+            <span class="step" data-step="2">2</span>
+            <span class="step" data-step="3">3</span>
+            <span class="step" data-step="4">4</span>
+        </div>
+    </div>
+
+    <!-- Step 1: Welcome -->
+    <div class="onboarding-step active" id="step1">
+        <div class="text-center">
+            <div class="welcome-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h2 class="mb-4">Welcome to PentraX! 🚀</h2>
+            <p class="lead mb-4">Your journey into cybersecurity excellence starts here.</p>
+            <div class="features-preview">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="fas fa-terminal text-primary"></i>
+                            <h5>Interactive Labs</h5>
+                            <p>Hands-on cybersecurity challenges</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="fas fa-robot text-success"></i>
+                            <h5>AI Assistant</h5>
+                            <p>Get help with your security questions</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="fas fa-users text-info"></i>
+                            <h5>Community</h5>
+                            <p>Connect with security professionals</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Profile Setup -->
+    <div class="onboarding-step" id="step2">
+        <div class="text-center mb-4">
+            <h2>Let's Set Up Your Profile</h2>
+            <p class="text-muted">Tell us about yourself to personalize your experience</p>
+        </div>
+        <form id="profileForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about your cybersecurity interests and experience..."></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="skills" class="form-label">Skills & Interests</label>
+                        <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g., Web Security, Network Security, Python, Linux">
+                        <div class="form-text">Separate skills with commas</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="github_username" class="form-label">GitHub Username (Optional)</label>
+                        <input type="text" class="form-control" id="github_username" name="github_username" placeholder="your-github-username">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Step 3: Platform Tour -->
+    <div class="onboarding-step" id="step3">
+        <div class="text-center mb-4">
+            <h2>Discover PentraX Features</h2>
+            <p class="text-muted">Here's what you can do on our platform</p>
+        </div>
+        <div class="tour-container">
+            <div class="tour-item active" data-tour="labs">
+                <div class="tour-content">
+                    <div class="tour-icon">
+                        <i class="fas fa-terminal"></i>
+                    </div>
+                    <h4>Interactive Cybersecurity Labs</h4>
+                    <p>Practice real-world security scenarios with our hands-on labs. From web application security to network penetration testing, develop practical skills in a safe environment.</p>
+                    <div class="tour-features">
+                        <span class="badge bg-primary">Web Security</span>
+                        <span class="badge bg-success">Network Security</span>
+                        <span class="badge bg-info">Cryptography</span>
+                        <span class="badge bg-warning">Reverse Engineering</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-item" data-tour="ai">
+                <div class="tour-content">
+                    <div class="tour-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h4>AI-Powered Security Assistant</h4>
+                    <p>Get instant help with your security questions, code reviews, and learning guidance. Our AI assistant is trained on cybersecurity best practices and can help you solve complex problems.</p>
+                    <div class="tour-features">
+                        <span class="badge bg-primary">Code Review</span>
+                        <span class="badge bg-success">Security Analysis</span>
+                        <span class="badge bg-info">Learning Guidance</span>
+                        <span class="badge bg-warning">Problem Solving</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-item" data-tour="community">
+                <div class="tour-content">
+                    <div class="tour-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4>Security Community</h4>
+                    <p>Connect with cybersecurity professionals, share knowledge, and collaborate on projects. Join discussions, ask questions, and learn from experienced practitioners.</p>
+                    <div class="tour-features">
+                        <span class="badge bg-primary">Forums</span>
+                        <span class="badge bg-success">Networking</span>
+                        <span class="badge bg-info">Knowledge Sharing</span>
+                        <span class="badge bg-warning">Collaboration</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tour-item" data-tour="store">
+                <div class="tour-content">
+                    <div class="tour-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h4>Security Tools & Resources</h4>
+                    <p>Access premium security tools, scripts, and resources shared by the community. Find specialized tools for penetration testing, vulnerability assessment, and security research.</p>
+                    <div class="tour-features">
+                        <span class="badge bg-primary">Security Tools</span>
+                        <span class="badge bg-success">Scripts</span>
+                        <span class="badge bg-info">Resources</span>
+                        <span class="badge bg-warning">Premium Content</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tour-navigation text-center mt-4">
+            <button class="btn btn-outline-primary" id="prevTour" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span class="mx-3">
+                <span id="currentTour">1</span> of <span id="totalTours">4</span>
+            </span>
+            <button class="btn btn-outline-primary" id="nextTour">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 4: Get Started -->
+    <div class="onboarding-step" id="step4">
+        <div class="text-center">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="mb-4">You're All Set! 🎉</h2>
+            <p class="lead mb-4">Your PentraX account is ready. Here's what you can do next:</p>
+            
+            <div class="next-steps">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="action-card">
+                            <i class="fas fa-terminal"></i>
+                            <h5>Start with Labs</h5>
+                            <p>Begin with our beginner-friendly labs to build your skills</p>
+                            <a href="{{ url_for('cyber_labs') }}" class="btn btn-primary btn-sm">Explore Labs</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="action-card">
+                            <i class="fas fa-robot"></i>
+                            <h5>Try AI Assistant</h5>
+                            <p>Ask questions and get help with your security learning</p>
+                            <a href="#" class="btn btn-success btn-sm" onclick="openAIAssistant()">Open AI Assistant</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="action-card">
+                            <i class="fas fa-users"></i>
+                            <h5>Join Community</h5>
+                            <p>Connect with other security professionals</p>
+                            <a href="{{ url_for('forum') }}" class="btn btn-info btn-sm">Visit Forum</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="action-card">
+                            <i class="fas fa-user-edit"></i>
+                            <h5>Complete Profile</h5>
+                            <p>Add more details to your profile</p>
+                            <a href="{{ url_for('profile') }}" class="btn btn-warning btn-sm">Edit Profile</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="onboarding-navigation">
+        <div class="d-flex justify-content-between align-items-center">
+            <button class="btn btn-outline-secondary" id="prevBtn" style="display: none;">
+                <i class="fas fa-arrow-left"></i> Previous
+            </button>
+            <div class="step-info">
+                <span id="currentStepText">Step 1 of 4</span>
+            </div>
+            <button class="btn btn-primary" id="nextBtn">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.onboarding-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 70vh;
+}
+
+.progress-container {
+    margin-bottom: 3rem;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #007bff, #28a745);
+    transition: width 0.3s ease;
+}
+
+.step-indicators {
+    display: flex;
+    justify-content: space-between;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.step.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.step.completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.onboarding-step {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.onboarding-step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-icon, .success-icon {
+    font-size: 4rem;
+    color: #007bff;
+    margin-bottom: 2rem;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.feature-card i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.tour-container {
+    position: relative;
+    min-height: 300px;
+}
+
+.tour-item {
+    display: none;
+    animation: slideIn 0.5s ease;
+}
+
+.tour-item.active {
+    display: block;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.tour-content {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.tour-icon {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 1.5rem;
+}
+
+.tour-features {
+    margin-top: 1.5rem;
+}
+
+.tour-features .badge {
+    margin: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.next-steps {
+    margin-top: 2rem;
+}
+
+.action-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: white;
+    transition: transform 0.3s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.action-card i {
+    font-size: 2rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.onboarding-navigation {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.step-info {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .onboarding-container {
+        padding: 1rem;
+    }
+    
+    .tour-content {
+        padding: 1rem;
+    }
+    
+    .feature-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+<script>
+let currentStep = 1;
+let currentTour = 1;
+const totalSteps = 4;
+const totalTours = 4;
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateProgress();
+    updateStepInfo();
+    
+    // Navigation buttons
+    document.getElementById('nextBtn').addEventListener('click', nextStep);
+    document.getElementById('prevBtn').addEventListener('click', prevStep);
+    
+    // Tour navigation
+    document.getElementById('nextTour').addEventListener('click', nextTour);
+    document.getElementById('prevTour').addEventListener('click', prevTour);
+});
+
+function nextStep() {
+    if (currentStep < totalSteps) {
+        // Save profile data if on step 2
+        if (currentStep === 2) {
+            saveProfileData();
+        }
+        
+        currentStep++;
+        updateStep();
+    } else {
+        // Complete onboarding
+        completeOnboarding();
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        updateStep();
+    }
+}
+
+function updateStep() {
+    // Hide all steps
+    document.querySelectorAll('.onboarding-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    
+    // Show current step
+    document.getElementById(`step${currentStep}`).classList.add('active');
+    
+    // Update progress
+    updateProgress();
+    updateStepInfo();
+    
+    // Update navigation buttons
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    if (currentStep === 1) {
+        prevBtn.style.display = 'none';
+    } else {
+        prevBtn.style.display = 'block';
+    }
+    
+    if (currentStep === totalSteps) {
+        nextBtn.innerHTML = 'Complete <i class="fas fa-check"></i>';
+    } else {
+        nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+    }
+    
+    // Reset tour to first item when entering step 3
+    if (currentStep === 3) {
+        currentTour = 1;
+        updateTour();
+    }
+}
+
+function updateProgress() {
+    const progress = (currentStep / totalSteps) * 100;
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    
+    // Update step indicators
+    document.querySelectorAll('.step').forEach((step, index) => {
+        const stepNum = index + 1;
+        step.classList.remove('active', 'completed');
+        
+        if (stepNum < currentStep) {
+            step.classList.add('completed');
+        } else if (stepNum === currentStep) {
+            step.classList.add('active');
+        }
+    });
+}
+
+function updateStepInfo() {
+    document.getElementById('currentStepText').textContent = `Step ${currentStep} of ${totalSteps}`;
+}
+
+function saveProfileData() {
+    const formData = new FormData(document.getElementById('profileForm'));
+    const data = {
+        bio: formData.get('bio') || '',
+        skills: formData.get('skills') || '',
+        github_username: formData.get('github_username') || ''
+    };
+    
+    // Save to localStorage for now (will be sent to server on completion)
+    localStorage.setItem('onboarding_profile', JSON.stringify(data));
+}
+
+function nextTour() {
+    if (currentTour < totalTours) {
+        currentTour++;
+        updateTour();
+    }
+}
+
+function prevTour() {
+    if (currentTour > 1) {
+        currentTour--;
+        updateTour();
+    }
+}
+
+function updateTour() {
+    // Hide all tour items
+    document.querySelectorAll('.tour-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Show current tour item
+    const tourItems = ['labs', 'ai', 'community', 'store'];
+    document.querySelector(`[data-tour="${tourItems[currentTour - 1]}"]`).classList.add('active');
+    
+    // Update tour navigation
+    document.getElementById('currentTour').textContent = currentTour;
+    document.getElementById('totalTours').textContent = totalTours;
+    
+    // Update navigation buttons
+    document.getElementById('prevTour').disabled = currentTour === 1;
+    document.getElementById('nextTour').disabled = currentTour === totalTours;
+}
+
+function completeOnboarding() {
+    // Get profile data
+    const profileData = JSON.parse(localStorage.getItem('onboarding_profile') || '{}');
+    
+    // Send to server
+    fetch('/complete-onboarding', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear localStorage
+            localStorage.removeItem('onboarding_profile');
+            
+            // Redirect to dashboard
+            window.location.href = '/';
+        } else {
+            alert('Error completing onboarding: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Redirect anyway
+        window.location.href = '/';
+    });
+}
+
+function openAIAssistant() {
+    // This will be implemented when AI assistant is available
+    alert('AI Assistant feature coming soon!');
+}
+</script>
+{% endblock %} 
