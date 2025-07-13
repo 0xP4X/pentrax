@@ -1401,6 +1401,391 @@ def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
 
+# Admin Content Deletion Routes
+@app.route('/admin/delete/post/<int:post_id>', methods=['POST'])
+@login_required
+def admin_delete_post(post_id):
+    """Admin can delete any post (premium or not, purchased or not)"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    post = Post.query.get_or_404(post_id)
+    
+    try:
+        # Delete associated purchases
+        Purchase.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated comments
+        Comment.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated likes
+        PostLike.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='post', target_id=post_id).delete()
+        
+        # Delete the post file if it exists
+        if post.file_path and os.path.exists(post.file_path):
+            os.remove(post.file_path)
+        
+        # Delete the post
+        db.session.delete(post)
+        db.session.commit()
+        
+        flash(f'Post "{post.title}" has been permanently deleted along with all associated data.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting post: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete/comment/<int:comment_id>', methods=['POST'])
+@login_required
+def admin_delete_comment(comment_id):
+    """Admin can delete any comment"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    comment = Comment.query.get_or_404(comment_id)
+    
+    try:
+        # Delete associated likes
+        CommentLike.query.filter_by(comment_id=comment_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='comment', target_id=comment_id).delete()
+        
+        # Delete the comment
+        db.session.delete(comment)
+        db.session.commit()
+        
+        flash(f'Comment has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting comment: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/admin/delete/lab/<int:lab_id>', methods=['POST'])
+@login_required
+def admin_delete_lab_comprehensive(lab_id):
+    """Admin can delete any lab with all associated data"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        # Delete lab completions
+        LabCompletion.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete quiz attempts
+        LabQuizAttempt.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete quiz questions
+        LabQuizQuestion.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal commands
+        LabTerminalCommand.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal attempts
+        LabTerminalAttempt.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal sessions
+        LabTerminalSession.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='lab', target_id=lab_id).delete()
+        
+        # Delete the lab
+        db.session.delete(lab)
+        db.session.commit()
+        
+        flash(f'Lab "{lab.title}" has been permanently deleted along with all associated data.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting lab: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_labs'))
+
+@app.route('/admin/delete/user/<int:user_id>', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    """Admin can delete any user (except other admins) with all their content"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent deletion of admin users
+    if user.is_admin:
+        flash('Cannot delete admin users.', 'error')
+        return redirect(url_for('admin_users'))
+    
+    # Prevent self-deletion
+    if user.id == current_user.id:
+        flash('Cannot delete your own account.', 'error')
+        return redirect(url_for('admin_users'))
+    
+    try:
+        # Delete user's posts and associated data
+        user_posts = Post.query.filter_by(user_id=user_id).all()
+        for post in user_posts:
+            # Delete post purchases
+            Purchase.query.filter_by(post_id=post.id).delete()
+            # Delete post comments
+            Comment.query.filter_by(post_id=post.id).delete()
+            # Delete post likes
+            PostLike.query.filter_by(post_id=post.id).delete()
+            # Delete post file
+            if post.file_path and os.path.exists(post.file_path):
+                os.remove(post.file_path)
+        
+        # Delete user's comments and associated likes
+        user_comments = Comment.query.filter_by(user_id=user_id).all()
+        for comment in user_comments:
+            CommentLike.query.filter_by(comment_id=comment.id).delete()
+        
+        # Delete user's lab completions
+        LabCompletion.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's quiz attempts
+        LabQuizAttempt.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's terminal attempts and sessions
+        LabTerminalAttempt.query.filter_by(user_id=user_id).delete()
+        LabTerminalSession.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's purchases
+        Purchase.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's wallet and transactions
+        wallet = UserWallet.query.filter_by(user_id=user_id).first()
+        if wallet:
+            WalletTransaction.query.filter_by(wallet_id=wallet.id).delete()
+            db.session.delete(wallet)
+        
+        # Delete user's orders and items
+        user_orders = Order.query.filter_by(user_id=user_id).all()
+        for order in user_orders:
+            OrderItem.query.filter_by(order_id=order.id).delete()
+        
+        # Delete user's subscriptions
+        PremiumSubscription.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's activation keys
+        ActivationKey.query.filter_by(used_by=user_id).delete()
+        
+        # Delete user's bans
+        UserBan.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's follows
+        Follow.query.filter_by(follower_id=user_id).delete()
+        Follow.query.filter_by(followed_id=user_id).delete()
+        
+        # Delete user's likes
+        PostLike.query.filter_by(user_id=user_id).delete()
+        CommentLike.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's notifications
+        Notification.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's actions
+        UserAction.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's contact messages
+        Contact.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's conversations and messages
+        user_conversations = db.session.query(Conversation).join(ConversationParticipant).filter(
+            ConversationParticipant.user_id == user_id
+        ).all()
+        
+        for conv in user_conversations:
+            # Delete messages in conversation
+            Message.query.filter_by(conversation_id=conv.id).delete()
+            # Delete read receipts
+            MessageReadReceipt.query.filter_by(conversation_id=conv.id).delete()
+            # Delete participants
+            ConversationParticipant.query.filter_by(conversation_id=conv.id).delete()
+        
+        # Delete user's conversation participations
+        ConversationParticipant.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user's posts, comments, orders
+        Post.query.filter_by(user_id=user_id).delete()
+        Comment.query.filter_by(user_id=user_id).delete()
+        Order.query.filter_by(user_id=user_id).delete()
+        
+        # Finally delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash(f'User "{user.username}" has been permanently deleted along with all their content and data.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/delete/purchase/<int:purchase_id>', methods=['POST'])
+@login_required
+def admin_delete_purchase(purchase_id):
+    """Admin can delete any purchase record"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    purchase = Purchase.query.get_or_404(purchase_id)
+    
+    try:
+        db.session.delete(purchase)
+        db.session.commit()
+        
+        flash(f'Purchase record has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting purchase: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/admin/delete/order/<int:order_id>', methods=['POST'])
+@login_required
+def admin_delete_order(order_id):
+    """Admin can delete any order with all its items"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    order = Order.query.get_or_404(order_id)
+    
+    try:
+        # Delete order items
+        OrderItem.query.filter_by(order_id=order_id).delete()
+        
+        # Delete the order
+        db.session.delete(order)
+        db.session.commit()
+        
+        flash(f'Order #{order.order_number} has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting order: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/admin/delete/contact/<int:contact_id>', methods=['POST'])
+@login_required
+def admin_delete_contact(contact_id):
+    """Admin can delete any contact message"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    
+    try:
+        db.session.delete(contact)
+        db.session.commit()
+        
+        flash(f'Contact message has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting contact: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_contacts'))
+
+@app.route('/admin/delete/conversation/<int:conversation_id>', methods=['POST'])
+@login_required
+def admin_delete_conversation(conversation_id):
+    """Admin can delete any conversation with all its messages"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    conversation = Conversation.query.get_or_404(conversation_id)
+    
+    try:
+        # Delete messages in conversation
+        Message.query.filter_by(conversation_id=conversation_id).delete()
+        
+        # Delete read receipts
+        MessageReadReceipt.query.filter_by(conversation_id=conversation_id).delete()
+        
+        # Delete participants
+        ConversationParticipant.query.filter_by(conversation_id=conversation_id).delete()
+        
+        # Delete the conversation
+        db.session.delete(conversation)
+        db.session.commit()
+        
+        flash(f'Conversation has been permanently deleted along with all messages.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting conversation: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/admin/delete/activation-key/<int:key_id>', methods=['POST'])
+@login_required
+def admin_delete_activation_key(key_id):
+    """Admin can delete any activation key"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    activation_key = ActivationKey.query.filter_by(id=key_id).first_or_404()
+    
+    try:
+        # Delete associated subscription if key was used
+        if activation_key.is_used:
+            PremiumSubscription.query.filter_by(activation_key_id=key_id).delete()
+        
+        db.session.delete(activation_key)
+        db.session.commit()
+        
+        flash(f'Activation key has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting activation key: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_activation_keys'))
+
+@app.route('/admin/delete/payment-plan/<int:plan_id>', methods=['POST'])
+@login_required
+def admin_delete_payment_plan(plan_id):
+    """Admin can delete any payment plan"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    plan = PaymentPlan.query.get_or_404(plan_id)
+    
+    try:
+        db.session.delete(plan)
+        db.session.commit()
+        
+        flash(f'Payment plan "{plan.display_name}" has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting payment plan: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_payment_plans'))
+
 @app.route('/edit_post/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def edit_post(post_id):
