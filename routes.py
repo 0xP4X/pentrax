@@ -236,6 +236,17 @@ def post_detail(post_id):
 @app.route('/create_post', methods=['GET', 'POST'])
 @login_required
 def create_post():
+    """Legacy route - redirects to appropriate creation page based on context"""
+    post_type = request.args.get('type', 'forum')
+    if post_type == 'store':
+        return redirect(url_for('create_store_item'))
+    else:
+        return redirect(url_for('create_forum_post', category=request.args.get('category', 'tools')))
+
+@app.route('/create/forum', methods=['GET', 'POST'])
+@login_required
+def create_forum_post():
+    """Create a forum post (community discussion, not for sale)"""
     # Check if user is banned
     if current_user.is_permanently_banned() or current_user.is_temporarily_banned():
         flash('You cannot create posts while your account is suspended.', 'error')
@@ -246,9 +257,8 @@ def create_post():
         content = request.form['content']
         category = request.form['category']
         tags = request.form.get('tags', '')
-        price = float(request.form.get('price', 0.0))
         
-        # Handle file upload
+        # Handle file upload (optional for forum posts)
         file_path = None
         file_name = None
         if 'file' in request.files:
@@ -264,8 +274,8 @@ def create_post():
             content=content,
             category=category,
             tags=tags,
-            price=price,
-            is_premium=price > 0,
+            price=0.0,  # Forum posts are always free
+            is_premium=False,  # Forum posts are never premium
             file_path=file_path,
             file_name=file_name,
             user_id=current_user.id
@@ -274,10 +284,66 @@ def create_post():
         db.session.add(post)
         db.session.commit()
         
-        flash('Post created successfully!', 'success')
+        flash('Forum post created successfully!', 'success')
         return redirect(url_for('post_detail', post_id=post.id))
     
-    return render_template('create_post.html')
+    return render_template('create_forum_post.html')
+
+@app.route('/create/store', methods=['GET', 'POST'])
+@login_required
+def create_store_item():
+    """Create a store item (premium content for sale)"""
+    # Check if user is banned
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned():
+        flash('You cannot create content while your account is suspended.', 'error')
+        return redirect(url_for('ban_notification'))
+    
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        category = request.form['category']
+        tags = request.form.get('tags', '')
+        price = float(request.form.get('price', 0.0))
+        
+        # Validate price for store items
+        if price <= 0:
+            flash('Store items must have a price greater than 0.', 'error')
+            return render_template('create_store_item.html')
+        
+        # Handle file upload (required for store items)
+        file_path = None
+        file_name = None
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                file_name = filename
+        
+        if not file_name:
+            flash('Store items must include a downloadable file.', 'error')
+            return render_template('create_store_item.html')
+        
+        post = Post(
+            title=title,
+            content=content,
+            category=category,
+            tags=tags,
+            price=price,
+            is_premium=True,  # Store items are always premium
+            file_path=file_path,
+            file_name=file_name,
+            user_id=current_user.id
+        )
+        
+        db.session.add(post)
+        db.session.commit()
+        
+        flash('Store item created successfully! You can track sales in your Creator Dashboard.', 'success')
+        return redirect(url_for('post_detail', post_id=post.id))
+    
+    return render_template('create_store_item.html')
 
 @app.route('/add_comment/<int:post_id>', methods=['POST'])
 @login_required
@@ -1845,13 +1911,13 @@ def edit_post(post_id):
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     
-    # Check if user owns this post
-    if post.user_id != current_user.id:
+    # Check if user owns this post (unless admin)
+    if post.user_id != current_user.id and not current_user.is_admin:
         flash('You can only delete your own posts.', 'error')
         return redirect(url_for('post_detail', post_id=post_id))
     
-    # Check if premium post has been purchased
-    if post.is_premium:
+    # Check if premium post has been purchased (unless admin)
+    if post.is_premium and not current_user.is_admin:
         existing_purchases = Purchase.query.filter_by(post_id=post.id, status='completed').count()
         if existing_purchases > 0:
             flash('Cannot delete premium content that has been purchased. Contact admin if needed.', 'error')

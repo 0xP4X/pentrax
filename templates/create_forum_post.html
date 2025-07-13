@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Create Forum Post - PentraX{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card forum-post-card">
+            <div class="card-header forum-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-comments fa-2x me-3 text-primary"></i>
+                    <div>
+                        <h4 class="mb-0">Create Forum Post</h4>
+                        <small class="text-muted">Share knowledge, ask questions, or start discussions</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">
+                                    <i class="fas fa-heading"></i> Title *
+                                </label>
+                                <input type="text" class="form-control forum-input" id="title" name="title" required
+                                       placeholder="What's your question or topic?">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">
+                                    <i class="fas fa-tag"></i> Category *
+                                </label>
+                                <select class="form-select forum-select" id="category" name="category" required>
+                                    <option value="">Choose category...</option>
+                                    <option value="tools" {{ 'selected' if request.args.get('category') == 'tools' }}>
+                                        <i class="fas fa-tools"></i> Tools & Scripts
+                                    </option>
+                                    <option value="bugs" {{ 'selected' if request.args.get('category') == 'bugs' }}>
+                                        <i class="fas fa-bug"></i> Bugs & CVEs
+                                    </option>
+                                    <option value="ideas" {{ 'selected' if request.args.get('category') == 'ideas' }}>
+                                        <i class="fas fa-lightbulb"></i> Ideas & Research
+                                    </option>
+                                    <option value="jobs" {{ 'selected' if request.args.get('category') == 'jobs' }}>
+                                        <i class="fas fa-briefcase"></i> Jobs & Collaborations
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">
+                            <i class="fas fa-edit"></i> Content *
+                        </label>
+                        <textarea class="form-control forum-textarea" id="content" name="content" rows="12" required
+                                  placeholder="Share your thoughts, questions, or findings with the community..."></textarea>
+                        <div class="form-text">
+                            <i class="fab fa-markdown"></i> Markdown supported • 
+                            <i class="fas fa-code"></i> Code blocks supported
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">
+                                    <i class="fas fa-hashtag"></i> Tags
+                                </label>
+                                <input type="text" class="form-control forum-input" id="tags" name="tags" 
+                                       placeholder="python, web-security, api, linux">
+                                <div class="form-text">Add relevant tags to help others find your post</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">
+                                    <i class="fas fa-paperclip"></i> Attachment (Optional)
+                                </label>
+                                <input type="file" class="form-control forum-file" id="file" name="file" 
+                                       accept=".txt,.py,.sh,.rb,.pl,.php,.js,.html,.css,.json,.xml,.md,.zip,.tar,.gz">
+                                <div class="form-text">Max 16MB</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Forum-specific guidelines -->
+                    <div class="alert alert-info forum-guidelines">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
+                            <div>
+                                <h6 class="mb-2"><strong>Forum Guidelines:</strong></h6>
+                                <ul class="mb-0 small">
+                                    <li><strong>Be respectful:</strong> Treat others with courtesy and professionalism</li>
+                                    <li><strong>Stay on topic:</strong> Keep discussions relevant to cybersecurity</li>
+                                    <li><strong>Share knowledge:</strong> Help others learn and grow</li>
+                                    <li><strong>Follow responsible disclosure:</strong> Report vulnerabilities ethically</li>
+                                    <li><strong>No spam:</strong> This is for genuine discussion, not promotion</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('forum', category=request.args.get('category', 'tools')) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary forum-submit">
+                            <i class="fas fa-paper-plane"></i> Post to Forum
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.forum-post-card {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.forum-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px 15px 0 0 !important;
+    border: none;
+    padding: 1.5rem;
+}
+
+.forum-input, .forum-select, .forum-textarea, .forum-file {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.forum-input:focus, .forum-select:focus, .forum-textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: translateY(-1px);
+}
+
+.forum-textarea {
+    resize: vertical;
+    min-height: 200px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.forum-guidelines {
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+}
+
+.forum-submit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.forum-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-label i {
+    margin-right: 0.5rem;
+    color: #667eea;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-resize textarea
+    document.getElementById('content').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+    
+    // Category-specific placeholders and guidance
+    document.getElementById('category').addEventListener('change', function() {
+        const content = document.getElementById('content');
+        const placeholders = {
+            'tools': 'Share your security tool or script:\n\n## What does this tool do?\nDescribe the purpose and functionality\n\n## How to use it\nProvide usage instructions and examples\n\n## Installation\nSetup requirements and steps\n\n## Code Example\n```python\n# Your code here\n```\n\n## Discussion\nWhat challenges did you face? What improvements could be made?',
+            'bugs': 'Report a security vulnerability:\n\n## Summary\nBrief description of the issue\n\n## Affected Systems\nWhat software/systems are vulnerable?\n\n## Impact Assessment\nWhat\'s the potential impact?\n\n## Proof of Concept\n```bash\n# Steps to reproduce\n```\n\n## Responsible Disclosure\nHave you contacted the vendor? Timeline?\n\n## Discussion\nHow should this be addressed?',
+            'ideas': 'Share your security research or idea:\n\n## Concept\nWhat\'s your idea or research topic?\n\n## Technical Background\nExplain the technical aspects\n\n## Potential Applications\nHow could this be used?\n\n## Challenges\nWhat obstacles need to be overcome?\n\n## Next Steps\nWhat research or development is needed?\n\n## Discussion\nWhat do you think? Any suggestions?',
+            'jobs': 'Post a job or collaboration opportunity:\n\n## Position/Project\nWhat are you looking for?\n\n## Requirements\nSkills, experience, and qualifications needed\n\n## Project Details\nScope, timeline, and deliverables\n\n## Compensation\nBudget, payment terms, or equity\n\n## How to Apply\nContact information and application process\n\n## Discussion\nQuestions about the opportunity?'
+        };
+        
+        if (placeholders[this.value]) {
+            content.placeholder = placeholders[this.value];
+        }
+    });
+    
+    // Tag input enhancement
+    document.getElementById('tags').addEventListener('input', function() {
+        const tags = this.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+        if (tags.length > 5) {
+            this.setCustomValidity('Maximum 5 tags allowed');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+</script>
+{% endblock %} 

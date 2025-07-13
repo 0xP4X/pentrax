@@ -2,11 +2,111 @@
 
 {% block title %}{{ post.title }} - PentraX{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Forum Post Styling */
+.forum-post-card {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.forum-post-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px 15px 0 0 !important;
+    border: none;
+}
+
+/* Store Item Styling */
+.store-item-card {
+    border: none;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    border-radius: 20px;
+    background: linear-gradient(135deg, #fff9f0 0%, #ffffff 100%);
+}
+
+.store-item-card .card-header {
+    background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+    color: white;
+    border-radius: 20px 20px 0 0 !important;
+    border: none;
+}
+
+/* Content styling */
+.post-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.post-content h1, .post-content h2, .post-content h3 {
+    color: #495057;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.post-content code {
+    background: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.post-content pre {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+/* Attachment styling */
+.attachment-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+/* Purchase section styling */
+.purchase-section {
+    border: 2px solid #ffc107;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+.purchase-section .card-header {
+    background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+    color: white;
+    border-radius: 15px 15px 0 0 !important;
+    border: none;
+}
+
+/* Comments section */
+.comments-section {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border-radius: 15px;
+}
+
+.comment-item {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    background: #ffffff;
+}
+
+.comment-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-8">
         <!-- Post Content -->
-        <div class="card mb-4">
+        <div class="card mb-4 {% if post.is_premium %}store-item-card{% else %}forum-post-card{% endif %}">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -20,7 +120,11 @@
                         {% endif %}
                         {% if post.is_premium %}
                         <span class="badge bg-warning text-dark">
-                            <i class="fas fa-crown"></i> Premium
+                            <i class="fas fa-store"></i> Store Item
+                        </span>
+                        {% else %}
+                        <span class="badge bg-primary">
+                            <i class="fas fa-comments"></i> Forum Post
                         </span>
                         {% endif %}
                     </div>

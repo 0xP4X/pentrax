@@ -36,8 +36,8 @@
                         </p>
                     </div>
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('create_post') }}?category={{ category }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> New Post
+                    <a href="{{ url_for('create_forum_post') }}?category={{ category }}" class="btn btn-primary">
+                        <i class="fas fa-comments"></i> New Forum Post
                     </a>
                     {% endif %}
                 </div>
@@ -139,8 +139,8 @@
                             {% endif %}
                         </p>
                         {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('create_post') }}?category={{ category }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Create First Post
+                        <a href="{{ url_for('create_forum_post') }}?category={{ category }}" class="btn btn-primary">
+                            <i class="fas fa-comments"></i> Create First Post
                         </a>
                         {% endif %}
                     </div>

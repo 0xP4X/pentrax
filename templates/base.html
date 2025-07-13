@@ -113,8 +113,10 @@
                                 <li><a class="dropdown-item" href="{{ url_for('change_password') }}">
                                     <i class="fas fa-key"></i> Change Password</a></li>
                                 {% if current_user.can_post() %}
-                                <li><a class="dropdown-item" href="{{ url_for('create_post') }}">
-                                    <i class="fas fa-plus"></i> Create Post</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('create_forum_post') }}">
+                                    <i class="fas fa-comments"></i> Create Forum Post</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('create_store_item') }}">
+                                    <i class="fas fa-store"></i> Create Store Item</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{{ url_for('my_purchases') }}">
                                     <i class="fas fa-shopping-bag"></i> My Purchases</a></li>
