@@ -1952,32 +1952,26 @@ def delete_post(post_id):
             return redirect(url_for('post_detail', post_id=post_id))
     
     try:
-        # Delete associated purchases first
+        # Delete associated order items first
+        OrderItem.query.filter_by(post_id=post_id).delete()
+        # Delete associated purchases
         Purchase.query.filter_by(post_id=post_id).delete()
-        
         # Delete associated comments
         Comment.query.filter_by(post_id=post_id).delete()
-        
         # Delete associated likes
         PostLike.query.filter_by(post_id=post_id).delete()
-        
         # Delete associated user actions
         UserAction.query.filter_by(target_type='post', target_id=post_id).delete()
-        
         # Delete associated file if it exists
         if post.file_path and os.path.exists(post.file_path):
             os.remove(post.file_path)
-        
         # Delete the post
         db.session.delete(post)
         db.session.commit()
-        
         flash('Post deleted successfully!', 'success')
-        
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting post: {str(e)}', 'error')
-    
     return redirect(url_for('profile'))
 
 # Activation Key routes
