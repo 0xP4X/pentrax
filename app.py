@@ -98,14 +98,11 @@ def inject_now():
 #             socketio.emit('output', {'output': output}, namespace='/terminals')
 
 if __name__ == '__main__':
+    # This block is for local development only.
     with app.app_context():
-        # Import models to ensure tables are created
         from models import User
         db.create_all()
-        
-        # Create admin user if it doesn't exist
         from werkzeug.security import generate_password_hash
-        
         admin_user = User.query.filter_by(username='admin').first()
         if not admin_user:
             admin_user = User(
@@ -119,5 +116,8 @@ if __name__ == '__main__':
             db.session.add(admin_user)
             db.session.commit()
             logging.info("Admin user created with username: admin, password: password123")
+    # For development only:
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
 
-        socketio.run(app, debug=True, host='0.0.0.0', port=5000) 
+# For production, use Gunicorn with eventlet:
+# gunicorn --worker-class eventlet -w 1 app:app 
