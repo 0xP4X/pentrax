@@ -359,3 +359,47 @@ function previewImage(input) {
 }
 </script>
 {% endblock %}
+
+<style>
+[data-bs-theme="dark"] .card,
+body.dark-mode .card {
+    background: linear-gradient(135deg, #23272b 0%, #181a1b 100%) !important;
+    color: #f8f9fa;
+}
+[data-bs-theme="dark"] .card-header,
+body.dark-mode .card-header {
+    background: linear-gradient(135deg, #232b5c 0%, #3a2a4d 100%) !important;
+    color: #fff;
+}
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .input-group-text,
+body.dark-mode .form-control,
+body.dark-mode .input-group-text {
+    background: #23272b !important;
+    color: #f8f9fa !important;
+    border: 2px solid #343a40 !important;
+}
+[data-bs-theme="dark"] .form-control:focus,
+body.dark-mode .form-control:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15) !important;
+}
+[data-bs-theme="dark"] .form-label,
+body.dark-mode .form-label {
+    color: #e3e3fa !important;
+}
+[data-bs-theme="dark"] .form-text,
+body.dark-mode .form-text {
+    color: #b0b8c1 !important;
+}
+[data-bs-theme="dark"] .btn-outline-secondary,
+body.dark-mode .btn-outline-secondary {
+    color: #b0b8c1;
+    border-color: #343a40;
+}
+[data-bs-theme="dark"] .btn-outline-secondary:hover,
+body.dark-mode .btn-outline-secondary:hover {
+    background: #343a40;
+    color: #fff;
+}
+</style>
