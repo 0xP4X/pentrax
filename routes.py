@@ -3074,9 +3074,14 @@ def delete_message(message_id):
     
     return jsonify({'success': True})
 
-# Add this route after the existing routes, before the error handlers
+# Serve uploaded files (avatars, attachments, etc.)
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
     """Serve uploaded files including avatar images"""
-    from flask import send_from_directory
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    from flask import send_from_directory, abort
+    import os
+    upload_folder = app.config['UPLOAD_FOLDER']
+    file_path = os.path.join(upload_folder, filename)
+    if not os.path.exists(file_path):
+        abort(404)
+    return send_from_directory(upload_folder, filename)
