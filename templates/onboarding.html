@@ -10,49 +10,44 @@
           <p class="mb-0">Let's personalize your experience</p>
         </div>
         <div class="card-body">
-          <form id="onboardingForm">
-            <div id="onboarding-steps">
-              <!-- Step 1: Bio -->
-              <div class="onboarding-step" data-step="1">
-                <h4>Tell us about yourself</h4>
-                <div class="mb-3">
-                  <label for="bio" class="form-label">Short Bio</label>
-                  <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="300" placeholder="E.g. Cybersecurity enthusiast, pentester, student..."></textarea>
-                </div>
-                <button type="button" class="btn btn-primary next-step">Next</button>
+          <div class="progress mb-4" style="height: 8px;">
+            <div class="progress-bar bg-success" id="onboarding-progress" style="width: 33%;"></div>
+          </div>
+          <form id="onboarding-form">
+            <!-- Step 1: Bio -->
+            <div class="onboarding-step" id="step-1">
+              <h5 class="mb-3">Choose a bio</h5>
+              <div class="btn-group w-100 mb-2" role="group">
+                <button type="button" class="btn btn-outline-secondary bio-btn">Aspiring Pentester</button>
+                <button type="button" class="btn btn-outline-secondary bio-btn">Cybersecurity Enthusiast</button>
+                <button type="button" class="btn btn-outline-secondary bio-btn">Bug Bounty Hunter</button>
               </div>
-              <!-- Step 2: Skills -->
-              <div class="onboarding-step d-none" data-step="2">
-                <h4>Your Skills</h4>
-                <div class="mb-3">
-                  <label for="skills" class="form-label">Skills (comma separated)</label>
-                  <input type="text" class="form-control" id="skills" name="skills" placeholder="Python, Penetration Testing, OSINT...">
-                </div>
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="button" class="btn btn-primary next-step">Next</button>
+              <div class="mb-2">
+                <input type="text" class="form-control" id="custom-bio" placeholder="Or write your own (optional)">
               </div>
-              <!-- Step 3: GitHub -->
-              <div class="onboarding-step d-none" data-step="3">
-                <h4>GitHub Username (optional)</h4>
-                <div class="mb-3">
-                  <label for="github_username" class="form-label">GitHub Username</label>
-                  <input type="text" class="form-control" id="github_username" name="github_username" placeholder="your-github-username">
-                </div>
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="button" class="btn btn-primary next-step">Next</button>
+              <button type="button" class="btn btn-primary float-end next-step">Next</button>
+            </div>
+            <!-- Step 2: Skills -->
+            <div class="onboarding-step d-none" id="step-2">
+              <h5 class="mb-3">Select your skills</h5>
+              <div class="d-flex flex-wrap gap-2 mb-3" id="skills-list">
+                {% for skill in ["Web Hacking", "Reverse Engineering", "Crypto", "Forensics", "OSINT", "Mobile", "Cloud", "Scripting"] %}
+                  <button type="button" class="btn btn-outline-info skill-btn">{{ skill }}</button>
+                {% endfor %}
               </div>
-              <!-- Step 4: Finish -->
-              <div class="onboarding-step d-none" data-step="4">
-                <h4>All set!</h4>
-                <p>You're ready to explore PentraX. Click finish to complete onboarding.</p>
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="submit" class="btn btn-success">Finish</button>
-              </div>
+              <button type="button" class="btn btn-secondary prev-step">Back</button>
+              <button type="button" class="btn btn-primary float-end next-step">Next</button>
+            </div>
+            <!-- Step 3: Finish -->
+            <div class="onboarding-step d-none" id="step-3">
+              <h5 class="mb-3">All set!</h5>
+              <p>You're ready to explore PentraX. Click below to get started.</p>
+              <button type="button" class="btn btn-secondary prev-step">Back</button>
+              <button type="submit" class="btn btn-success float-end">Get Started</button>
             </div>
           </form>
-          <div id="onboarding-success" class="alert alert-success d-none mt-4 text-center">
-            <i class="fas fa-check-circle fa-2x mb-2"></i><br>
-            Onboarding complete! Redirecting to your profile...
+          <div class="alert alert-success mt-4 d-none" id="onboarding-success">
+            <i class="fas fa-check-circle me-2"></i>Onboarding complete! Redirecting...
           </div>
         </div>
       </div>
@@ -61,52 +56,5 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  let step = 1;
-  const steps = document.querySelectorAll('.onboarding-step');
-  function showStep(n) {
-    steps.forEach(s => s.classList.add('d-none'));
-    const current = document.querySelector('.onboarding-step[data-step="' + n + '"]');
-    if (current) current.classList.remove('d-none');
-  }
-  showStep(step);
-  document.querySelectorAll('.next-step').forEach(btn => {
-    btn.addEventListener('click', function() {
-      step = Math.min(step + 1, steps.length);
-      showStep(step);
-    });
-  });
-  document.querySelectorAll('.prev-step').forEach(btn => {
-    btn.addEventListener('click', function() {
-      step = Math.max(step - 1, 1);
-      showStep(step);
-    });
-  });
-  document.getElementById('onboardingForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const data = {
-      bio: document.getElementById('bio').value,
-      skills: document.getElementById('skills').value,
-      github_username: document.getElementById('github_username').value
-    };
-    fetch('/complete-onboarding', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.success) {
-        document.getElementById('onboardingForm').classList.add('d-none');
-        document.getElementById('onboarding-success').classList.remove('d-none');
-        setTimeout(() => { window.location.href = '/profile'; }, 1800);
-      } else {
-        alert('Error: ' + res.message);
-      }
-    })
-    .catch(() => alert('An error occurred. Please try again.'));
-  });
-});
-</script>
+<script src="/static/js/onboarding.js"></script>
 {% endblock %} 

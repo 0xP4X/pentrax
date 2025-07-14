@@ -560,16 +560,98 @@ class OnboardingManager {
 
 // Initialize onboarding when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    const navigationEntries = performance.getEntriesByType('navigation');
-    const isRefresh = navigationEntries.length > 0 && 
-                     (navigationEntries[0].type === 'reload' || navigationEntries[0].type === 'navigate');
-    
-    if (isRefresh || !sessionStorage.getItem('pentrax_session_active')) {
-        window.onboarding = new OnboardingManager();
-        sessionStorage.setItem('pentrax_session_active', 'true');
-    }
+  let currentStep = 1;
+  const totalSteps = 3;
+  const progressBar = document.getElementById('onboarding-progress');
+  const steps = Array.from(document.querySelectorAll('.onboarding-step'));
+  let onboardingData = { bio: '', skills: [] };
+
+  function showStep(step) {
+    steps.forEach((el, idx) => {
+      el.classList.toggle('d-none', idx !== step - 1);
+    });
+    progressBar.style.width = (step * 100 / totalSteps) + '%';
+  }
+
+  // Step 1: Bio selection
+  document.querySelectorAll('.bio-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.bio-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      onboardingData.bio = this.textContent;
+      document.getElementById('custom-bio').value = '';
+    });
+  });
+  document.getElementById('custom-bio').addEventListener('input', function() {
+    document.querySelectorAll('.bio-btn').forEach(b => b.classList.remove('active'));
+    onboardingData.bio = this.value;
+  });
+
+  // Step 2: Skills selection
+  document.querySelectorAll('.skill-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.classList.toggle('active');
+      const skill = this.textContent;
+      if (this.classList.contains('active')) {
+        onboardingData.skills.push(skill);
+      } else {
+        onboardingData.skills = onboardingData.skills.filter(s => s !== skill);
+      }
+    });
+  });
+
+  // Navigation
+  document.querySelectorAll('.next-step').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (currentStep === 1 && !onboardingData.bio) {
+        alert('Please select or enter a bio.');
+        return;
+      }
+      if (currentStep === 2 && onboardingData.skills.length === 0) {
+        alert('Please select at least one skill.');
+        return;
+      }
+      if (currentStep < totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+      }
+    });
+  });
+  document.querySelectorAll('.prev-step').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    });
+  });
+
+  // Form submit
+  document.getElementById('onboarding-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch('/complete-onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingData)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('onboarding-form').classList.add('d-none');
+        document.getElementById('onboarding-success').classList.remove('d-none');
+        setTimeout(() => {
+          window.location.href = data.redirect_url || '/user/' + data.username;
+        }, 1500);
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    })
+    .catch(() => alert('Network error. Please try again.'));
+  });
+
+  // Start at step 1
+  showStep(currentStep);
 });
 
 // Export for global access
 window.OnboardingManager = OnboardingManager;
-</rewritten_file>

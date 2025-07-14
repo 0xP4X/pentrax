@@ -95,45 +95,36 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.before_request
+def enforce_onboarding():
+    if current_user.is_authenticated and not getattr(current_user, 'onboarding_complete', False):
+        allowed = [
+            'onboarding', 'complete_onboarding', 'logout', 'static', 'uploads'
+        ]
+        if request.endpoint and not any(request.endpoint.startswith(a) for a in allowed):
+            return redirect(url_for('onboarding'))
+
 @app.route('/onboarding')
 @login_required
 def onboarding():
-    """Show onboarding for new users"""
+    if getattr(current_user, 'onboarding_complete', False):
+        return redirect(url_for('user_profile', username=current_user.username))
     return render_template('onboarding.html')
 
 @app.route('/complete-onboarding', methods=['POST'])
 @login_required
 def complete_onboarding():
-    """Complete onboarding and save user profile data"""
-    try:
-        data = request.get_json()
-        
-        # Update user profile with onboarding data
-        if data.get('bio'):
-            current_user.bio = data['bio']
-        if data.get('skills'):
-            current_user.skills = data['skills']
-        if data.get('github_username'):
-            current_user.github_username = data['github_username']
-        
-        # Mark user as having completed onboarding
-        # You can add a field to track this if needed
-        # current_user.onboarding_completed = True
-        
-        db.session.commit()
-        
-        # Create welcome notification
-        create_notification(
-            current_user.id,
-            'Welcome to PentraX! 🚀',
-            'Your account is now ready. Start exploring our cybersecurity labs and connect with the community!'
-        )
-        
-        return jsonify({'success': True, 'message': 'Onboarding completed successfully!'})
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)})
+    data = request.get_json()
+    # Save onboarding data to user
+    current_user.bio = data.get('bio', '')
+    current_user.skills = ','.join(data.get('skills', []))
+    current_user.onboarding_complete = True
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'redirect_url': url_for('user_profile', username=current_user.username),
+        'username': current_user.username
+    })
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('Current Password', [validators.DataRequired()])
