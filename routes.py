@@ -3085,3 +3085,44 @@ def serve_upload(filename):
     if not os.path.exists(file_path):
         abort(404)
     return send_from_directory(upload_folder, filename)
+
+@app.route('/admin/mass-mail', methods=['GET', 'POST'])
+@login_required
+def admin_mass_mail():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+
+    from models import User
+    from utils import send_email
+    users = User.query.order_by(User.email).all()
+    user_choices = [(u.email, f"{u.username} ({u.email})") for u in users]
+
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        recipient = request.form.get('recipient', 'all')
+        sent_count = 0
+        failed = []
+        if not subject or not message:
+            flash('Subject and message are required.', 'error')
+        else:
+            if recipient == 'all':
+                for user in users:
+                    if user.email:
+                        success = send_email(user.email, subject, message)
+                        if success:
+                            sent_count += 1
+                        else:
+                            failed.append(user.email)
+            else:
+                success = send_email(recipient, subject, message)
+                if success:
+                    sent_count = 1
+                else:
+                    failed.append(recipient)
+            if sent_count:
+                flash(f'Email sent to {sent_count} user(s).', 'success')
+            if failed:
+                flash(f'Failed to send to: {', '.join(failed)}', 'error')
+    return render_template('admin_mass_mail.html', user_choices=user_choices)
