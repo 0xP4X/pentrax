@@ -468,7 +468,7 @@ socket.emit('join_conversation', { conversation_id: conversationId, user_id: cur
 // Send message via Socket.IO
 const messageForm = document.querySelector('.message-form');
 const messageInput = document.querySelector('.message-input');
-const messagesContainer = document.getElementById('messages-container');
+    const messagesContainer = document.getElementById('messages-container');
 
 if (messageForm && messageInput) {
     messageForm.addEventListener('submit', function(e) {
@@ -702,9 +702,9 @@ socket.on('reaction_added', function(data) {
                 reactionsDiv.appendChild(reactionBtn);
             }
             reactionBtn.textContent = `${data.emoji} ${data.count}`;
-        }
-    }
-});
+                }
+            }
+        });
 
 // On page unload, leave the room
 window.addEventListener('beforeunload', function() {
