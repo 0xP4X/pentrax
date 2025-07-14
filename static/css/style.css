@@ -1129,3 +1129,13 @@ body {
 @media (max-width: 768px) {
     .message-bubble { max-width: 95vw; }
 }
+
+/* Fix user dropdown overlap in navbar */
+#userDropdown.d-flex {
+    gap: 0.5rem;
+    min-width: 80px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    align-items: center;
+}
