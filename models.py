@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import relationship
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -596,3 +597,31 @@ class MessageReaction(db.Model):
     
     # Ensure a user can only react once per message with the same emoji
     __table_args__ = (db.UniqueConstraint('message_id', 'user_id', 'emoji', name='unique_user_message_reaction'),)
+
+class UserStreak(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    current_streak = db.Column(db.Integer, default=0)
+    longest_streak = db.Column(db.Integer, default=0)
+    last_active_date = db.Column(db.Date, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('streak', uselist=False))
+
+class Achievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    icon = db.Column(db.String(100), nullable=True)  # FontAwesome or custom icon name
+    type = db.Column(db.String(50), nullable=False)  # post, reaction, lab, streak, etc.
+    criteria = db.Column(db.String(255), nullable=False)  # JSON or string describing how to unlock
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class UserAchievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievement.id'), nullable=False)
+    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='user_achievements')
+    achievement = db.relationship('Achievement', backref='user_achievements')

@@ -119,6 +119,40 @@
           </div>
         </div>
 
+        <!-- Streak & Achievements -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h6><i class="fas fa-fire"></i> Streak & Achievements</h6>
+          </div>
+          <div class="card-body text-center">
+            {% if streak %}
+              <div class="mb-3">
+                <span class="badge bg-warning text-dark fs-5"><i class="fas fa-fire"></i> {{ streak.current_streak }}-day streak</span>
+                <div class="text-muted small">Longest: {{ streak.longest_streak }} days</div>
+              </div>
+            {% else %}
+              <div class="mb-3 text-muted">No streak yet</div>
+            {% endif %}
+            <div>
+              <h6 class="mb-2"><i class="fas fa-trophy text-primary"></i> Achievements</h6>
+              {% if achievements %}
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                  {% for ach in achievements %}
+                    <div class="text-center" style="width:64px;">
+                      <span class="fs-2" title="{{ ach.name }}: {{ ach.description }}">
+                        <i class="{{ ach.icon }} text-info"></i>
+                      </span>
+                      <div class="small text-muted" style="font-size:0.8em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ ach.name }}">{{ ach.name }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-muted">No achievements yet</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
         <!-- User Information -->
         <div class="card">
             <div class="card-header">

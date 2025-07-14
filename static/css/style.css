@@ -1139,3 +1139,10 @@ body {
     text-overflow: ellipsis;
     align-items: center;
 }
+
+/* On conversation page, move AI assistant to the left bottom */
+body.conversation-page .ai-assistant {
+    left: 20px !important;
+    right: auto !important;
+    bottom: 20px !important;
+}

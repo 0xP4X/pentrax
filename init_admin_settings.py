@@ -3,7 +3,8 @@
 Script to initialize default admin settings
 """
 from app import app, db
-from models import AdminSettings, User
+from models import AdminSettings, User, Achievement
+from datetime import datetime
 
 def init_admin_settings():
     with app.app_context():
@@ -72,5 +73,36 @@ def init_admin_settings():
         print("3. Set up OpenAI API key for AI Assistant")
         print("4. Customize platform settings as needed")
 
+def seed_achievements():
+    default_achievements = [
+        # Posting achievements
+        {"name": "First Post", "description": "Create your first post.", "icon": "fas fa-feather-alt", "type": "post", "criteria": "posts>=1"},
+        {"name": "Contributor", "description": "Create 10 posts.", "icon": "fas fa-pen-nib", "type": "post", "criteria": "posts>=10"},
+        {"name": "Forum Star", "description": "Create 50 posts.", "icon": "fas fa-star", "type": "post", "criteria": "posts>=50"},
+        # Reaction achievements
+        {"name": "First Reaction", "description": "Give or receive your first reaction.", "icon": "fas fa-smile", "type": "reaction", "criteria": "reactions>=1"},
+        {"name": "Reaction King", "description": "Give or receive 100 reactions.", "icon": "fas fa-crown", "type": "reaction", "criteria": "reactions>=100"},
+        # Lab achievements
+        {"name": "Lab Explorer", "description": "Complete your first lab.", "icon": "fas fa-flask", "type": "lab", "criteria": "labs_completed>=1"},
+        {"name": "Lab Master", "description": "Complete 10 labs.", "icon": "fas fa-trophy", "type": "lab", "criteria": "labs_completed>=10"},
+        # Streak achievements
+        {"name": "3-Day Streak", "description": "Be active 3 days in a row.", "icon": "fas fa-fire", "type": "streak", "criteria": "streak>=3"},
+        {"name": "7-Day Streak", "description": "Be active 7 days in a row.", "icon": "fas fa-bolt", "type": "streak", "criteria": "streak>=7"},
+        {"name": "30-Day Streak", "description": "Be active 30 days in a row.", "icon": "fas fa-meteor", "type": "streak", "criteria": "streak>=30"},
+    ]
+    for ach in default_achievements:
+        if not Achievement.query.filter_by(name=ach["name"]).first():
+            db.session.add(Achievement(
+                name=ach["name"],
+                description=ach["description"],
+                icon=ach["icon"],
+                type=ach["type"],
+                criteria=ach["criteria"],
+                created_at=datetime.utcnow()
+            ))
+    db.session.commit()
+
 if __name__ == "__main__":
-    init_admin_settings() 
+    init_admin_settings()
+    with app.app_context():
+        seed_achievements() 

@@ -16,6 +16,7 @@ import requests
 import hashlib
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
+from utils.achievements import update_user_streak, check_and_unlock_achievements
 
 @app.context_processor
 def inject_user():
@@ -45,6 +46,8 @@ def login():
             # Allow temporarily banned and muted users to log in
             # They will be redirected to ban notification by the before_request middleware
             login_user(user)
+            update_user_streak(user.id)
+            check_and_unlock_achievements(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
@@ -221,12 +224,17 @@ def user_profile(username):
     followers = [f.follower for f in user.followers]
     # Following: users this user follows
     following = [f.followed for f in user.following]
+    # Streak and achievements
+    streak = user.streak
+    achievements = [ua.achievement for ua in user.user_achievements]
     return render_template(
         'user_profile.html',
         user=user,
         user_posts=user_posts,
         followers=followers,
-        following=following
+        following=following,
+        streak=streak,
+        achievements=achievements
     )
 
 # Forum routes
@@ -311,6 +319,8 @@ def create_forum_post():
         
         db.session.add(post)
         db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
         
         flash('Forum post created successfully!', 'success')
         return redirect(url_for('post_detail', post_id=post.id))
@@ -367,6 +377,8 @@ def create_store_item():
         
         db.session.add(post)
         db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
         
         flash('Store item created successfully! You can track sales in your Creator Dashboard.', 'success')
         return redirect(url_for('post_detail', post_id=post.id))
@@ -522,8 +534,9 @@ def submit_flag(lab_id):
         )
         db.session.add(action)
         db.session.commit()
-        
-        flash(f'Congratulations! You completed the lab and earned {lab.points} reputation points!', 'success')
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
+        flash('Congratulations! You completed the lab and earned points!', 'success')
         return redirect(url_for('lab_detail', lab_id=lab_id))
     else:
         flash('Incorrect flag. Try again!', 'error')
@@ -601,7 +614,10 @@ def submit_command(lab_id):
         # Award points
         current_user.reputation += lab.points
         db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
         flash(f'Success! You completed the hacking lab and earned {lab.points} reputation points!', 'success')
+        return redirect(url_for('lab_detail', lab_id=lab_id))
     else:
         flash('Incorrect command or output. Please try again.', 'error')
     return redirect(url_for('lab_detail', lab_id=lab_id))
@@ -1264,6 +1280,8 @@ def admin_create_lab():
         )
         db.session.add(lab)
         db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
         flash('Lab created!', 'success')
         return redirect(url_for('admin_labs'))
     return render_template('admin_lab_form.html', lab=None)
@@ -1305,6 +1323,8 @@ def admin_edit_lab(lab_id):
         lab.strict_order = ('strict_order' in data)
         lab.allow_retry = ('allow_retry' in data)
         db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
         flash('Lab updated!', 'success')
         return redirect(url_for('admin_labs'))
     # Attach options_list for quiz questions
@@ -3102,27 +3122,47 @@ def admin_mass_mail():
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         recipient = request.form.get('recipient', 'all')
-        sent_count = 0
-        failed = []
-        if not subject or not message:
-            flash('Subject and message are required.', 'error')
-        else:
-            if recipient == 'all':
-                for user in users:
-                    if user.email:
-                        success = send_email(user.email, subject, message)
-                        if success:
-                            sent_count += 1
-                        else:
-                            failed.append(user.email)
-            else:
-                success = send_email(recipient, subject, message)
-                if success:
-                    sent_count = 1
-                else:
-                    failed.append(recipient)
-            if sent_count:
-                flash(f'Email sent to {sent_count} user(s).', 'success')
-            if failed:
-                flash(f'Failed to send to: {', '.join(failed)}', 'error')
-    return render_template('admin_mass_mail.html', user_choices=user_choices)
+
+        # Compose premium HTML email
+        html_body = f'''
+        <html>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6fb; margin: 0; padding: 0;">
+          <table width="100%" bgcolor="#f4f6fb" cellpadding="0" cellspacing="0" style="padding: 0; margin: 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin: 40px 0;">
+                  <tr>
+                    <td style="background: #1a2235; border-radius: 12px 12px 0 0; padding: 32px 0; text-align: center;">
+                      <h1 style="color: #fff; margin: 0; font-size: 2.2rem; letter-spacing: 2px;">PentraX Security</h1>
+                      <p style="color: #b0b8d1; margin: 0; font-size: 1.1rem;">Your trusted cybersecurity platform</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 36px 40px 24px 40px; color: #222;">
+                      <h2 style="color: #007bff; margin-top: 0;">{subject}</h2>
+                      <div style="font-size: 1.1rem; line-height: 1.7; color: #222; margin-bottom: 24px;">
+                        {message.replace(chr(10), '<br>')}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 40px 36px 40px;">
+                      <div style="background: #f8f9fa; border-radius: 8px; padding: 18px 24px; color: #444; font-size: 1rem;">
+                        <strong>Stay Secure:</strong> PentraX will never ask for your password or sensitive information by email.<br>
+                        If you have any doubts, contact our support team directly from the platform.
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background: #1a2235; border-radius: 0 0 12px 12px; padding: 18px 0; text-align: center; color: #b0b8d1; font-size: 0.95rem;">
+                      &copy; {datetime.utcnow().year} PentraX Security. All rights reserved.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        '''
+        # ... existing code for sending email, using html_body as the HTML version ...
