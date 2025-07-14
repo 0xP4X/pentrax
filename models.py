@@ -566,7 +566,8 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    attachment_url = db.Column(db.String(300), nullable=True)
+    attachment_type = db.Column(db.String(20), nullable=True)
     # Relationships
     sender = db.relationship('User', backref='sent_messages')
     read_receipts = db.relationship('MessageReadReceipt', backref='message', cascade='all, delete-orphan')
@@ -580,3 +581,18 @@ class MessageReadReceipt(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='message_read_receipts')
+
+class MessageReaction(db.Model):
+    """Model for message reactions"""
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)  # Emoji character
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    message = db.relationship('Message', backref='reactions')
+    user = db.relationship('User', backref='message_reactions')
+    
+    # Ensure a user can only react once per message with the same emoji
+    __table_args__ = (db.UniqueConstraint('message_id', 'user_id', 'emoji', name='unique_user_message_reaction'),)

@@ -21,7 +21,9 @@ def upgrade():
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.add_column(sa.Column('password_reset_token', sa.String(length=128), nullable=True))
         batch_op.add_column(sa.Column('password_reset_expiry', sa.DateTime(), nullable=True))
-
+    with op.batch_alter_table('message', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('attachment_url', sa.String(length=300), nullable=True))
+        batch_op.add_column(sa.Column('attachment_type', sa.String(length=20), nullable=True))
     # ### end Alembic commands ###
 
 
@@ -30,5 +32,7 @@ def downgrade():
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.drop_column('password_reset_expiry')
         batch_op.drop_column('password_reset_token')
-
+    with op.batch_alter_table('message', schema=None) as batch_op:
+        batch_op.drop_column('attachment_type')
+        batch_op.drop_column('attachment_url')
     # ### end Alembic commands ###

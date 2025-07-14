@@ -98,12 +98,47 @@
                 {% if messages %}
                     <div class="messages-wrapper">
                         {% for message in messages %}
-                            <div class="message-wrapper mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}">
+                            <div class="message-wrapper mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}" id="msg-{{ message.id }}">
                                 <div class="d-inline-block max-w-75">
                                     <div class="message-bubble {% if message.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+                                        <!-- Message Actions (for sender) -->
+                                        {% if message.sender_id == current_user.id %}
+                                            <div class="message-actions">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" onclick="editMessage({{ message.id }}, '{{ message.content|replace("'", "\\'")|replace('"', '\\"') }}')">
+                                                            <i class="fas fa-edit me-2"></i>Edit</a></li>
+                                                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteMessage({{ message.id }})">
+                                                            <i class="fas fa-trash me-2"></i>Delete</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Message Content -->
                                         <div class="message-content">
                                             {{ message.content }}
                                         </div>
+                                        
+                                        <!-- Attachment -->
+                                        {% if message.attachment_url %}
+                                            <div class="message-attachment mt-2">
+                                                {% if message.attachment_type and message.attachment_type.startswith('image/') %}
+                                                    <img src="{{ message.attachment_url }}" alt="Attachment" class="img-fluid rounded" style="max-width: 200px; max-height: 200px;">
+                                                {% else %}
+                                                    <a href="{{ message.attachment_url }}" class="attachment-link" target="_blank">
+                                                        <div class="d-flex align-items-center bg-light rounded p-2">
+                                                            <i class="fas fa-file me-2"></i>
+                                                            <span>Attachment</span>
+                                                        </div>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        
                                         <div class="message-meta">
                                             <small class="text-muted">{{ message.created_at.strftime('%H:%M') }}</small>
                                             {% if message.sender_id == current_user.id %}
@@ -115,6 +150,18 @@
                                                     {% endif %}
                                                 </span>
                                             {% endif %}
+                                            <!-- Message reactions -->
+                                            <div class="message-reactions mt-1">
+                                                <button class="btn btn-sm btn-outline-secondary reaction-btn" onclick="addReaction({{ message.id }}, '👍')" title="Like">
+                                                    👍
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary reaction-btn" onclick="addReaction({{ message.id }}, '❤️')" title="Love">
+                                                    ❤️
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary reaction-btn" onclick="addReaction({{ message.id }}, '😮')" title="Wow">
+                                                    😮
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -135,13 +182,14 @@
 
             <!-- Message Input -->
             <div class="border-top bg-white p-3">
-                <form method="POST" action="{{ url_for('send_message', conversation_id=conversation.id) }}" class="message-form">
+                <form method="POST" action="{{ url_for('send_message', conversation_id=conversation.id) }}" class="message-form" enctype="multipart/form-data">
                     <div class="d-flex align-items-end gap-2">
                         <div class="flex-grow-1">
                             <div class="input-group">
-                                <button type="button" class="btn btn-link text-muted border-0" title="Attach file">
+                                <button type="button" class="btn btn-link text-muted border-0" title="Attach file" onclick="document.getElementById('file-input').click()">
                                     <i class="fas fa-paperclip"></i>
                                 </button>
+                                <input type="file" id="file-input" name="attachment" accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar" style="display: none;" onchange="handleFileSelect(this)">
                                 <textarea name="content" 
                                           placeholder="Type a message..." 
                                           class="form-control border-0 message-input"
@@ -150,6 +198,16 @@
                                 <button type="button" class="btn btn-link text-muted border-0" title="Emoji">
                                     <i class="far fa-smile"></i>
                                 </button>
+                            </div>
+                            <!-- File preview -->
+                            <div id="file-preview" class="mt-2" style="display: none;">
+                                <div class="d-flex align-items-center bg-light rounded p-2">
+                                    <i class="fas fa-file me-2"></i>
+                                    <span id="file-name" class="flex-grow-1"></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary rounded-circle send-btn" title="Send message">
@@ -263,6 +321,71 @@
     background: #a8a8a8;
 }
 
+/* Dark mode support */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #2d3748 !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+    background-color: #1a202c !important;
+}
+
+[data-bs-theme="dark"] .text-dark {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .border-end {
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .border-bottom {
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .border-top {
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .message-received {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .message-input {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .message-input:focus {
+    background-color: #1a202c !important;
+    border-color: #667eea !important;
+}
+
+[data-bs-theme="dark"] #file-preview {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .attachment-link .bg-light {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #4a5568 !important;
+}
+
 /* Animation for new messages */
 .message-wrapper {
     animation: slideIn 0.3s ease-out;
@@ -279,6 +402,43 @@
     }
 }
 
+/* Message actions */
+.message-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.message-bubble:hover .message-actions {
+    opacity: 1;
+}
+
+.message-actions .dropdown-menu {
+    min-width: 120px;
+}
+
+/* Attachment styles */
+.message-attachment {
+    margin-top: 8px;
+}
+
+.attachment-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.attachment-link:hover {
+    text-decoration: none;
+}
+
+/* File preview */
+#file-preview {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .max-w-75 {
@@ -288,63 +448,267 @@
     .message-bubble {
         padding: 10px 14px;
     }
+    
+    .message-actions {
+        opacity: 1;
+    }
 }
 </style>
 
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const messagesContainer = document.getElementById('messages-container');
-    const textarea = document.querySelector('.message-input');
-    const form = document.querySelector('.message-form');
-    
-    // Auto-resize textarea
-    function autoResize() {
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+const socket = io();
+const conversationId = {{ conversation.id }};
+const currentUserId = {{ current_user.id }};
+const otherUserId = {{ other_user.id }};
+
+// Join the conversation room
+socket.emit('join_conversation', { conversation_id: conversationId, user_id: currentUserId });
+
+// Send message via Socket.IO
+const messageForm = document.querySelector('.message-form');
+const messageInput = document.querySelector('.message-input');
+const messagesContainer = document.getElementById('messages-container');
+
+if (messageForm && messageInput) {
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const content = messageInput.value.trim();
+        if (!content) return;
+        socket.emit('send_message', {
+            conversation_id: conversationId,
+            sender_id: currentUserId,
+            content: content
+        });
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+    });
+}
+
+// Typing indicator
+let typingTimeout;
+if (messageInput) {
+    messageInput.addEventListener('input', function() {
+        socket.emit('typing', { conversation_id: conversationId, user_id: currentUserId });
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            // Optionally emit stop typing
+        }, 1000);
+    });
+}
+
+socket.on('typing', function(data) {
+    if (data.user_id !== currentUserId) {
+        showTypingIndicator();
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(hideTypingIndicator, 2000);
     }
-    
-    textarea.addEventListener('input', autoResize);
-    
-    // Scroll to bottom of messages
-    function scrollToBottom() {
+});
+
+function showTypingIndicator() {
+    let indicator = document.getElementById('typing-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'typing-indicator';
+        indicator.className = 'text-muted small mb-2';
+        indicator.innerHTML = '<i class="fas fa-ellipsis-h fa-fw"></i> ' + '{{ other_user.username }} is typing...';
+        messagesContainer.appendChild(indicator);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-    
-    scrollToBottom();
-    
-    // Auto-focus textarea
-    textarea.focus();
-    
-    // Handle Enter key to send message
-    textarea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.submit();
+}
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) indicator.remove();
+}
+
+// Receive message in real time
+socket.on('receive_message', function(data) {
+    if (data.conversation_id == conversationId) {
+        addMessageBubble(data, data.sender_id == currentUserId);
+        // Mark as read if not sender
+        if (data.sender_id !== currentUserId) {
+            socket.emit('read_message', { conversation_id: conversationId, user_id: currentUserId, message_id: data.id });
         }
-    });
-    
-    // Mark conversation as read
-    fetch('/messages/api/mark_read/{{ conversation.id }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
+    }
+});
+
+// Mark message as read in real time
+socket.on('message_read', function(data) {
+    // Optionally update UI to show read status
+    const msgElem = document.getElementById('msg-' + data.message_id);
+    if (msgElem) {
+        const meta = msgElem.querySelector('.message-meta');
+        if (meta) {
+            meta.innerHTML += ' <i class="fas fa-check-double text-primary"></i>';
         }
-    });
+    }
+});
+
+function addMessageBubble(data, isSender) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message-wrapper mb-3' + (isSender ? ' text-end' : '');
+    wrapper.id = 'msg-' + data.id;
+    const bubble = document.createElement('div');
+    bubble.className = 'd-inline-block max-w-75 ' + (isSender ? 'message-bubble message-sent' : 'message-bubble message-received');
+    bubble.innerHTML = `
+        <div class="message-content">${escapeHtml(data.content)}</div>
+        <div class="message-meta">
+            <small class="text-muted">${formatTime(data.created_at)}</small>
+            ${isSender ? '<span class="ms-2"><i class="fas fa-check-double text-muted"></i></span>' : ''}
+        </div>
+    `;
+    wrapper.appendChild(bubble);
+    messagesContainer.appendChild(wrapper);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    hideTypingIndicator();
+}
+
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+function formatTime(dtStr) {
+    const d = new Date(dtStr.replace(' ', 'T'));
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// File handling functions
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        const preview = document.getElementById('file-preview');
+        const fileName = document.getElementById('file-name');
+        
+        fileName.textContent = file.name;
+        preview.style.display = 'block';
+    }
+}
+
+function removeFile() {
+    const input = document.getElementById('file-input');
+    const preview = document.getElementById('file-preview');
     
-    // Update message badge
-    fetch('/messages/api/unread_count')
-        .then(response => response.json())
-        .then(data => {
-            const badge = document.getElementById('message-badge');
-            if (badge) {
-                if (data.count > 0) {
-                    badge.textContent = data.count;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            }
+    input.value = '';
+    preview.style.display = 'none';
+}
+
+// Message editing and deletion
+function editMessage(messageId, currentContent) {
+    const messageElement = document.getElementById('msg-' + messageId);
+    const contentDiv = messageElement.querySelector('.message-content');
+    const currentText = contentDiv.textContent;
+    
+    // Create edit form
+    const editForm = document.createElement('div');
+    editForm.className = 'edit-form';
+    editForm.innerHTML = `
+        <textarea class="form-control mb-2" rows="2">${currentText}</textarea>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary" onclick="saveEdit(${messageId}, this)">Save</button>
+            <button class="btn btn-sm btn-secondary" onclick="cancelEdit(${messageId})">Cancel</button>
+        </div>
+    `;
+    
+    contentDiv.style.display = 'none';
+    contentDiv.parentNode.insertBefore(editForm, contentDiv.nextSibling);
+}
+
+function saveEdit(messageId, button) {
+    const messageElement = document.getElementById('msg-' + messageId);
+    const editForm = messageElement.querySelector('.edit-form');
+    const textarea = editForm.querySelector('textarea');
+    const contentDiv = messageElement.querySelector('.message-content');
+    const newContent = textarea.value.trim();
+    
+    if (newContent) {
+        // Send update via Socket.IO
+        socket.emit('edit_message', {
+            message_id: messageId,
+            conversation_id: conversationId,
+            content: newContent
         });
+        
+        // Update UI immediately
+        contentDiv.textContent = newContent;
+        contentDiv.style.display = 'block';
+        editForm.remove();
+    }
+}
+
+function cancelEdit(messageId) {
+    const messageElement = document.getElementById('msg-' + messageId);
+    const editForm = messageElement.querySelector('.edit-form');
+    const contentDiv = messageElement.querySelector('.message-content');
+    
+    contentDiv.style.display = 'block';
+    editForm.remove();
+}
+
+function deleteMessage(messageId) {
+    if (confirm('Are you sure you want to delete this message?')) {
+        socket.emit('delete_message', {
+            message_id: messageId,
+            conversation_id: conversationId
+        });
+    }
+}
+
+// Handle message editing and deletion events
+socket.on('message_edited', function(data) {
+    const messageElement = document.getElementById('msg-' + data.message_id);
+    if (messageElement) {
+        const contentDiv = messageElement.querySelector('.message-content');
+        contentDiv.textContent = data.content;
+        contentDiv.style.display = 'block';
+        
+        // Remove edit form if it exists
+        const editForm = messageElement.querySelector('.edit-form');
+        if (editForm) editForm.remove();
+    }
+});
+
+socket.on('message_deleted', function(data) {
+    const messageElement = document.getElementById('msg-' + data.message_id);
+    if (messageElement) {
+        messageElement.remove();
+    }
+});
+
+// Message reactions
+function addReaction(messageId, emoji) {
+    socket.emit('add_reaction', {
+        message_id: messageId,
+        conversation_id: conversationId,
+        emoji: emoji,
+        user_id: currentUserId
+    });
+}
+
+socket.on('reaction_added', function(data) {
+    const messageElement = document.getElementById('msg-' + data.message_id);
+    if (messageElement) {
+        // Update reaction display
+        const reactionsDiv = messageElement.querySelector('.message-reactions');
+        if (reactionsDiv) {
+            // Add or update reaction count
+            let reactionBtn = reactionsDiv.querySelector(`[data-emoji="${data.emoji}"]`);
+            if (!reactionBtn) {
+                reactionBtn = document.createElement('button');
+                reactionBtn.className = 'btn btn-sm btn-primary reaction-btn';
+                reactionBtn.setAttribute('data-emoji', data.emoji);
+                reactionBtn.onclick = () => addReaction(data.message_id, data.emoji);
+                reactionsDiv.appendChild(reactionBtn);
+            }
+            reactionBtn.textContent = `${data.emoji} ${data.count}`;
+        }
+    }
+});
+
+// On page unload, leave the room
+window.addEventListener('beforeunload', function() {
+    socket.emit('leave_conversation', { conversation_id: conversationId, user_id: currentUserId });
 });
 </script>
 {% endblock %} 

@@ -2945,11 +2945,36 @@ def send_message(conversation_id):
         flash('Message cannot be empty', 'error')
         return redirect(url_for('conversation', conversation_id=conversation_id))
     
+    # Handle file upload
+    attachment_url = None
+    attachment_type = None
+    if 'attachment' in request.files:
+        file = request.files['attachment']
+        if file and file.filename:
+            # Secure filename
+            from werkzeug.utils import secure_filename
+            import os
+            filename = secure_filename(file.filename)
+            
+            # Create unique filename
+            import uuid
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            # Save file
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(file_path)
+            
+            # Set attachment info
+            attachment_url = f"/uploads/{unique_filename}"
+            attachment_type = file.content_type
+    
     # Create message
     message = Message(
         conversation_id=conversation_id,
         sender_id=current_user.id,
-        content=content
+        content=content,
+        attachment_url=attachment_url,
+        attachment_type=attachment_type
     )
     
     db.session.add(message)
@@ -3004,6 +3029,47 @@ def mark_conversation_read(conversation_id):
         )
         db.session.add(receipt)
     
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/messages/api/edit/<int:message_id>', methods=['POST'])
+@login_required
+def edit_message(message_id):
+    """Edit a message"""
+    message = Message.query.get_or_404(message_id)
+    
+    # Check if user is the sender
+    if message.sender_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    content = request.json.get('content', '').strip()
+    if not content:
+        return jsonify({'error': 'Message cannot be empty'}), 400
+    
+    message.content = content
+    db.session.commit()
+    
+    return jsonify({'success': True, 'content': content})
+
+@app.route('/messages/api/delete/<int:message_id>', methods=['POST'])
+@login_required
+def delete_message(message_id):
+    """Delete a message"""
+    message = Message.query.get_or_404(message_id)
+    
+    # Check if user is the sender
+    if message.sender_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Delete attachment file if exists
+    if message.attachment_url:
+        import os
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], message.attachment_url.split('/')[-1])
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    
+    db.session.delete(message)
     db.session.commit()
     
     return jsonify({'success': True})

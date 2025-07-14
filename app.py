@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from dotenv import load_dotenv
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import eventlet
 # import pty  # Commented out for Windows compatibility
 # import select  # Commented out for Windows compatibility
@@ -54,6 +54,161 @@ login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
 socketio = SocketIO(app, async_mode='eventlet')
+
+# Real-time messaging events
+@socketio.on('join_conversation')
+def handle_join_conversation(data):
+    room = f"conversation_{data['conversation_id']}"
+    join_room(room)
+    emit('user_joined', {'user_id': data['user_id']}, room=room)
+
+@socketio.on('leave_conversation')
+def handle_leave_conversation(data):
+    room = f"conversation_{data['conversation_id']}"
+    leave_room(room)
+    emit('user_left', {'user_id': data['user_id']}, room=room)
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    # data: {conversation_id, sender_id, content, attachment_url (optional), attachment_type (optional)}
+    from models import Message, Conversation, ConversationParticipant, User
+    from flask_login import current_user
+    from datetime import datetime
+    from app import db
+    from utils import create_notification
+    
+    message = Message(
+        conversation_id=data['conversation_id'],
+        sender_id=data['sender_id'],
+        content=data['content'],
+        attachment_url=data.get('attachment_url'),
+        attachment_type=data.get('attachment_type'),
+        created_at=datetime.utcnow()
+    )
+    db.session.add(message)
+    
+    # Update conversation timestamp
+    conversation = Conversation.query.get(data['conversation_id'])
+    conversation.updated_at = datetime.utcnow()
+    
+    # Get other participants for notifications
+    other_participants = ConversationParticipant.query.filter(
+        ConversationParticipant.conversation_id == data['conversation_id'],
+        ConversationParticipant.user_id != data['sender_id']
+    ).all()
+    
+    db.session.commit()
+    
+    # Create notifications for other participants
+    sender = User.query.get(data['sender_id'])
+    for participant in other_participants:
+        create_notification(
+            participant.user_id,
+            f'New message from {sender.username}',
+            f'{sender.username}: {data["content"][:50]}{"..." if len(data["content"]) > 50 else ""}'
+        )
+    
+    # Broadcast to room
+    room = f"conversation_{data['conversation_id']}"
+    emit('receive_message', {
+        'id': message.id,
+        'conversation_id': message.conversation_id,
+        'sender_id': message.sender_id,
+        'content': message.content,
+        'attachment_url': message.attachment_url,
+        'attachment_type': message.attachment_type,
+        'created_at': message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'is_read': message.is_read
+    }, room=room)
+
+@socketio.on('typing')
+def handle_typing(data):
+    # data: {conversation_id, user_id}
+    room = f"conversation_{data['conversation_id']}"
+    emit('typing', {'user_id': data['user_id']}, room=room, include_self=False)
+
+@socketio.on('read_message')
+def handle_read_message(data):
+    # data: {conversation_id, user_id, message_id}
+    from models import Message, MessageReadReceipt
+    from app import db
+    message = Message.query.get(data['message_id'])
+    if message and not message.is_read:
+        message.is_read = True
+        receipt = MessageReadReceipt(message_id=message.id, user_id=data['user_id'])
+        db.session.add(receipt)
+        db.session.commit()
+        room = f"conversation_{data['conversation_id']}"
+        emit('message_read', {'message_id': message.id, 'user_id': data['user_id']}, room=room)
+
+@socketio.on('edit_message')
+def handle_edit_message(data):
+    # data: {message_id, conversation_id, content}
+    from models import Message
+    from app import db
+    message = Message.query.get(data['message_id'])
+    if message and message.sender_id == data.get('sender_id'):
+        message.content = data['content']
+        db.session.commit()
+        room = f"conversation_{data['conversation_id']}"
+        emit('message_edited', {
+            'message_id': message.id,
+            'content': message.content
+        }, room=room)
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    # data: {message_id, conversation_id}
+    from models import Message
+    from app import db
+    message = Message.query.get(data['message_id'])
+    if message and message.sender_id == data.get('sender_id'):
+        message_id = message.id
+        db.session.delete(message)
+        db.session.commit()
+        room = f"conversation_{data['conversation_id']}"
+        emit('message_deleted', {'message_id': message_id}, room=room)
+
+@socketio.on('add_reaction')
+def handle_add_reaction(data):
+    # data: {message_id, conversation_id, emoji, user_id}
+    from models import Message, MessageReaction
+    from app import db
+    message = Message.query.get(data['message_id'])
+    if message:
+        # Check if reaction already exists
+        existing_reaction = MessageReaction.query.filter_by(
+            message_id=data['message_id'],
+            user_id=data['user_id'],
+            emoji=data['emoji']
+        ).first()
+        
+        if existing_reaction:
+            # Remove reaction (toggle)
+            db.session.delete(existing_reaction)
+        else:
+            # Add reaction
+            reaction = MessageReaction(
+                message_id=data['message_id'],
+                user_id=data['user_id'],
+                emoji=data['emoji']
+            )
+            db.session.add(reaction)
+        
+        db.session.commit()
+        
+        # Get reaction count
+        reaction_count = MessageReaction.query.filter_by(
+            message_id=data['message_id'],
+            emoji=data['emoji']
+        ).count()
+        
+        room = f"conversation_{data['conversation_id']}"
+        emit('reaction_added', {
+            'message_id': data['message_id'],
+            'emoji': data['emoji'],
+            'count': reaction_count
+        }, room=room)
 
 @login_manager.user_loader
 def load_user(user_id):

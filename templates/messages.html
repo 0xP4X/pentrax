@@ -34,6 +34,14 @@
                         <i class="fas fa-search text-muted"></i>
                     </span>
                     <input type="text" class="form-control border-0 bg-light" placeholder="Search conversations..." id="search-conversations">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-filter="all">All conversations</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="unread">Unread only</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="recent">Recent (last 7 days)</a></li>
+                    </ul>
                 </div>
             </div>
 
@@ -206,22 +214,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // Search functionality
     const searchInput = document.getElementById('search-conversations');
     const conversationItems = document.querySelectorAll('.conversation-item');
+    let currentFilter = 'all';
     
     if (searchInput) {
         searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            
-            conversationItems.forEach(function(item) {
-                const username = item.querySelector('h6').textContent.toLowerCase();
-                const lastMessage = item.querySelector('p').textContent.toLowerCase();
-                
-                if (username.includes(searchTerm) || lastMessage.includes(searchTerm)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+            filterConversations();
         });
+    }
+    
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentFilter = this.getAttribute('data-filter');
+            
+            // Update active filter
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            filterConversations();
+        });
+    });
+    
+    function filterConversations() {
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        
+        conversationItems.forEach(function(item) {
+            const username = item.querySelector('h6').textContent.toLowerCase();
+            const lastMessage = item.querySelector('p').textContent.toLowerCase();
+            const unreadBadge = item.querySelector('.badge');
+            const lastMessageTime = item.querySelector('small').textContent;
+            
+            let showBySearch = username.includes(searchTerm) || lastMessage.includes(searchTerm);
+            let showByFilter = true;
+            
+            // Apply filters
+            if (currentFilter === 'unread') {
+                showByFilter = unreadBadge && unreadBadge.textContent > 0;
+            } else if (currentFilter === 'recent') {
+                // Check if conversation is from last 7 days
+                const isRecent = isWithinLastWeek(lastMessageTime);
+                showByFilter = isRecent;
+            }
+            
+            if (showBySearch && showByFilter) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    function isWithinLastWeek(timeString) {
+        // Simple check for recent conversations
+        // This could be enhanced with actual date parsing
+        return timeString.includes('Today') || timeString.includes('Yesterday') || 
+               timeString.includes('Jan') || timeString.includes('Feb') || 
+               timeString.includes('Mar') || timeString.includes('Apr') ||
+               timeString.includes('May') || timeString.includes('Jun') ||
+               timeString.includes('Jul') || timeString.includes('Aug') ||
+               timeString.includes('Sep') || timeString.includes('Oct') ||
+               timeString.includes('Nov') || timeString.includes('Dec');
     }
     
     // Update unread count in navigation
