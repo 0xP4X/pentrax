@@ -1,59 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Welcome to PentraX Onboarding{% endblock %}
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-7">
-      <div class="card shadow-lg">
-        <div class="card-header bg-primary text-white text-center">
-          <h2 class="mb-0"><i class="fas fa-rocket me-2"></i>Welcome to PentraX!</h2>
-          <p class="mb-0">Let's personalize your experience</p>
-        </div>
-        <div class="card-body">
-          <div class="progress mb-4" style="height: 8px;">
-            <div class="progress-bar bg-success" id="onboarding-progress" style="width: 33%;"></div>
-          </div>
-          <form id="onboarding-form">
-            <!-- Step 1: Bio -->
-            <div class="onboarding-step" id="step-1">
-              <h5 class="mb-3">Choose a bio</h5>
-              <div class="btn-group w-100 mb-2" role="group">
-                <button type="button" class="btn btn-outline-secondary bio-btn">Aspiring Pentester</button>
-                <button type="button" class="btn btn-outline-secondary bio-btn">Cybersecurity Enthusiast</button>
-                <button type="button" class="btn btn-outline-secondary bio-btn">Bug Bounty Hunter</button>
-              </div>
-              <div class="mb-2">
-                <input type="text" class="form-control" id="custom-bio" placeholder="Or write your own (optional)">
-              </div>
-              <button type="button" class="btn btn-primary float-end next-step">Next</button>
-            </div>
-            <!-- Step 2: Skills -->
-            <div class="onboarding-step d-none" id="step-2">
-              <h5 class="mb-3">Select your skills</h5>
-              <div class="d-flex flex-wrap gap-2 mb-3" id="skills-list">
-                {% for skill in ["Web Hacking", "Reverse Engineering", "Crypto", "Forensics", "OSINT", "Mobile", "Cloud", "Scripting"] %}
-                  <button type="button" class="btn btn-outline-info skill-btn">{{ skill }}</button>
-                {% endfor %}
-              </div>
-              <button type="button" class="btn btn-secondary prev-step">Back</button>
-              <button type="button" class="btn btn-primary float-end next-step">Next</button>
-            </div>
-            <!-- Step 3: Finish -->
-            <div class="onboarding-step d-none" id="step-3">
-              <h5 class="mb-3">All set!</h5>
-              <p>You're ready to explore PentraX. Click below to get started.</p>
-              <button type="button" class="btn btn-secondary prev-step">Back</button>
-              <button type="submit" class="btn btn-success float-end">Get Started</button>
-            </div>
-          </form>
-          <div class="alert alert-success mt-4 d-none" id="onboarding-success">
-            <i class="fas fa-check-circle me-2"></i>Onboarding complete! Redirecting...
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="onboarding-modal-container"></div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/js/onboarding.js"></script>
