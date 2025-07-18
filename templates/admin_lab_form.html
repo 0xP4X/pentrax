@@ -46,8 +46,10 @@
             </div>
         </div>
         <div class="mb-3">
-            <label for="instructions" class="form-label">Instructions</label>
-            <textarea class="form-control" id="instructions" name="instructions" rows="2">{{ lab.instructions if lab else '' }}</textarea>
+            <label for="instructions" class="form-label">Instructions <span class="text-muted small">(Markdown supported)</span></label>
+            <textarea class="form-control" id="instructions" name="instructions" rows="8">{{ lab.instructions if lab else '' }}</textarea>
+            <div class="form-text">You can use <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank">Markdown</a> for formatting, images, code, and links.</div>
+            <div id="instructions-preview" class="border rounded p-3 mt-2 bg-light" style="min-height: 80px;"></div>
         </div>
         <div class="mb-3">
             <label for="hints" class="form-label">Hints</label>
@@ -268,11 +270,14 @@
     </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const labTypeSelect = document.getElementById('lab_type');
     const terminalConfig = document.getElementById('terminal-config');
-    
+    const instructionsInput = document.getElementById('instructions');
+    const previewDiv = document.getElementById('instructions-preview');
+
     function toggleTerminalConfig() {
         if (labTypeSelect.value === 'terminal') {
             terminalConfig.style.display = 'block';
@@ -280,9 +285,18 @@ document.addEventListener('DOMContentLoaded', function() {
             terminalConfig.style.display = 'none';
         }
     }
-    
     labTypeSelect.addEventListener('change', toggleTerminalConfig);
     toggleTerminalConfig(); // Initial call
+
+    function updatePreview() {
+        if (instructionsInput && previewDiv) {
+            previewDiv.innerHTML = marked.parse(instructionsInput.value || '');
+        }
+    }
+    if (instructionsInput && previewDiv) {
+        instructionsInput.addEventListener('input', updatePreview);
+        updatePreview();
+    }
 });
 </script>
 {% endblock %} 

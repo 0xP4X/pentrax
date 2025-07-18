@@ -24,7 +24,7 @@
                 <p class="text-muted">{{ lab.description }}</p>
                 <hr>
                 <h5>Instructions</h5>
-                <div class="mb-3">{{ lab.instructions|safe }}</div>
+                <div class="mb-3" id="lab-instructions-markdown"></div>
                 {% if lab.tools_needed %}
                 <div class="mb-3">
                     <strong>Tools Needed:</strong> {{ lab.tools_needed }}
@@ -198,6 +198,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='js/xterm.css') }}">
 <script src="{{ url_for('static', filename='js/xterm.js') }}"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 // Only initialize terminal if the terminal div exists
 if (document.getElementById('terminal')) {
@@ -230,5 +231,13 @@ if (hintForm) {
             });
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const instructionsDiv = document.getElementById('lab-instructions-markdown');
+    if (instructionsDiv) {
+        const raw = `{{ lab.instructions|e|replace('\n', '\n') }}`;
+        instructionsDiv.innerHTML = marked.parse(raw);
+    }
+});
 </script>
 {% endblock %} 
