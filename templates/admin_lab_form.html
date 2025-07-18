@@ -4,6 +4,9 @@
 <div class="container mt-4">
     <h2 class="mb-4">{% if lab %}Edit Lab{% else %}Add New Lab{% endif %}</h2>
     <form method="post">
+        <div class="d-flex justify-content-end mb-3">
+            <button type="submit" class="btn btn-primary">Save Lab</button>
+        </div>
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label for="title" class="form-label">Title</label>
@@ -205,8 +208,8 @@
         </div>
         
         <hr>
-        <!-- Quiz Questions Section -->
-        <h4 class="mt-4">Quiz Questions</h4>
+        <!-- Quiz Questions Section (Optional) -->
+        <h4 class="mt-4">Quiz Questions <span class="text-muted small">(Optional)</span></h4>
         <div class="mb-3">
             {% if lab and lab.quiz_questions %}
                 <ul class="list-group mb-3">
@@ -223,7 +226,7 @@
                 {% endfor %}
                 </ul>
             {% else %}
-                <div class="text-muted">No quiz questions yet.</div>
+                <div class="text-muted">No quiz questions yet. You can add some below, or leave this section empty.</div>
             {% endif %}
         </div>
         <form method="post" action="{{ url_for('admin_add_quiz_question', lab_id=lab.id if lab else 0) }}">
@@ -265,9 +268,12 @@
             <label for="command_success_criteria" class="form-label">Command Success Criteria (output, flag, etc.)</label>
             <input type="text" class="form-control" id="command_success_criteria" name="command_success_criteria" value="{{ lab.command_success_criteria if lab else '' }}">
         </div>
-        <button type="submit" class="btn btn-primary">{% if lab %}Update Lab{% else %}Create Lab{% endif %}</button>
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary">Save Lab</button>
+        </div>
         <a href="{{ url_for('admin_labs') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
+    <p class="text-muted mt-3">You can save the lab at any time. After saving, you can add quizzes and terminal commands below.</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
