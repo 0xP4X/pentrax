@@ -539,65 +539,6 @@ class Contact(db.Model):
         return f'<Contact {self.subject}>'
 
 # Messaging System Models
-class Conversation(db.Model):
-    """Model for conversations between users"""
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    participants = db.relationship('ConversationParticipant', backref='conversation', cascade='all, delete-orphan')
-    messages = db.relationship('Message', backref='conversation', cascade='all, delete-orphan', order_by='Message.created_at')
-
-class ConversationParticipant(db.Model):
-    """Model for conversation participants"""
-    id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
-    
-    # Relationships
-    user = db.relationship('User', backref='conversation_participations')
-
-class Message(db.Model):
-    """Model for individual messages"""
-    id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    attachment_url = db.Column(db.String(300), nullable=True)
-    attachment_type = db.Column(db.String(20), nullable=True)
-    # Relationships
-    sender = db.relationship('User', backref='sent_messages')
-    read_receipts = db.relationship('MessageReadReceipt', backref='message', cascade='all, delete-orphan')
-
-class MessageReadReceipt(db.Model):
-    """Model for tracking message read receipts"""
-    id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    read_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    user = db.relationship('User', backref='message_read_receipts')
-
-class MessageReaction(db.Model):
-    """Model for message reactions"""
-    id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    emoji = db.Column(db.String(10), nullable=False)  # Emoji character
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    message = db.relationship('Message', backref='reactions')
-    user = db.relationship('User', backref='message_reactions')
-    
-    # Ensure a user can only react once per message with the same emoji
-    __table_args__ = (db.UniqueConstraint('message_id', 'user_id', 'emoji', name='unique_user_message_reaction'),)
 
 class UserStreak(db.Model):
     id = db.Column(db.Integer, primary_key=True)
