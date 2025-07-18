@@ -515,6 +515,8 @@ class OnboardingManager {
         setTimeout(() => {
             if (!localStorage.getItem('pentrax_guided_tour_completed')) {
                 this.showTourPrompt();
+            } else {
+                window.location.href = '/';
             }
         }, 1200);
     }
@@ -548,6 +550,7 @@ class OnboardingManager {
             setTimeout(() => {
                 const el = document.getElementById('tourPromptModal');
                 if (el) el.remove();
+                window.location.href = '/';
             }, 500);
         };
         document.getElementById('startTourBtn').onclick = () => {
@@ -608,6 +611,7 @@ class OnboardingManager {
         document.querySelectorAll('.pentrax-tour-overlay, .pentrax-tour-tooltip').forEach(el => el.remove());
         if (stepIdx >= this.tourSteps.length) {
             localStorage.setItem('pentrax_guided_tour_completed', 'true');
+            window.location.href = '/';
             return;
         }
         const step = this.tourSteps[stepIdx];
@@ -665,6 +669,7 @@ class OnboardingManager {
         tooltip.querySelector('#exitTourBtn').onclick = () => {
             document.querySelectorAll('.pentrax-tour-overlay, .pentrax-tour-tooltip').forEach(el => el.remove());
             localStorage.setItem('pentrax_guided_tour_completed', 'skipped');
+            window.location.href = '/';
         };
         tooltip.querySelector('#nextTourBtn').onclick = () => {
             this.showTourStep(stepIdx + 1);
