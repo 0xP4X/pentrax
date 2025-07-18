@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, Conversation, ConversationParticipant, Message, MessageReadReceipt
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
