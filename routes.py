@@ -108,7 +108,7 @@ def enforce_onboarding():
 @login_required
 def onboarding():
     if getattr(current_user, 'onboarding_complete', False):
-        return redirect(url_for('user_profile', username=current_user.username))
+        return redirect(url_for('index'))  # or your dashboard/profile
     return render_template('onboarding.html')
 
 @app.route('/complete-onboarding', methods=['POST'])
