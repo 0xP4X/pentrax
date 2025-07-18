@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Welcome to PentraX Onboarding{% endblock %}
 {% block content %}
+<script>
+  if (localStorage.getItem('pentrax_onboarding_completed') === 'true') {
+    window.location.href = '/';
+  }
+</script>
 <div id="onboarding-modal-container"></div>
 {% endblock %}
 {% block scripts %}
