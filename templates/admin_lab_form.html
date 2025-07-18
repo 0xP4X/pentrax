@@ -82,7 +82,6 @@
             <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if lab is none or lab.is_active %}checked{% endif %}>
             <label class="form-check-label" for="is_active">Active?</label>
         </div>
-        
         <!-- Terminal Lab Configuration -->
         <div id="terminal-config" style="display: none;">
             <hr>
@@ -125,148 +124,6 @@
                     <label class="form-check-label" for="allow_retry">Allow Command Retry</label>
                 </div>
             </div>
-            
-            <!-- Terminal Commands Section -->
-            <h5 class="mt-4">Terminal Commands</h5>
-            <div class="mb-3">
-                {% if lab and lab.terminal_commands %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Order</th>
-                                    <th>Command</th>
-                                    <th>Expected Output</th>
-                                    <th>Points</th>
-                                    <th>Hint</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for cmd in lab.terminal_commands|sort(attribute='order') %}
-                                <tr>
-                                    <td>{{ cmd.order }}</td>
-                                    <td><code>{{ cmd.command }}</code></td>
-                                    <td>{{ cmd.expected_output or 'Any' }}</td>
-                                    <td>{{ cmd.points }}</td>
-                                    <td>{{ cmd.hint or 'None' }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-warning edit-command" data-command-id="{{ cmd.id }}">Edit</button>
-                                        <form method="post" action="{{ url_for('admin_delete_terminal_command', command_id=cmd.id, lab_id=lab.id) }}" style="display:inline;">
-                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this command?')">Delete</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-muted">No terminal commands yet.</div>
-                {% endif %}
-            </div>
-            
-            <!-- Add Terminal Command Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h6>Add Terminal Command</h6>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{{ url_for('admin_add_terminal_command', lab_id=lab.id if lab else 0) }}">
-                        <div class="row">
-                            <div class="col-md-3 mb-2">
-                                <input type="number" class="form-control" name="order" placeholder="Order" required>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <input type="text" class="form-control" name="command" placeholder="Command" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <input type="number" class="form-control" name="points" placeholder="Points" value="1" min="1" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <input type="text" class="form-control" name="expected_output" placeholder="Expected Output (optional)">
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <input type="text" class="form-control" name="hint" placeholder="Hint (optional)">
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" class="form-control" name="description" placeholder="Description (optional)">
-                        </div>
-                        <div class="mb-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_optional" id="is_optional">
-                                <label class="form-check-label" for="is_optional">Optional Command</label>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-success btn-sm">Add Command</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <hr>
-        <!-- Quiz Questions Section (Optional) -->
-        <h4 class="mt-4">Quiz Questions <span class="text-muted small">(Optional)</span></h4>
-        <div class="mb-3">
-            {% if lab and lab.quiz_questions %}
-                <ul class="list-group mb-3">
-                {% for q in lab.quiz_questions|sort(attribute='order') %}
-                    <li class="list-group-item">
-                        <strong>Q{{ loop.index }} ({{ q.marks }} mark{{ 's' if q.marks != 1 else '' }}):</strong> {{ q.question }}<br>
-                        <em>Options:</em> {{ q.options_list|join(', ') }}<br>
-                        <em>Answer:</em> {{ q.correct_answer }}<br>
-                        <em>Explanation:</em> {{ q.explanation }}<br>
-                        <form method="post" action="{{ url_for('admin_delete_quiz_question', question_id=q.id, lab_id=lab.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
-                    </li>
-                {% endfor %}
-                </ul>
-            {% else %}
-                <div class="text-muted">No quiz questions yet. You can add some below, or leave this section empty.</div>
-            {% endif %}
-        </div>
-        <form method="post" action="{{ url_for('admin_add_quiz_question', lab_id=lab.id if lab else 0) }}">
-            <div class="row">
-                <div class="col-md-6 mb-2">
-                    <input type="text" class="form-control" name="question" placeholder="Question" required>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <input type="text" class="form-control" name="options" placeholder="Options (comma separated)" required>
-                </div>
-                <div class="col-md-2 mb-2">
-                    <input type="text" class="form-control" name="correct_answer" placeholder="Correct Answer" required>
-                </div>
-                <div class="col-md-1 mb-2">
-                    <input type="number" class="form-control" name="marks" placeholder="Marks" value="1" min="1" required>
-                </div>
-            </div>
-            <div class="mb-2">
-                <input type="text" class="form-control" name="explanation" placeholder="Explanation (optional)">
-            </div>
-            <button type="submit" class="btn btn-success btn-sm">Add Quiz Question</button>
-        </form>
-        <hr>
-        <!-- Hacking Lab Section -->
-        <h4 class="mt-4">Real-Time Hacking Lab</h4>
-        <div class="mb-3">
-            <label for="sandbox_url" class="form-label">Sandbox URL/Connection</label>
-            <input type="text" class="form-control" id="sandbox_url" name="sandbox_url" value="{{ lab.sandbox_url if lab else '' }}">
-        </div>
-        <div class="mb-3">
-            <label for="sandbox_instructions" class="form-label">Sandbox Instructions</label>
-            <textarea class="form-control" id="sandbox_instructions" name="sandbox_instructions" rows="2">{{ lab.sandbox_instructions if lab else '' }}</textarea>
-        </div>
-        <div class="mb-3">
-            <label for="required_command" class="form-label">Required Command (for success)</label>
-            <input type="text" class="form-control" id="required_command" name="required_command" value="{{ lab.required_command if lab else '' }}">
-        </div>
-        <div class="mb-3">
-            <label for="command_success_criteria" class="form-label">Command Success Criteria (output, flag, etc.)</label>
-            <input type="text" class="form-control" id="command_success_criteria" name="command_success_criteria" value="{{ lab.command_success_criteria if lab else '' }}">
         </div>
         <div class="d-flex justify-content-end mt-4">
             <button type="submit" class="btn btn-primary">Save Lab</button>
@@ -274,6 +131,149 @@
         <a href="{{ url_for('admin_labs') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
     <p class="text-muted mt-3">You can save the lab at any time. After saving, you can add quizzes and terminal commands below.</p>
+
+    <!-- Terminal Commands Section (Optional) -->
+    <div id="terminal-commands-section">
+        <h4 class="mt-4">Terminal Commands <span class="text-muted small">(Optional)</span></h4>
+        <div class="mb-3">
+            {% if lab and lab.terminal_commands %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Command</th>
+                                <th>Expected Output</th>
+                                <th>Points</th>
+                                <th>Hint</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for cmd in lab.terminal_commands|sort(attribute='order') %}
+                            <tr>
+                                <td>{{ cmd.order }}</td>
+                                <td><code>{{ cmd.command }}</code></td>
+                                <td>{{ cmd.expected_output or 'Any' }}</td>
+                                <td>{{ cmd.points }}</td>
+                                <td>{{ cmd.hint or 'None' }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-warning edit-command" data-command-id="{{ cmd.id }}">Edit</button>
+                                    <form method="post" action="{{ url_for('admin_delete_terminal_command', command_id=cmd.id, lab_id=lab.id) }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this command?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-muted">No terminal commands yet. You can add some below, or leave this section empty.</div>
+            {% endif %}
+        </div>
+        <!-- Add Terminal Command Form -->
+        <div class="card">
+            <div class="card-header">
+                <h6>Add Terminal Command</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('admin_add_terminal_command', lab_id=lab.id if lab else 0) }}">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <input type="number" class="form-control" name="order" placeholder="Order" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control" name="command" placeholder="Command" required>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="number" class="form-control" name="points" placeholder="Points" value="1" min="1" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control" name="expected_output" placeholder="Expected Output (optional)">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control" name="hint" placeholder="Hint (optional)">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" class="form-control" name="description" placeholder="Description (optional)">
+                    </div>
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_optional" id="is_optional">
+                            <label class="form-check-label" for="is_optional">Optional Command</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm">Add Command</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <!-- Quiz Questions Section (Optional) -->
+    <h4 class="mt-4">Quiz Questions <span class="text-muted small">(Optional)</span></h4>
+    <div class="mb-3">
+        {% if lab and lab.quiz_questions %}
+            <ul class="list-group mb-3">
+            {% for q in lab.quiz_questions|sort(attribute='order') %}
+                <li class="list-group-item">
+                    <strong>Q{{ loop.index }} ({{ q.marks }} mark{{ 's' if q.marks != 1 else '' }}):</strong> {{ q.question }}<br>
+                    <em>Options:</em> {{ q.options_list|join(', ') }}<br>
+                    <em>Answer:</em> {{ q.correct_answer }}<br>
+                    <em>Explanation:</em> {{ q.explanation }}<br>
+                    <form method="post" action="{{ url_for('admin_delete_quiz_question', question_id=q.id, lab_id=lab.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="text-muted">No quiz questions yet. You can add some below, or leave this section empty.</div>
+        {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin_add_quiz_question', lab_id=lab.id if lab else 0) }}">
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <input type="text" class="form-control" name="question" placeholder="Question" required>
+            </div>
+            <div class="col-md-3 mb-2">
+                <input type="text" class="form-control" name="options" placeholder="Options (comma separated)" required>
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="text" class="form-control" name="correct_answer" placeholder="Correct Answer" required>
+            </div>
+            <div class="col-md-1 mb-2">
+                <input type="number" class="form-control" name="marks" placeholder="Marks" value="1" min="1" required>
+            </div>
+        </div>
+        <div class="mb-2">
+            <input type="text" class="form-control" name="explanation" placeholder="Explanation (optional)">
+        </div>
+        <button type="submit" class="btn btn-success btn-sm">Add Quiz Question</button>
+    </form>
+    <hr>
+    <!-- Hacking Lab Section -->
+    <h4 class="mt-4">Real-Time Hacking Lab</h4>
+    <div class="mb-3">
+        <label for="sandbox_url" class="form-label">Sandbox URL/Connection</label>
+        <input type="text" class="form-control" id="sandbox_url" name="sandbox_url" value="{{ lab.sandbox_url if lab else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="sandbox_instructions" class="form-label">Sandbox Instructions</label>
+        <textarea class="form-control" id="sandbox_instructions" name="sandbox_instructions" rows="2">{{ lab.sandbox_instructions if lab else '' }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label for="required_command" class="form-label">Required Command (for success)</label>
+        <input type="text" class="form-control" id="required_command" name="required_command" value="{{ lab.required_command if lab else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="command_success_criteria" class="form-label">Command Success Criteria (output, flag, etc.)</label>
+        <input type="text" class="form-control" id="command_success_criteria" name="command_success_criteria" value="{{ lab.command_success_criteria if lab else '' }}">
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
