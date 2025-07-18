@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
     is_muted = db.Column(db.Boolean, default=False)
+    onboarding_complete = db.Column(db.Boolean, default=False)
     reputation = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
