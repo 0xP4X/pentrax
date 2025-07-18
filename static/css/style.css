@@ -1146,3 +1146,30 @@ body.conversation-page .ai-assistant {
     right: auto !important;
     bottom: 20px !important;
 }
+
+/* Guided Tour Styles */
+.pentrax-tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    pointer-events: auto;
+}
+.pentrax-tour-tooltip {
+    position: fixed;
+    z-index: 2100;
+    max-width: 320px;
+    background: #222;
+    color: #fff;
+    border-radius: 12px;
+    padding: 1.2rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    animation: fadeInTour 0.3s;
+}
+@keyframes fadeInTour {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

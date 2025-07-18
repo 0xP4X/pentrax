@@ -511,6 +511,164 @@ class OnboardingManager {
         
         // Show welcome animation
         this.showWelcomeAnimation();
+        // After welcome, offer guided tour
+        setTimeout(() => {
+            if (!localStorage.getItem('pentrax_guided_tour_completed')) {
+                this.showTourPrompt();
+            }
+        }, 1200);
+    }
+
+    showTourPrompt() {
+        // Modal HTML for tour prompt
+        const promptHTML = `
+            <div class="modal fade" id="tourPromptModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title"><i class="fas fa-map-signs me-2"></i>Quick Tour?</h5>
+                        </div>
+                        <div class="modal-body">
+                            <p>Would you like a quick tour of PentraX's main features? You can exit at any time.</p>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button class="btn btn-secondary" id="skipTourBtn">No, thanks</button>
+                            <button class="btn btn-primary" id="startTourBtn">Yes, show me</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', promptHTML);
+        const modal = new bootstrap.Modal(document.getElementById('tourPromptModal'));
+        modal.show();
+        document.getElementById('skipTourBtn').onclick = () => {
+            localStorage.setItem('pentrax_guided_tour_completed', 'skipped');
+            modal.hide();
+            setTimeout(() => {
+                const el = document.getElementById('tourPromptModal');
+                if (el) el.remove();
+            }, 500);
+        };
+        document.getElementById('startTourBtn').onclick = () => {
+            modal.hide();
+            setTimeout(() => {
+                const el = document.getElementById('tourPromptModal');
+                if (el) el.remove();
+                this.startGuidedTour();
+            }, 500);
+        };
+    }
+
+    startGuidedTour() {
+        // Define the tour steps: selector, title, description
+        this.tourSteps = [
+            {
+                selector: '.navbar-brand',
+                title: 'Home',
+                description: 'Return to the PentraX dashboard from anywhere.'
+            },
+            {
+                selector: '.nav-link[href*="forums"], .nav-link.dropdown-toggle:has(i.fa-comments)',
+                title: 'Forums',
+                description: 'Join discussions, share tools, report bugs, and find jobs.'
+            },
+            {
+                selector: '.nav-link[href*="cyber_labs"], .fa-flask',
+                title: 'Cyber Labs',
+                description: 'Practice your skills with hands-on cybersecurity labs.'
+            },
+            {
+                selector: '.nav-link[href*="store"], .fa-store',
+                title: 'Store',
+                description: 'Browse and purchase premium tools, scripts, and resources.'
+            },
+            {
+                selector: '.nav-link[href*="messages"], .fa-envelope',
+                title: 'Messages',
+                description: 'Check your private messages and chat securely.'
+            },
+            {
+                selector: '.dropdown-menu-end .dropdown-item[href*="profile"], .fa-user',
+                title: 'Profile',
+                description: 'View and edit your profile, settings, and purchases.'
+            },
+            {
+                selector: '#ai-assistant, .ai-toggle',
+                title: 'AI Assistant',
+                description: 'Get instant help and guidance from the PentraX AI Assistant.'
+            }
+        ];
+        this.currentTourStep = 0;
+        this.showTourStep(this.currentTourStep);
+    }
+
+    showTourStep(stepIdx) {
+        // Remove any existing tour overlays
+        document.querySelectorAll('.pentrax-tour-overlay, .pentrax-tour-tooltip').forEach(el => el.remove());
+        if (stepIdx >= this.tourSteps.length) {
+            localStorage.setItem('pentrax_guided_tour_completed', 'true');
+            return;
+        }
+        const step = this.tourSteps[stepIdx];
+        const target = document.querySelector(step.selector);
+        if (!target) {
+            // If not found, skip to next
+            this.showTourStep(stepIdx + 1);
+            return;
+        }
+        // Highlight target
+        const rect = target.getBoundingClientRect();
+        // Overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'pentrax-tour-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.zIndex = '2000';
+        overlay.onclick = () => {};
+        document.body.appendChild(overlay);
+        // Tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'pentrax-tour-tooltip card shadow-lg';
+        tooltip.style.position = 'fixed';
+        tooltip.style.zIndex = '2100';
+        tooltip.style.maxWidth = '320px';
+        tooltip.style.background = '#222';
+        tooltip.style.color = '#fff';
+        tooltip.style.borderRadius = '12px';
+        tooltip.style.padding = '1.2rem';
+        tooltip.style.boxShadow = '0 8px 32px rgba(0,0,0,0.25)';
+        tooltip.innerHTML = `
+            <div class="mb-2"><strong>${step.title}</strong></div>
+            <div class="mb-3">${step.description}</div>
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-outline-light btn-sm" id="exitTourBtn">Exit Tour</button>
+                <button class="btn btn-primary btn-sm" id="nextTourBtn">Next</button>
+            </div>
+        `;
+        // Position tooltip near target
+        let top = rect.bottom + 12;
+        let left = rect.left;
+        if (top + 160 > window.innerHeight) top = rect.top - 180;
+        if (left + 340 > window.innerWidth) left = window.innerWidth - 340;
+        if (left < 10) left = 10;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        document.body.appendChild(tooltip);
+        // Scroll into view if needed
+        target.scrollIntoView({behavior: 'smooth', block: 'center'});
+        // Button handlers
+        tooltip.querySelector('#exitTourBtn').onclick = () => {
+            document.querySelectorAll('.pentrax-tour-overlay, .pentrax-tour-tooltip').forEach(el => el.remove());
+            localStorage.setItem('pentrax_guided_tour_completed', 'skipped');
+        };
+        tooltip.querySelector('#nextTourBtn').onclick = () => {
+            this.showTourStep(stepIdx + 1);
+        };
     }
 
     showWelcomeAnimation() {
