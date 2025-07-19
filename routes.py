@@ -2225,3 +2225,11 @@ def admin_impersonate_user(user_id):
     session['impersonate_id'] = user.id
     flash(f'You are now impersonating {user.username}. (Demo only)', 'info')
     return redirect(url_for('user_profile', username=user.username))
+
+@app.route('/admin/labs')
+@login_required
+def admin_labs():
+    if not current_user.is_admin:
+        abort(403)
+    labs = Lab.query.order_by(Lab.id.desc()).all()
+    return render_template('admin_labs.html', labs=labs)
