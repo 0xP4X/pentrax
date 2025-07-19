@@ -382,6 +382,9 @@ body {
     border-radius: 50px;
     margin: 0 0.25rem;
     transition: background 0.2s, color 0.2s;
+    color: var(--primary-color) !important;
+}
+[data-bs-theme="dark"] .category-bar .nav-link {
     color: var(--bs-body-color) !important;
 }
 .category-bar .nav-link.active {
