@@ -1,11 +1,11 @@
 // PentraX AI Assistant
 document.addEventListener('DOMContentLoaded', function() {
-    const hexaToggle = document.getElementById('hexa-toggle');
-    const hexaChat = document.getElementById('hexa-chat');
-    const hexaClose = document.getElementById('hexa-close');
-    const hexaInput = document.getElementById('hexa-input');
-    const hexaSend = document.getElementById('hexa-send');
-    const hexaMessages = document.getElementById('hexa-messages');
+    const aiToggle = document.getElementById('ai-toggle');
+    const aiChat = document.getElementById('ai-chat');
+    const aiClose = document.getElementById('ai-close');
+    const aiInput = document.getElementById('ai-input');
+    const aiSend = document.getElementById('ai-send');
+    const aiMessages = document.getElementById('ai-messages');
     
     let isOpen = false;
     let conversationHistory = [];
@@ -14,29 +14,29 @@ document.addEventListener('DOMContentLoaded', function() {
     loadConversationHistory();
     
     // Toggle AI chat
-    if (hexaToggle) {
-        hexaToggle.addEventListener('click', function() {
+    if (aiToggle) {
+        aiToggle.addEventListener('click', function() {
             toggleChat();
         });
     }
     
     // Close AI chat
-    if (hexaClose) {
-        hexaClose.addEventListener('click', function() {
+    if (aiClose) {
+        aiClose.addEventListener('click', function() {
             closeChat();
         });
     }
     
     // Send message on button click
-    if (hexaSend) {
-        hexaSend.addEventListener('click', function() {
+    if (aiSend) {
+        aiSend.addEventListener('click', function() {
             sendMessage();
         });
     }
     
     // Send message on Enter key
-    if (hexaInput) {
-        hexaInput.addEventListener('keypress', function(e) {
+    if (aiInput) {
+        aiInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Auto-resize input
-        hexaInput.addEventListener('input', function() {
+        aiInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Close chat when clicking outside
     document.addEventListener('click', function(e) {
-        if (isOpen && !e.target.closest('.hexa-assistant')) {
+        if (isOpen && !e.target.closest('.ai-assistant')) {
             closeChat();
         }
     });
@@ -66,13 +66,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function openChat() {
-        if (hexaChat) {
-            hexaChat.style.display = 'flex';
+        if (aiChat) {
+            aiChat.style.display = 'flex';
             isOpen = true;
             
             // Focus input
-            if (hexaInput) {
-                setTimeout(() => hexaInput.focus(), 100);
+            if (aiInput) {
+                setTimeout(() => aiInput.focus(), 100);
             }
             
             // Show welcome message if first time
@@ -83,22 +83,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function closeChat() {
-        if (hexaChat) {
-            hexaChat.style.display = 'none';
+        if (aiChat) {
+            aiChat.style.display = 'none';
             isOpen = false;
         }
     }
     
     function sendMessage() {
-        const message = hexaInput.value.trim();
+        const message = aiInput.value.trim();
         if (!message) return;
         
         // Add user message
         addMessage('user', message);
         
         // Clear input
-        hexaInput.value = '';
-        hexaInput.style.height = 'auto';
+        aiInput.value = '';
+        aiInput.style.height = 'auto';
         
         // Show typing indicator
         showTypingIndicator();
@@ -129,19 +129,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function addMessage(sender, content, save = true) {
-        if (!hexaMessages) return;
+        if (!aiMessages) return;
         
         const messageDiv = document.createElement('div');
-        messageDiv.className = `hexa-message ${sender}`;
+        messageDiv.className = `ai-message ${sender}`;
         
         // Format message content
         const formattedContent = formatMessage(content);
         messageDiv.innerHTML = formattedContent;
         
-        hexaMessages.appendChild(messageDiv);
+        aiMessages.appendChild(messageDiv);
         
         // Scroll to bottom
-        hexaMessages.scrollTop = hexaMessages.scrollHeight;
+        aiMessages.scrollTop = aiMessages.scrollHeight;
         
         // Save to history
         if (save) {
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showTypingIndicator() {
         const typingDiv = document.createElement('div');
-        typingDiv.className = 'hexa-message assistant typing-indicator';
+        typingDiv.className = 'ai-message assistant typing-indicator';
         typingDiv.innerHTML = `
             <div class="typing-dots">
                 <span></span>
@@ -182,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         typingDiv.id = 'typing-indicator';
         
-        hexaMessages.appendChild(typingDiv);
-        hexaMessages.scrollTop = hexaMessages.scrollHeight;
+        aiMessages.appendChild(typingDiv);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
         
         // Add CSS for typing animation
         if (!document.getElementById('typing-styles')) {
@@ -252,16 +252,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearHistory() {
         conversationHistory = [];
         localStorage.removeItem('ai-conversation');
-        if (hexaMessages) {
-            hexaMessages.innerHTML = '';
+        if (aiMessages) {
+            aiMessages.innerHTML = '';
         }
         addMessage('assistant', 'Conversation history cleared. How can I help you?', false);
     }
     
     // Add clear history button (optional)
     function addClearButton() {
-        const hexaHeader = document.querySelector('.hexa-header');
-        if (hexaHeader && !document.getElementById('clear-history-btn')) {
+        const aiHeader = document.querySelector('.ai-header');
+        if (aiHeader && !document.getElementById('clear-history-btn')) {
             const clearBtn = document.createElement('button');
             clearBtn.id = 'clear-history-btn';
             clearBtn.className = 'btn btn-sm btn-outline-light';
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            hexaHeader.insertBefore(clearBtn, hexaClose);
+            aiHeader.insertBefore(clearBtn, aiClose);
         }
     }
     
@@ -327,20 +327,20 @@ Just ask me anything about cybersecurity! You can also use:
     // Modify sendMessage to handle special commands
     const originalSendMessage = sendMessage;
     sendMessage = function() {
-        const message = hexaInput.value.trim();
+        const message = aiInput.value.trim();
         if (!message) return;
         
         // Check for special commands
         const specialResponse = handleSpecialCommands(message);
         if (specialResponse === null) {
             // Command handled, don't send to API
-            hexaInput.value = '';
+            aiInput.value = '';
             return;
         } else if (specialResponse) {
             // Show special response
             addMessage('user', message);
             addMessage('assistant', specialResponse);
-            hexaInput.value = '';
+            aiInput.value = '';
             return;
         }
         
@@ -348,61 +348,3 @@ Just ask me anything about cybersecurity! You can also use:
         originalSendMessage();
     };
 });
-
-// Add draggable logic for Hexa
-function makeHexaDraggable() {
-    const hexa = document.querySelector('.hexa-assistant');
-    if (!hexa) return;
-    let offsetX = 0, offsetY = 0, startX = 0, startY = 0, dragging = false;
-
-    // Restore position from localStorage
-    const saved = localStorage.getItem('hexa-position');
-    if (saved) {
-        const pos = JSON.parse(saved);
-        hexa.style.left = pos.left;
-        hexa.style.top = pos.top;
-        hexa.style.position = 'fixed';
-    }
-
-    function onMouseDown(e) {
-        dragging = true;
-        startX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-        startY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-        const rect = hexa.getBoundingClientRect();
-        offsetX = startX - rect.left;
-        offsetY = startY - rect.top;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-        document.addEventListener('touchmove', onMouseMove);
-        document.addEventListener('touchend', onMouseUp);
-    }
-    function onMouseMove(e) {
-        if (!dragging) return;
-        let x = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-        let y = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-        let left = x - offsetX;
-        let top = y - offsetY;
-        // Clamp to viewport
-        left = Math.max(0, Math.min(window.innerWidth - hexa.offsetWidth, left));
-        top = Math.max(0, Math.min(window.innerHeight - hexa.offsetHeight, top));
-        hexa.style.left = left + 'px';
-        hexa.style.top = top + 'px';
-        hexa.style.position = 'fixed';
-    }
-    function onMouseUp() {
-        dragging = false;
-        localStorage.setItem('hexa-position', JSON.stringify({ left: hexa.style.left, top: hexa.style.top }));
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        document.removeEventListener('touchmove', onMouseMove);
-        document.removeEventListener('touchend', onMouseUp);
-    }
-    // Drag handle: whole header or the widget itself
-    const dragHandle = hexa.querySelector('.hexa-header') || hexa;
-    dragHandle.style.cursor = 'move';
-    dragHandle.addEventListener('mousedown', onMouseDown);
-    dragHandle.addEventListener('touchstart', onMouseDown);
-}
-
-// Call after DOM is ready
-setTimeout(makeHexaDraggable, 500);
