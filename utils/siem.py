@@ -25,13 +25,25 @@ def enrich_ip_info(ip):
         return {'error': str(e)}
     return None
 
-# Patch log_siem_event to enrich IP info
-old_log_siem_event = log_siem_event
-
 def log_siem_event(event_type, message, severity='info', source=None, user=None, ip_address=None, raw_data=None):
     if ip_address and (not raw_data or 'ip_info' not in (raw_data or {})):
         ip_info = enrich_ip_info(ip_address)
         if raw_data is None:
             raw_data = {}
         raw_data['ip_info'] = ip_info
-    return old_log_siem_event(event_type, message, severity, source, user, ip_address, raw_data) 
+    if user is None:
+        user = getattr(current_user, '_get_current_object', lambda: None)()
+    event = SIEMEvent(
+        event_type=event_type,
+        user_id=user.id if user else None,
+        username=user.username if user else None,
+        ip_address=ip_address or (request.remote_addr if request else None),
+        source=source,
+        severity=severity,
+        message=message,
+        raw_data=raw_data,
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(event)
+    db.session.commit()
+    return event 
