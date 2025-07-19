@@ -498,6 +498,15 @@ class OnboardingManager {
         // Save user profile
         localStorage.setItem('pentrax_user_profile', JSON.stringify(this.userProfile));
         localStorage.setItem('pentrax_onboarding_completed', 'true');
+
+        // Always call backend to set onboarding_complete
+        fetch('/complete-onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.userProfile)
+        }).then(res => res.json()).then(data => {
+            // Optionally handle response
+        }).catch(() => {});
         
         // Hide modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('onboardingModal'));
