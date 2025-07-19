@@ -7,6 +7,10 @@
 <script src="/static/js/onboarding.js"></script>
 <script>
   window.onboarding = new OnboardingManager();
-  window.onboarding.showOnboardingModal(); // Force show modal for all users
+  if (!localStorage.getItem('pentrax_onboarding_completed')) {
+    window.onboarding.showOnboardingModal();
+  } else {
+    window.onboarding.checkOnboardingStatus();
+  }
 </script>
 {% endblock %} 

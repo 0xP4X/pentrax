@@ -351,4 +351,12 @@ document.addEventListener('DOMContentLoaded', function() {
             toastEl.remove();
         });
     }
+
+    if (localStorage.getItem('pentrax_show_tour_prompt') === 'true') {
+        localStorage.removeItem('pentrax_show_tour_prompt');
+        if (window.OnboardingManager && (!localStorage.getItem('pentrax_guided_tour_completed') || localStorage.getItem('pentrax_guided_tour_completed') === 'skipped')) {
+            if (!window.onboarding) window.onboarding = new OnboardingManager();
+            window.onboarding.showTourPrompt();
+        }
+    }
 });

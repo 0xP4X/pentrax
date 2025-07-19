@@ -498,6 +498,7 @@ class OnboardingManager {
         // Save user profile
         localStorage.setItem('pentrax_user_profile', JSON.stringify(this.userProfile));
         localStorage.setItem('pentrax_onboarding_completed', 'true');
+        localStorage.setItem('pentrax_show_tour_prompt', 'true');
 
         // Always call backend to set onboarding_complete
         fetch('/complete-onboarding', {
@@ -520,13 +521,9 @@ class OnboardingManager {
         
         // Show welcome animation
         this.showWelcomeAnimation();
-        // After welcome, offer guided tour
+        // Redirect to home, where the tour prompt will be shown
         setTimeout(() => {
-            if (!localStorage.getItem('pentrax_guided_tour_completed')) {
-                this.showTourPrompt();
-            } else {
-                window.location.href = '/';
-            }
+            window.location.href = '/';
         }, 1200);
     }
 
