@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from flask import render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, abort
+from flask import render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, abort, make_response, g
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -20,6 +20,8 @@ from utils.achievements import update_user_streak, check_and_unlock_achievements
 from functools import wraps
 from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
 from utils.siem import get_deep_ip_info, log_siem_event
+import re
+from collections import defaultdict
 
 @app.context_processor
 def inject_user():
@@ -3102,3 +3104,171 @@ def admin_deep_ip_scan():
         return {'error': 'No IP provided'}, 400
     data = get_deep_ip_info(ip)
     return data
+
+# Error handlers for unauthorized, forbidden, and rate limit
+@app.errorhandler(401)
+def unauthorized_error(error):
+    log_siem_event(
+        event_type='unauthorized_access',
+        message=f'Unauthorized access attempt to {request.path}',
+        severity='warning',
+        ip_address=request.remote_addr,
+        source='security'
+    )
+    return make_response(render_template('401.html'), 401)
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    log_siem_event(
+        event_type='forbidden_access',
+        message=f'Forbidden access attempt to {request.path}',
+        severity='warning',
+        ip_address=request.remote_addr,
+        source='security'
+    )
+    return make_response(render_template('403.html'), 403)
+
+@app.errorhandler(429)
+def rate_limit_error(error):
+    log_siem_event(
+        event_type='rate_limit',
+        message=f'Rate limit triggered for {request.remote_addr} on {request.path}',
+        severity='warning',
+        ip_address=request.remote_addr,
+        source='security'
+    )
+    return make_response(render_template('429.html'), 429)
+
+# Flag suspicious/attack patterns in before_request
+@app.before_request
+def flag_suspicious_requests():
+    # Example: repeated failed logins, access to /admin by non-admins, suspicious user agents, etc.
+    if request.path.startswith('/admin') and (not current_user.is_authenticated or not getattr(current_user, 'is_admin', False)):
+        log_siem_event(
+            event_type='suspicious_admin_access',
+            message=f'Non-admin tried to access admin route: {request.path}',
+            severity='warning',
+            ip_address=request.remote_addr,
+            source='security'
+        )
+    # Example: suspicious user agent
+    if 'sqlmap' in (request.user_agent.string or '').lower():
+        log_siem_event(
+            event_type='attack_detected',
+            message=f'SQLMap or automated tool detected: {request.user_agent.string}',
+            severity='critical',
+            ip_address=request.remote_addr,
+            source='security'
+        )
+
+# In-memory store for repeated event aggregation (replace with Redis/DB for production)
+FAILED_LOGIN_ATTEMPTS = defaultdict(list)  # {ip: [timestamps]}
+ADMIN_ACCESS_ATTEMPTS = defaultdict(list)
+MULTI_ACCOUNT_IPS = defaultdict(set)  # {ip: set(usernames)}
+LAST_USER_IP = defaultdict(str)  # {username: last_ip}
+
+# Helper: suspicious payload patterns
+SUSPICIOUS_PATTERNS = [
+    r"(\bselect\b|\binsert\b|\bupdate\b|\bdelete\b|\bdrop\b|\bunion\b|\b--|\b#|\b;|\b'\b|\b\"\b)",  # SQLi
+    r"<script|onerror=|onload=|<img|<svg|javascript:",  # XSS
+    r"(;|&&|\|\||`|\$\(|\bcat\b|\bwget\b|\bcurl\b|\bping\b|\bwhoami\b)",  # Command injection
+]
+
+# Helper: log and alert on repeated suspicious events
+def alert_if_repeated(event_type, ip, threshold, window_sec=300):
+    now = datetime.utcnow()
+    store = FAILED_LOGIN_ATTEMPTS if event_type == 'login_failed' else ADMIN_ACCESS_ATTEMPTS
+    store[ip] = [t for t in store[ip] if (now - t).total_seconds() < window_sec]
+    store[ip].append(now)
+    if len(store[ip]) >= threshold:
+        log_siem_event(
+            event_type=f'{event_type}_alert',
+            message=f'{len(store[ip])} {event_type.replace("_", " ")}s from {ip} in {window_sec//60}min',
+            severity='critical',
+            ip_address=ip,
+            source='security'
+        )
+        store[ip] = []  # reset after alert
+
+@app.before_request
+def advanced_intrusion_detection():
+    ip = request.remote_addr
+    path = request.path
+    # 1. Detect repeated failed logins (brute force/credential stuffing)
+    if path == '/login' and request.method == 'POST':
+        username = request.form.get('username')
+        user = User.query.filter_by(username=username).first()
+        if not (user and user.check_password(request.form.get('password'))):
+            alert_if_repeated('login_failed', ip, threshold=5)
+    # 2. Detect repeated admin access attempts
+    if path.startswith('/admin') and (not current_user.is_authenticated or not getattr(current_user, 'is_admin', False)):
+        alert_if_repeated('admin_access', ip, threshold=3)
+    # 3. Detect multiple accounts from same IP
+    if current_user.is_authenticated:
+        MULTI_ACCOUNT_IPS[ip].add(current_user.username)
+        if len(MULTI_ACCOUNT_IPS[ip]) > 2:
+            log_siem_event(
+                event_type='multi_account_ip',
+                message=f'Multiple accounts from IP {ip}: {list(MULTI_ACCOUNT_IPS[ip])}',
+                severity='warning',
+                ip_address=ip,
+                source='security'
+            )
+    # 4. Detect geolocation/session hijacking
+    if current_user.is_authenticated:
+        last_ip = LAST_USER_IP.get(current_user.username)
+        if last_ip and last_ip != ip:
+            log_siem_event(
+                event_type='session_hijack_possible',
+                message=f'User {current_user.username} session from new IP {ip} (was {last_ip})',
+                severity='warning',
+                user=current_user,
+                ip_address=ip,
+                source='security'
+            )
+        LAST_USER_IP[current_user.username] = ip
+    # 5. Detect suspicious payloads
+    if request.method == 'POST':
+        for k, v in request.form.items():
+            for pat in SUSPICIOUS_PATTERNS:
+                if re.search(pat, v, re.IGNORECASE):
+                    log_siem_event(
+                        event_type='suspicious_payload',
+                        message=f'Suspicious input detected in {k} on {path}',
+                        severity='critical',
+                        ip_address=ip,
+                        source='security',
+                        raw_data={'field': k, 'value': v}
+                    )
+    # 6. Detect suspicious file uploads
+    if request.files:
+        for f in request.files.values():
+            if f.filename.lower().endswith(('.php', '.exe', '.sh', '.bat', '.js', '.py', '.pl', '.rb')):
+                log_siem_event(
+                    event_type='suspicious_file_upload',
+                    message=f'Suspicious file upload: {f.filename}',
+                    severity='critical',
+                    ip_address=ip,
+                    source='security'
+                )
+    # 7. Detect access to other users' resources
+    if '/user/' in path and current_user.is_authenticated:
+        username = path.split('/user/')[-1].split('/')[0]
+        if username != current_user.username and not current_user.is_admin:
+            log_siem_event(
+                event_type='unauthorized_user_resource',
+                message=f'User {current_user.username} tried to access {username} profile/resource',
+                severity='warning',
+                user=current_user,
+                ip_address=ip,
+                source='security'
+            )
+    # 8. Detect requests from blocked/bad IPs
+    if hasattr(g, 'blocked_ip') and g.blocked_ip:
+        log_siem_event(
+            event_type='blocked_ip_request',
+            message=f'Request from blocked IP {ip}',
+            severity='critical',
+            ip_address=ip,
+            source='firewall'
+        )
