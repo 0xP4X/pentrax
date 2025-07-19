@@ -584,3 +584,14 @@ class SIEMEvent(db.Model):
 
     def __repr__(self):
         return f'<SIEMEvent {self.event_type} {self.timestamp}>'
+
+class BlockedIP(db.Model):
+    __tablename__ = 'blocked_ips'
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    blocked_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reason = db.Column(db.String(255), nullable=True)
+    blocked_by = db.Column(db.String(64), nullable=True)
+
+    def __repr__(self):
+        return f'<BlockedIP {self.ip_address}>'
