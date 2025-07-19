@@ -140,11 +140,11 @@
             <div class="d-flex gap-2 mb-3 flex-wrap">
               <!-- Ban/Unban -->
               {% if not user.is_banned %}
-              <form method="post" action="{{ url_for('admin_ban_user', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to ban this user?');">
+              <form method="post" action="{{ url_for('ban_user', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to ban this user?');">
                 <button class="btn btn-danger btn-sm" {% if current_user.id == user.id or user.is_admin %}disabled{% endif %}>Ban User</button>
               </form>
               {% else %}
-              <form method="post" action="{{ url_for('admin_unban_user', user_id=user.id) }}" onsubmit="return confirm('Unban this user?');">
+              <form method="post" action="{{ url_for('unban_user', user_id=user.id) }}" onsubmit="return confirm('Unban this user?');">
                 <button class="btn btn-success btn-sm">Unban User</button>
               </form>
               {% endif %}
