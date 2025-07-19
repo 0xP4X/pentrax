@@ -55,7 +55,7 @@ def set_security_headers(response):
     if request.path.startswith('/static/') or request.path.startswith('/uploads/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     else:
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Cache-Control'] = 'no-cache'
     return response
 
 # Initialize extensions
