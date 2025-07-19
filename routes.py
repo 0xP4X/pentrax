@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent, BlockedIP
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
@@ -19,6 +19,7 @@ from wtforms import StringField, PasswordField, SubmitField, validators
 from utils.achievements import update_user_streak, check_and_unlock_achievements
 from functools import wraps
 from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
+from utils.siem import get_deep_ip_info
 
 @app.context_processor
 def inject_user():
@@ -2961,10 +2962,11 @@ def admin_block_ip():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
     ip = request.form.get('ip')
+    reason = request.form.get('reason') or 'manual block from SIEM dashboard'
     if not ip:
         flash('No IP address provided.', 'error')
         return redirect(url_for('admin_siem_dashboard'))
-    add_blocked_ip(ip, reason='manual block from SIEM dashboard')
+    add_blocked_ip(ip, reason=reason, blocked_by=current_user.username)
     flash(f'IP {ip} has been blocked.', 'success')
     return redirect(url_for('admin_siem_dashboard'))
 
@@ -2975,9 +2977,24 @@ def admin_unblock_ip():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
     ip = request.form.get('ip')
+    reason = request.form.get('reason') or 'manual unblock from SIEM dashboard'
     if not ip:
         flash('No IP address provided.', 'error')
         return redirect(url_for('admin_siem_dashboard'))
-    unblock_ip(ip, reason='manual unblock from SIEM dashboard')
+    unblock_ip(ip, reason=reason)
     flash(f'IP {ip} has been unblocked.', 'success')
     return redirect(url_for('admin_siem_dashboard'))
+
+def get_blocked_ips():
+    return BlockedIP.query.order_by(BlockedIP.blocked_at.desc()).all()
+
+@app.route('/admin/deep_ip_scan')
+@login_required
+def admin_deep_ip_scan():
+    if not current_user.is_admin:
+        return {'error': 'Access denied'}, 403
+    ip = request.args.get('ip')
+    if not ip:
+        return {'error': 'No IP provided'}, 400
+    data = get_deep_ip_info(ip)
+    return data

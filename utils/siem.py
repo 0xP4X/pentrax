@@ -4,23 +4,50 @@ from datetime import datetime
 from flask import request
 import requests
 
-def enrich_ip_info(ip):
+# Replace with your AbuseIPDB API key if available
+ABUSEIPDB_API_KEY = None  # Set to your key for abuse reports
+
+# Deep IP info function for on-demand scans
+
+def get_deep_ip_info(ip):
+    result = {}
+    # ip-api.com (geo)
     try:
         resp = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,as,query', timeout=2)
         data = resp.json()
         if data.get('status') == 'success':
-            return {
-                'country': data.get('country'),
-                'region': data.get('regionName'),
-                'city': data.get('city'),
-                'zip': data.get('zip'),
-                'lat': data.get('lat'),
-                'lon': data.get('lon'),
-                'isp': data.get('isp'),
-                'org': data.get('org'),
-                'as': data.get('as'),
-                'ip': data.get('query'),
-            }
+            result['geo'] = data
+    except Exception as e:
+        result['geo_error'] = str(e)
+    # ipinfo.io (ASN, org, privacy)
+    try:
+        resp = requests.get(f'https://ipinfo.io/{ip}/json', timeout=2)
+        if resp.status_code == 200:
+            result['ipinfo'] = resp.json()
+    except Exception as e:
+        result['ipinfo_error'] = str(e)
+    # AbuseIPDB (abuse/blacklist)
+    if ABUSEIPDB_API_KEY:
+        try:
+            resp = requests.get(
+                'https://api.abuseipdb.com/api/v2/check',
+                params={'ipAddress': ip, 'maxAgeInDays': 90},
+                headers={'Key': ABUSEIPDB_API_KEY, 'Accept': 'application/json'},
+                timeout=3
+            )
+            if resp.status_code == 200:
+                result['abuseipdb'] = resp.json().get('data', {})
+        except Exception as e:
+            result['abuseipdb_error'] = str(e)
+    return result
+
+def enrich_ip_info(ip):
+    # Use only fast geo for event logging, deep scan for on-demand
+    try:
+        resp = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,as,query', timeout=2)
+        data = resp.json()
+        if data.get('status') == 'success':
+            return data
     except Exception as e:
         return {'error': str(e)}
     return None
