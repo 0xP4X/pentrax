@@ -1,3 +1,48 @@
+/* Compatibility fallbacks for IE and Safari */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.grid, [class*="grid-"] {
+  display: -ms-grid;
+  display: grid;
+}
+
+.flex, [class*="flex-"] {
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.flex-row {
+  -ms-flex-direction: row;
+  flex-direction: row;
+}
+.flex-column {
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.flex-grow-1 {
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+}
+
+.grid-cols-2 {
+  -ms-grid-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+}
+
+.match-parent {
+  text-align: match-parent;
+  text-align: -webkit-match-parent;
+}
+
+.user-select-none {
+  -ms-user-select: none;
+  user-select: none;
+}
+
 /* PentraX Cybersecurity Platform - Custom Styles */
 
 /* Root Variables */
