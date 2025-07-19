@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Welcome to PentraX Onboarding{% endblock %}
 {% block content %}
-<script>
-  if (localStorage.getItem('pentrax_onboarding_completed') === 'true') {
-    window.location.href = '/';
-  }
-</script>
 <div id="onboarding-modal-container"></div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/js/onboarding.js"></script>
 <script>
   window.onboarding = new OnboardingManager();
+  window.onboarding.showOnboardingModal(); // Force show modal for all users
 </script>
 {% endblock %} 
