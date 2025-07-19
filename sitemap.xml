@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://pentrax.onrender.com/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/forums</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/cyber_labs</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/store</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/register</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/login</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pentrax.onrender.com/contact</loc>
+    <priority>0.5</priority>
+  </url>
+  <!-- Add more URLs for labs, blog, or other public pages as needed -->
+</urlset> 
