@@ -158,23 +158,23 @@
       <div class="container-fluid px-2 d-flex align-items-center justify-content-between">
         <a class="navbar-brand fw-bold" href="/">PentraX</a>
         <div class="d-flex align-items-center">
-          <button class="btn btn-outline-secondary btn-sm me-2" id="theme-toggle-mobile">
+          <button class="btn btn-outline-secondary btn-sm me-2" id="theme-toggle-mobile" type="button">
             <i class="fas fa-sun" id="theme-icon-mobile"></i>
           </button>
           <button class="navbar-toggler" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
           </button>
+          <ul class="dropdown-menu dropdown-menu-end mt-2" style="min-width: 180px;">
+            <li><a class="dropdown-item" href="/labs"><i class="fas fa-flask me-2"></i>Labs</a></li>
+            <li><a class="dropdown-item" href="/forum/tools"><i class="fas fa-comments me-2"></i>Forum</a></li>
+            <li><a class="dropdown-item" href="/store"><i class="fas fa-store me-2"></i>Store</a></li>
+            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
+            {% if current_user.is_authenticated %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+            {% endif %}
+          </ul>
         </div>
-        <ul class="dropdown-menu dropdown-menu-end mt-2" style="min-width: 180px;">
-          <li><a class="dropdown-item" href="/labs"><i class="fas fa-flask me-2"></i>Labs</a></li>
-          <li><a class="dropdown-item" href="/forum/tools"><i class="fas fa-comments me-2"></i>Forum</a></li>
-          <li><a class="dropdown-item" href="/store"><i class="fas fa-store me-2"></i>Store</a></li>
-          <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
-          {% if current_user.is_authenticated %}
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-          {% endif %}
-        </ul>
       </div>
     </nav>
 
@@ -284,14 +284,13 @@ const themeToggleMobile = document.getElementById('theme-toggle-mobile');
 const themeIconMobile = document.getElementById('theme-icon-mobile');
 if (themeToggleMobile && themeIconMobile) {
   themeToggleMobile.addEventListener('click', function() {
-    document.documentElement.toggleAttribute('data-bs-theme', 'light');
-    if (document.documentElement.getAttribute('data-bs-theme') === 'light') {
-      themeIconMobile.classList.remove('fa-sun');
-      themeIconMobile.classList.add('fa-moon');
-    } else {
-      themeIconMobile.classList.remove('fa-moon');
-      themeIconMobile.classList.add('fa-sun');
-    }
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-bs-theme') === 'dark';
+    html.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    themeIconMobile.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+    // Optionally sync with desktop toggle
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) themeIcon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
   });
 }
 </script>
