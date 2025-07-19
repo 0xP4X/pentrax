@@ -36,8 +36,8 @@
                         </p>
                     </div>
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('create_forum_post') }}?category={{ category }}" class="btn btn-primary">
-                        <i class="fas fa-comments"></i> New Forum Post
+                    <a href="{{ url_for('create_forum_post') }}?category={{ category }}" class="btn btn-primary fab-forum-post d-md-none" title="New Forum Post">
+                        <i class="fas fa-comments fa-lg"></i>
                     </a>
                     {% endif %}
                 </div>
