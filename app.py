@@ -44,6 +44,15 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
 app.config["UPLOAD_FOLDER"] = "uploads"
 
+# Set session cookies to Secure
+app.config['SESSION_COOKIE_SECURE'] = True
+
+# Add X-Content-Type-Options header to all responses
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
+
 # Initialize extensions
 db.init_app(app)
 migrate.init_app(app, db)
