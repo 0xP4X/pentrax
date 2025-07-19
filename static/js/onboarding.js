@@ -605,7 +605,7 @@ class OnboardingManager {
             {
                 selector: '#ai-assistant, .ai-toggle',
                 title: 'AI Assistant',
-                description: 'Get instant help and guidance from the PentraX AI Assistant.'
+                description: 'Get instant help and guidance from the Hexa.'
             }
         ];
         this.currentTourStep = 0;

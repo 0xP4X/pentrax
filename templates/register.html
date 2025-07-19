@@ -34,11 +34,17 @@
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                             <input type="password" class="form-control" id="password" name="password" required minlength="6">
                         </div>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 8px;">
+                                <div id="passwordStrengthBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%; transition: width 0.4s;"></div>
+                            </div>
+                            <div id="passwordStrengthText" class="small mt-1 text-muted">&nbsp;</div>
+                        </div>
                         <div class="form-text">Password must be at least 6 characters</div>
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
                             <i class="fas fa-user-plus"></i> Create Account
                         </button>
                     </div>
@@ -61,4 +67,42 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const password = document.getElementById('password');
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+    const registerBtn = document.getElementById('registerBtn');
+
+    password.addEventListener('input', function() {
+        const val = password.value;
+        let score = 0;
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+        // Animate bar and text
+        let width = 0, color = 'bg-danger', label = 'Weak';
+        if (score === 0) {
+            width = 0; color = 'bg-danger'; label = '';
+        } else if (score === 1) {
+            width = 33; color = 'bg-danger'; label = 'Weak';
+        } else if (score === 2) {
+            width = 66; color = 'bg-warning'; label = 'Medium';
+        } else if (score === 3) {
+            width = 90; color = 'bg-info'; label = 'Strong';
+        } else if (score === 4) {
+            width = 100; color = 'bg-success'; label = 'Very Strong';
+        }
+        strengthBar.style.width = width + '%';
+        strengthBar.className = 'progress-bar ' + color;
+        strengthText.textContent = label;
+        // Only enable submit if password is strong or very strong
+        registerBtn.disabled = (score < 3);
+    });
+});
+</script>
 {% endblock %}

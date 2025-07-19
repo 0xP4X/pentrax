@@ -1,4 +1,4 @@
-// PentraX AI Assistant
+// Hexa
 document.addEventListener('DOMContentLoaded', function() {
     const aiToggle = document.getElementById('ai-toggle');
     const aiChat = document.getElementById('ai-chat');
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show welcome message if first time
             if (conversationHistory.length === 0) {
-                addMessage('assistant', 'Hello! I\'m your PentraX AI assistant. How can I help you with cybersecurity today?', false);
+                addMessage('assistant', 'Hello! I\'m your Hexa. How can I help you with cybersecurity today?', false);
             }
         }
     }
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const lowerMessage = message.toLowerCase().trim();
         
         if (lowerMessage === '/help' || lowerMessage === 'help') {
-            return `I'm your PentraX AI assistant! I can help you with:
+            return `I'm your Hexa! I can help you with:
 
 • **Security Tools** - Explain how tools work, debug scripts
 • **Vulnerability Analysis** - Understand CVEs, attack vectors  
