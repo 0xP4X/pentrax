@@ -788,7 +788,6 @@ def admin_dashboard():
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
-    
     # Basic stats
     total_users = User.query.count()
     total_posts = Post.query.count()
@@ -796,19 +795,15 @@ def admin_dashboard():
     banned_users = User.query.filter_by(is_banned=True).count()
     total_downloads = UserAction.query.filter_by(action_type='file_download').count()
     total_views = sum(post.views for post in Post.query.all())
-    
     # Contact statistics
     pending_contacts = Contact.query.filter_by(status='pending').count()
     total_contacts = Contact.query.count()
-    
     # Recent activity
     recent_users = User.query.order_by(desc(User.created_at)).limit(10).all()
     recent_posts = Post.query.order_by(desc(Post.created_at)).limit(10).all()
     recent_actions = UserAction.query.order_by(desc(UserAction.timestamp)).limit(20).all()
-    
     # Revenue calculation (mock for now)
     revenue = sum(post.price for post in Post.query.filter(Post.price > 0).all()) * 0.15  # 15% commission
-    
     return render_template('admin_dashboard.html', 
                          total_users=total_users, total_posts=total_posts,
                          premium_users=premium_users, banned_users=banned_users,
@@ -2219,4 +2214,14 @@ def admin_reset_password(user_id):
     user = User.query.get_or_404(user_id)
     # For demo, just flash a message
     flash(f'Password reset link sent to {user.email} (not really).', 'info')
+    return redirect(url_for('user_profile', username=user.username))
+
+@app.route('/admin/impersonate/<int:user_id>', methods=['POST'])
+@login_required
+def admin_impersonate_user(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    session['impersonate_id'] = user.id
+    flash(f'You are now impersonating {user.username}. (Demo only)', 'info')
     return redirect(url_for('user_profile', username=user.username))
