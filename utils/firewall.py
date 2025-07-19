@@ -24,6 +24,20 @@ def add_blocked_ip(ip, reason=None):
 def is_blocked_ip(ip):
     return ip in BLOCKED_IPS
 
+def unblock_ip(ip, reason=None):
+    BLOCKED_IPS.discard(ip)
+    log_siem_event(
+        event_type='ip_unblocked',
+        message=f'IP {ip} unblocked. Reason: {reason or "manual"}',
+        severity='info',
+        source='firewall',
+        ip_address=ip,
+        raw_data={'reason': reason}
+    )
+
+def get_blocked_ips():
+    return list(BLOCKED_IPS)
+
 # Middleware function
 def firewall_middleware(app):
     @app.before_request
