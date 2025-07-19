@@ -18,7 +18,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
 from utils.achievements import update_user_streak, check_and_unlock_achievements
 from functools import wraps
-from utils.firewall import add_blocked_ip
+from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
 
 @app.context_processor
 def inject_user():
@@ -2951,7 +2951,8 @@ def admin_siem_dashboard():
     if date_to:
         query = query.filter(SIEMEvent.timestamp <= date_to)
     events = query.order_by(SIEMEvent.timestamp.desc()).limit(200).all()
-    return render_template('admin_siem_dashboard.html', events=events, event_type=event_type, severity=severity, ip=ip, user=user, date_from=date_from, date_to=date_to)
+    blocked_ips = get_blocked_ips()
+    return render_template('admin_siem_dashboard.html', events=events, blocked_ips=blocked_ips, event_type=event_type, severity=severity, ip=ip, user=user, date_from=date_from, date_to=date_to)
 
 @app.route('/admin/block_ip', methods=['POST'])
 @login_required
@@ -2965,4 +2966,18 @@ def admin_block_ip():
         return redirect(url_for('admin_siem_dashboard'))
     add_blocked_ip(ip, reason='manual block from SIEM dashboard')
     flash(f'IP {ip} has been blocked.', 'success')
+    return redirect(url_for('admin_siem_dashboard'))
+
+@app.route('/admin/unblock_ip', methods=['POST'])
+@login_required
+def admin_unblock_ip():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    ip = request.form.get('ip')
+    if not ip:
+        flash('No IP address provided.', 'error')
+        return redirect(url_for('admin_siem_dashboard'))
+    unblock_ip(ip, reason='manual unblock from SIEM dashboard')
+    flash(f'IP {ip} has been unblocked.', 'success')
     return redirect(url_for('admin_siem_dashboard'))

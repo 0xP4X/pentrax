@@ -3,66 +3,105 @@
 {% block content %}
 <div class="container-fluid py-3">
   <h2 class="mb-4"><i class="fas fa-shield-alt"></i> SIEM Dashboard</h2>
-  <form class="row g-2 mb-3" method="get">
-    <div class="col-md-2"><input type="text" class="form-control" name="event_type" placeholder="Event Type" value="{{ event_type or '' }}"></div>
-    <div class="col-md-2"><input type="text" class="form-control" name="severity" placeholder="Severity" value="{{ severity or '' }}"></div>
-    <div class="col-md-2"><input type="text" class="form-control" name="ip" placeholder="IP Address" value="{{ ip or '' }}"></div>
-    <div class="col-md-2"><input type="text" class="form-control" name="user" placeholder="User" value="{{ user or '' }}"></div>
-    <div class="col-md-2"><input type="date" class="form-control" name="date_from" value="{{ date_from or '' }}"></div>
-    <div class="col-md-2"><input type="date" class="form-control" name="date_to" value="{{ date_to or '' }}"></div>
-    <div class="col-md-12 mt-2"><button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Filter</button></div>
-  </form>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle bg-white">
-      <thead class="table-light">
-        <tr>
-          <th>Time</th><th>Type</th><th>Severity</th><th>User</th><th>IP</th><th>Message</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for e in events %}
-        <tr data-bs-toggle="collapse" data-bs-target="#event-{{ e.id }}" aria-expanded="false" style="cursor:pointer;">
-          <td>{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td>{{ e.event_type }}</td>
-          <td><span class="badge bg-{{ 'danger' if e.severity=='critical' else 'warning' if e.severity=='warning' else 'info' }}">{{ e.severity }}</span></td>
-          <td>{{ e.username or '-' }}</td>
-          <td>{{ e.ip_address or '-' }}</td>
-          <td>{{ e.message|truncate(40) }}</td>
-          <td>
-            {% if e.ip_address %}
-            <form method="post" action="/admin/block_ip" style="display:inline;">
-              <input type="hidden" name="ip" value="{{ e.ip_address }}">
-              <button class="btn btn-sm btn-danger" type="submit" title="Block IP"><i class="fas fa-ban"></i></button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        <tr class="collapse bg-light" id="event-{{ e.id }}">
-          <td colspan="7">
-            <strong>Details:</strong>
-            <pre class="small mb-0">{{ e.raw_data | tojson(indent=2) }}</pre>
-            {% if e.raw_data and e.raw_data.ip_info %}
-            <div class="mt-2">
-              <strong>IP Info:</strong>
-              <ul class="mb-0 small">
-                <li><b>Country:</b> {{ e.raw_data.ip_info.country }}</li>
-                <li><b>Region:</b> {{ e.raw_data.ip_info.region }}</li>
-                <li><b>City:</b> {{ e.raw_data.ip_info.city }}</li>
-                <li><b>ISP:</b> {{ e.raw_data.ip_info.isp }}</li>
-                <li><b>Org:</b> {{ e.raw_data.ip_info.org }}</li>
-                <li><b>ASN:</b> {{ e.raw_data.ip_info['as'] }}</li>
-                <li><b>Lat/Lon:</b> {{ e.raw_data.ip_info.lat }}, {{ e.raw_data.ip_info.lon }}</li>
-              </ul>
-            </div>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <ul class="nav nav-tabs mb-3" id="siemTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab">Events</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="blocked-tab" data-bs-toggle="tab" data-bs-target="#blocked" type="button" role="tab">Blocked IPs</button>
+    </li>
+  </ul>
+  <div class="tab-content" id="siemTabsContent">
+    <div class="tab-pane fade show active" id="events" role="tabpanel">
+      <!-- Events Table (existing content) -->
+      <form class="row g-2 mb-3" method="get">
+        <div class="col-md-2"><input type="text" class="form-control" name="event_type" placeholder="Event Type" value="{{ event_type or '' }}"></div>
+        <div class="col-md-2"><input type="text" class="form-control" name="severity" placeholder="Severity" value="{{ severity or '' }}"></div>
+        <div class="col-md-2"><input type="text" class="form-control" name="ip" placeholder="IP Address" value="{{ ip or '' }}"></div>
+        <div class="col-md-2"><input type="text" class="form-control" name="user" placeholder="User" value="{{ user or '' }}"></div>
+        <div class="col-md-2"><input type="date" class="form-control" name="date_from" value="{{ date_from or '' }}"></div>
+        <div class="col-md-2"><input type="date" class="form-control" name="date_to" value="{{ date_to or '' }}"></div>
+        <div class="col-md-12 mt-2"><button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Filter</button></div>
+      </form>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>Time</th><th>Type</th><th>Severity</th><th>User</th><th>IP</th><th>Message</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in events %}
+            <tr data-bs-toggle="collapse" data-bs-target="#event-{{ e.id }}" aria-expanded="false" style="cursor:pointer;">
+              <td>{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+              <td>{{ e.event_type }}</td>
+              <td><span class="badge bg-{{ 'danger' if e.severity=='critical' else 'warning' if e.severity=='warning' else 'info' }}">{{ e.severity }}</span></td>
+              <td>{{ e.username or '-' }}</td>
+              <td>{{ e.ip_address or '-' }}</td>
+              <td>{{ e.message|truncate(40) }}</td>
+              <td>
+                {% if e.ip_address %}
+                <form method="post" action="/admin/block_ip" style="display:inline;">
+                  <input type="hidden" name="ip" value="{{ e.ip_address }}">
+                  <button class="btn btn-sm btn-danger" type="submit" title="Block IP"><i class="fas fa-ban"></i></button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            <tr class="collapse bg-light" id="event-{{ e.id }}">
+              <td colspan="7">
+                <strong>Details:</strong>
+                <pre class="small mb-0">{{ e.raw_data | tojson(indent=2) }}</pre>
+                {% if e.raw_data and e.raw_data.ip_info %}
+                <div class="mt-2">
+                  <strong>IP Info:</strong>
+                  <ul class="mb-0 small">
+                    <li><b>Country:</b> {{ e.raw_data.ip_info.country }}</li>
+                    <li><b>Region:</b> {{ e.raw_data.ip_info.region }}</li>
+                    <li><b>City:</b> {{ e.raw_data.ip_info.city }}</li>
+                    <li><b>ISP:</b> {{ e.raw_data.ip_info.isp }}</li>
+                    <li><b>Org:</b> {{ e.raw_data.ip_info.org }}</li>
+                    <li><b>ASN:</b> {{ e.raw_data.ip_info['as'] }}</li>
+                    <li><b>Lat/Lon:</b> {{ e.raw_data.ip_info.lat }}, {{ e.raw_data.ip_info.lon }}</li>
+                  </ul>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if not events %}
+        <div class="alert alert-info mt-4">No SIEM events found for the selected filters.</div>
+      {% endif %}
+    </div>
+    <div class="tab-pane fade" id="blocked" role="tabpanel">
+      <h5 class="mb-3"><i class="fas fa-ban"></i> Blocked IPs</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered bg-white">
+          <thead class="table-light">
+            <tr><th>IP Address</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for ip in blocked_ips %}
+            <tr>
+              <td>{{ ip }}</td>
+              <td>
+                <form method="post" action="/admin/unblock_ip" style="display:inline;">
+                  <input type="hidden" name="ip" value="{{ ip }}">
+                  <button class="btn btn-sm btn-success" type="submit" title="Unblock IP"><i class="fas fa-unlock"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if not blocked_ips %}
+        <div class="alert alert-info mt-4">No blocked IPs.</div>
+      {% endif %}
+    </div>
   </div>
-  {% if not events %}
-    <div class="alert alert-info mt-4">No SIEM events found for the selected filters.</div>
-  {% endif %}
 </div>
 {% endblock %} 
