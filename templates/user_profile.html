@@ -258,4 +258,37 @@
         </div>
     </div>
 </div>
+{% if current_user.is_admin %}
+<div class="card mb-4">
+  <div class="card-header bg-dark text-white">
+    <h5><i class="fas fa-user-shield"></i> Admin User Overview</h5>
+  </div>
+  <div class="card-body">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><strong>Username:</strong> {{ user.username }}</li>
+      <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+      <li class="list-group-item"><strong>Registered:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
+      <li class="list-group-item"><strong>Last Login:</strong> {{ user.last_login or 'Never' }}</li>
+      <li class="list-group-item"><strong>Account Status:</strong>
+        {% if user.is_admin %}<span class="badge bg-danger">Admin</span>{% endif %}
+        {% if user.is_premium %}<span class="badge bg-warning text-dark">Premium</span>{% endif %}
+        {% if user.is_banned %}<span class="badge bg-danger">Banned</span>{% endif %}
+        {% if user.is_muted %}<span class="badge bg-info">Muted</span>{% endif %}
+        {% if not user.is_banned and not user.is_muted %}<span class="badge bg-success">Active</span>{% endif %}
+      </li>
+      <li class="list-group-item"><strong>Reputation:</strong> {{ user.reputation }}</li>
+      <li class="list-group-item"><strong>Posts:</strong> {{ user_posts|length }}</li>
+      <li class="list-group-item"><strong>Labs Completed:</strong> {{ user.lab_completions|length }}</li>
+      <li class="list-group-item"><strong>Purchases:</strong> {{ user.purchases|length }}</li>
+      <li class="list-group-item"><strong>Last IP:</strong> {{ user.last_ip or 'N/A' }}</li>
+    </ul>
+    <div class="mt-3">
+      <a href="{{ url_for('admin_ban_user', user_id=user.id) }}" class="btn btn-danger btn-sm">Ban User</a>
+      <a href="{{ url_for('admin_mute_user', user_id=user.id) }}" class="btn btn-info btn-sm">Mute User</a>
+      <a href="{{ url_for('admin_delete_user', user_id=user.id) }}" class="btn btn-outline-danger btn-sm">Delete User</a>
+      <!-- Add more admin actions as needed -->
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
