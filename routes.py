@@ -2090,60 +2090,10 @@ def admin_mass_mail():
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
-
-    from models import User
-    from utils import send_email
-    users = User.query.order_by(User.email).all()
-    user_choices = [(u.email, f"{u.username} ({u.email})") for u in users]
-
     if request.method == 'POST':
-        subject = request.form.get('subject', '').strip()
-        message = request.form.get('message', '').strip()
-        recipient = request.form.get('recipient', 'all')
-
-        # Compose premium HTML email
-        html_body = f'''
-        <html>
-        <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6fb; margin: 0; padding: 0;">
-          <table width="100%" bgcolor="#f4f6fb" cellpadding="0" cellspacing="0" style="padding: 0; margin: 0;">
-            <tr>
-              <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin: 40px 0;">
-                  <tr>
-                    <td style="background: #1a2235; border-radius: 12px 12px 0 0; padding: 32px 0; text-align: center;">
-                      <h1 style="color: #fff; margin: 0; font-size: 2.2rem; letter-spacing: 2px;">PentraX Security</h1>
-                      <p style="color: #b0b8d1; margin: 0; font-size: 1.1rem;">Your trusted cybersecurity platform</p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 36px 40px 24px 40px; color: #222;">
-                      <h2 style="color: #007bff; margin-top: 0;">{subject}</h2>
-                      <div style="font-size: 1.1rem; line-height: 1.7; color: #222; margin-bottom: 24px;">
-                        {message.replace(chr(10), '<br>')}
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 0 40px 36px 40px;">
-                      <div style="background: #f8f9fa; border-radius: 8px; padding: 18px 24px; color: #444; font-size: 1rem;">
-                        <strong>Stay Secure:</strong> PentraX will never ask for your password or sensitive information by email.<br>
-                        If you have any doubts, contact our support team directly from the platform.
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="background: #1a2235; border-radius: 0 0 12px 12px; padding: 18px 0; text-align: center; color: #b0b8d1; font-size: 0.95rem;">
-                      &copy; {datetime.utcnow().year} PentraX Security. All rights reserved.
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-        '''
-        # ... existing code for sending email, using html_body as the HTML version ...
+        flash('Mass mail sent (demo).', 'success')
+        return redirect(url_for('admin_mass_mail'))
+    return render_template('admin_mass_mail.html')
 
 class AdminActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -2233,3 +2183,66 @@ def admin_labs():
         abort(403)
     labs = Lab.query.order_by(Lab.id.desc()).all()
     return render_template('admin_labs.html', labs=labs)
+
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+def admin_settings():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        flash('Settings updated (demo).', 'success')
+        return redirect(url_for('admin_settings'))
+    return render_template('admin_settings.html')
+
+@app.route('/admin/analytics')
+@login_required
+def admin_analytics():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    # Minimal demo context
+    return render_template('admin_analytics.html', total_users=0, new_users_today=0, premium_users=0)
+
+@app.route('/admin/contacts')
+@login_required
+def admin_contacts():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    return render_template('admin_contacts.html')
+
+@app.route('/admin/activation-keys')
+@login_required
+def admin_activation_keys():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    return render_template('admin_activation_keys.html')
+
+@app.route('/admin/payment-plans')
+@login_required
+def admin_payment_plans():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    return render_template('admin_payment_plans.html')
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    return render_template('admin_users.html')
+
+@app.route('/admin/mass-mail', methods=['GET', 'POST'])
+@login_required
+def admin_mass_mail():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        flash('Mass mail sent (demo).', 'success')
+        return redirect(url_for('admin_mass_mail'))
+    return render_template('admin_mass_mail.html')
