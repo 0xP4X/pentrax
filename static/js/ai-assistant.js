@@ -348,34 +348,3 @@ Just ask me anything about cybersecurity! You can also use:
         originalSendMessage();
     };
 });
-
-function makeDraggable(element, handleSelector) {
-  const handle = handleSelector ? element.querySelector(handleSelector) : element;
-  let offsetX = 0, offsetY = 0, isDragging = false;
-
-  if (!handle) return;
-  handle.style.cursor = 'move';
-
-  handle.addEventListener('mousedown', function(e) {
-    isDragging = true;
-    offsetX = e.clientX - element.offsetLeft;
-    offsetY = e.clientY - element.offsetTop;
-    document.body.style.userSelect = 'none';
-  });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    element.style.left = (e.clientX - offsetX) + 'px';
-    element.style.top = (e.clientY - offsetY) + 'px';
-    element.style.position = 'fixed';
-    element.style.zIndex = 9999;
-  });
-
-  document.addEventListener('mouseup', function() {
-    isDragging = false;
-    document.body.style.userSelect = '';
-  });
-}
-
-const ai = document.getElementById('ai-assistant');
-if (ai) makeDraggable(ai, '.ai-header');
