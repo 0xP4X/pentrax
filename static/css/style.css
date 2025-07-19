@@ -375,6 +375,21 @@ body {
 .category-ideas { background-color: var(--success-color) !important; }
 .category-jobs { background-color: var(--info-color) !important; }
 
+.category-bar .nav-link {
+    font-weight: 500;
+    font-size: 1.1rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    margin: 0 0.25rem;
+    transition: background 0.2s, color 0.2s;
+    color: var(--bs-body-color) !important;
+}
+.category-bar .nav-link.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.15);
+}
+
 /* Loading Spinner */
 .spinner-border-sm {
     width: 1rem;
