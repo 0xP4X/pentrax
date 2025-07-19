@@ -3,282 +3,196 @@
 {% block title %}{{ user.username }} - PentraX{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-4">
-        <!-- User Profile Card -->
-        <div class="card mb-4">
-            <div class="card-body text-center">
-                <div class="profile-avatar mb-3 mx-auto">
-                    {% if user.avatar_url %}
-                        <img src="{{ user.avatar_url }}" alt="{{ user.username }}'s Avatar" class="rounded-circle img-thumbnail" style="width:120px;height:120px;object-fit:cover;border:3px solid #007bff;">
-                    {% else %}
-                        <div class="avatar-placeholder mb-3">
-                            <i class="fas fa-user-circle fa-5x text-muted"></i>
-                        </div>
-                    {% endif %}
-                </div>
-                <h4>{{ user.username }}</h4>
-                {% if user.is_admin %}
-                <span class="badge bg-danger mb-2">Administrator</span>
-                {% endif %}
-                {% if user.is_premium %}
-                <span class="badge bg-warning text-dark mb-2">Premium</span>
-                {% endif %}
-                <p class="text-muted">{{ user.email }}</p>
-                
-                {% if current_user.is_authenticated and current_user.id != user.id %}
-                <!-- Follow/Unfollow buttons would go here -->
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('follow_user', username=user.username) }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-user-plus"></i> Follow
-                    </a>
-                    {# Message button removed because messaging is disabled #}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- User Stats -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6">
-                        <h5 class="text-primary">{{ user_posts|length }}</h5>
-                        <small class="text-muted">Posts</small>
-                    </div>
-                    <div class="col-6">
-                        <h5 class="text-success">{{ user.reputation }}</h5>
-                        <small class="text-muted">Reputation</small>
-                    </div>
-                </div>
-                <hr>
-                <div class="row text-center">
-                    <div class="col-6">
-                        <h6 class="text-info">{{ user.followers.count() }}</h6>
-                        <small class="text-muted">Followers</small>
-                    </div>
-                    <div class="col-6">
-                        <h6 class="text-warning">{{ user.following.count() }}</h6>
-                        <small class="text-muted">Following</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Followers & Following -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h6><i class="fas fa-users"></i> Followers & Following</h6>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-6">
-                <strong>Followers ({{ followers|length }})</strong>
-                <ul class="list-unstyled mt-2">
-                  {% for u in followers %}
-                    <li>
-                      <a href="{{ url_for('user_profile', username=u.username) }}" class="d-flex align-items-center">
-                        {% if u.avatar_url %}
-                          <img src="{{ u.avatar_url }}" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;">
-                        {% else %}
-                          <span class="badge bg-secondary me-2">{{ u.username[0]|upper }}</span>
-                        {% endif %}
-                        {{ u.username }}
-                      </a>
-                    </li>
-                  {% else %}
-                    <li class="text-muted small">No followers yet.</li>
-                  {% endfor %}
-                </ul>
+<div class="container mt-4">
+  {% if current_user.is_admin %}
+    <!-- Advanced Admin User Profile: Tabbed Interface -->
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
+        <h5 class="mb-0"><i class="fas fa-user-shield"></i> Admin User Overview</h5>
+        <span>
+          {% if user.is_admin %}<span class="badge bg-danger" title="Admin"><i class="fas fa-crown"></i> Admin</span>{% endif %}
+          {% if user.is_premium %}<span class="badge bg-warning text-dark" title="Premium"><i class="fas fa-gem"></i> Premium</span>{% endif %}
+          {% if user.is_banned %}<span class="badge bg-danger" title="Banned"><i class="fas fa-ban"></i> Banned</span>{% endif %}
+          {% if user.is_muted %}<span class="badge bg-info text-dark" title="Muted"><i class="fas fa-volume-mute"></i> Muted</span>{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        <!-- Quick Stats Cards -->
+        <div class="row mb-4 text-center">
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-primary text-white">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-file-alt"></i></div>
+                <div class="fw-bold">{{ user_posts|length }}</div>
+                <div class="small">Posts</div>
               </div>
-              <div class="col-6">
-                <strong>Following ({{ following|length }})</strong>
-                <ul class="list-unstyled mt-2">
-                  {% for u in following %}
-                    <li>
-                      <a href="{{ url_for('user_profile', username=u.username) }}" class="d-flex align-items-center">
-                        {% if u.avatar_url %}
-                          <img src="{{ u.avatar_url }}" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;">
-                        {% else %}
-                          <span class="badge bg-secondary me-2">{{ u.username[0]|upper }}</span>
-                        {% endif %}
-                        {{ u.username }}
-                      </a>
-                    </li>
-                  {% else %}
-                    <li class="text-muted small">Not following anyone yet.</li>
-                  {% endfor %}
-                </ul>
+            </div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-success text-white">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-flask"></i></div>
+                <div class="fw-bold">{{ user.lab_completions|length }}</div>
+                <div class="small">Labs</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-warning text-dark">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-shopping-cart"></i></div>
+                <div class="fw-bold">{{ user.purchases|length }}</div>
+                <div class="small">Purchases</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-info text-white">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-star"></i></div>
+                <div class="fw-bold">{{ user.reputation }}</div>
+                <div class="small">Reputation</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-secondary text-white">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-calendar"></i></div>
+                <div class="fw-bold">{{ user.created_at.strftime('%Y-%m-%d') }}</div>
+                <div class="small">Joined</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <div class="card bg-dark text-white">
+              <div class="card-body p-2">
+                <div class="fs-4"><i class="fas fa-user"></i></div>
+                <div class="fw-bold">{{ user.username }}</div>
+                <div class="small">Username</div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Streak & Achievements -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h6><i class="fas fa-fire"></i> Streak & Achievements</h6>
+        <!-- Tabbed Interface -->
+        <ul class="nav nav-tabs mb-3" id="adminUserTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Activity</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">Security</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab">Admin Actions</button>
+          </li>
+        </ul>
+        <div class="tab-content" id="adminUserTabContent">
+          <!-- Overview Tab -->
+          <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <ul class="list-group list-group-flush mb-3">
+              <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+              <li class="list-group-item"><strong>Last Login:</strong> {{ user.last_login or 'Never' }}</li>
+              <li class="list-group-item"><strong>Last IP:</strong> {{ user.last_ip or 'N/A' }}</li>
+              <li class="list-group-item"><strong>Bio:</strong> {{ user.bio or 'No bio provided.' }}</li>
+            </ul>
           </div>
-          <div class="card-body text-center">
-            {% if streak %}
-              <div class="mb-3">
-                <span class="badge bg-warning text-dark fs-5"><i class="fas fa-fire"></i> {{ streak.current_streak }}-day streak</span>
-                <div class="text-muted small">Longest: {{ streak.longest_streak }} days</div>
-              </div>
-            {% else %}
-              <div class="mb-3 text-muted">No streak yet</div>
-            {% endif %}
-            <div>
-              <h6 class="mb-2"><i class="fas fa-trophy text-primary"></i> Achievements</h6>
-              {% if achievements %}
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                  {% for ach in achievements %}
-                    <div class="text-center" style="width:64px;">
-                      <span class="fs-2" title="{{ ach.name }}: {{ ach.description }}">
-                        <i class="{{ ach.icon }} text-info"></i>
-                      </span>
-                      <div class="small text-muted" style="font-size:0.8em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ ach.name }}">{{ ach.name }}</div>
-                    </div>
-                  {% endfor %}
-                </div>
+          <!-- Activity Tab -->
+          <div class="tab-pane fade" id="activity" role="tabpanel">
+            <h6>Recent Posts</h6>
+            <ul class="list-group mb-3">
+              {% for post in user_posts[:5] %}
+                <li class="list-group-item">
+                  <a href="{{ url_for('post_detail', post_id=post.id) }}">{{ post.title }}</a>
+                  <span class="text-muted small">({{ post.created_at.strftime('%Y-%m-%d') }})</span>
+                </li>
               {% else %}
-                <div class="text-muted">No achievements yet</div>
-              {% endif %}
+                <li class="list-group-item text-muted">No recent posts.</li>
+              {% endfor %}
+            </ul>
+            <h6>Recent Labs Completed</h6>
+            <ul class="list-group">
+              {% for lab in user.lab_completions[:5] %}
+                <li class="list-group-item">
+                  <span>{{ lab.lab_title }}</span>
+                  <span class="text-muted small">({{ lab.completed_at.strftime('%Y-%m-%d') }})</span>
+                </li>
+              {% else %}
+                <li class="list-group-item text-muted">No recent labs.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <!-- Security Tab -->
+          <div class="tab-pane fade" id="security" role="tabpanel">
+            <ul class="list-group mb-3">
+              <li class="list-group-item"><strong>Account Status:</strong> {% if user.is_banned %}<span class="badge bg-danger">Banned</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}</li>
+              <li class="list-group-item"><strong>Muted:</strong> {% if user.is_muted %}<span class="badge bg-info">Yes</span>{% else %}No{% endif %}</li>
+              <li class="list-group-item"><strong>Registered:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
+              <li class="list-group-item"><strong>Last Login:</strong> {{ user.last_login or 'Never' }}</li>
+              <li class="list-group-item"><strong>Last IP:</strong> {{ user.last_ip or 'N/A' }}</li>
+            </ul>
+            <div class="alert alert-warning small">Security actions (ban, mute, etc.) are not implemented yet.</div>
+          </div>
+          <!-- Admin Actions Tab -->
+          <div class="tab-pane fade" id="actions" role="tabpanel">
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-danger btn-sm" disabled title="Not implemented">Ban User</button>
+              <button class="btn btn-warning btn-sm" disabled title="Not implemented">Mute User</button>
+              <button class="btn btn-secondary btn-sm" disabled title="Not implemented">Delete User</button>
+              <button class="btn btn-info btn-sm" disabled title="Not implemented">Reset Password</button>
+              <button class="btn btn-dark btn-sm" disabled title="Not implemented">Impersonate</button>
             </div>
+            <div class="alert alert-info small">Admin actions are for demonstration. Implement as needed.</div>
           </div>
         </div>
-
-        <!-- User Information -->
-        <div class="card">
-            <div class="card-header">
-                <h6><i class="fas fa-info-circle"></i> About</h6>
-            </div>
-            <div class="card-body">
-                {% if user.bio %}
-                <div class="mb-3">
-                    <strong>Bio:</strong>
-                    <p class="text-muted">{{ user.bio }}</p>
-                </div>
-                {% endif %}
-                
-                {% if user.skills %}
-                <div class="mb-3">
-                    <strong>Skills:</strong>
-                    <p class="text-muted">{{ user.skills }}</p>
-                </div>
-                {% endif %}
-                
-                {% if user.github_username %}
-                <div class="mb-3">
-                    <strong>GitHub:</strong>
-                    <p>
-                        <a href="https://github.com/{{ user.github_username }}" 
-                           target="_blank" class="text-decoration-none">
-                            <i class="fab fa-github"></i> {{ user.github_username }}
-                        </a>
-                    </p>
-                </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <strong>Member Since:</strong>
-                    <p class="text-muted">{{ user.created_at.strftime('%B %Y') }}</p>
-                </div>
-            </div>
+      </div>
+    </div>
+    <script>
+      // Activate Bootstrap tabs if needed
+      var triggerTabList = [].slice.call(document.querySelectorAll('#adminUserTab button'));
+      triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl);
+        triggerEl.addEventListener('click', function (event) {
+          event.preventDefault();
+          tabTrigger.show();
+        });
+      });
+    </script>
+  {% else %}
+    <!-- Normal User Profile View -->
+    <div class="row">
+      <div class="col-md-4 text-center">
+        <img src="{{ user.avatar_url or url_for('static', filename='img/default_avatar.png') }}" class="rounded-circle mb-3" width="120" height="120" alt="User Avatar">
+        <h3>{{ user.username }}</h3>
+        {% if current_user.is_authenticated and current_user.id != user.id %}
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('follow_user', username=user.username) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-user-plus"></i> Follow
+          </a>
         </div>
+        {% endif %}
+      </div>
+      <div class="col-md-8">
+        <h4>About</h4>
+        <p>{{ user.bio or 'No bio provided.' }}</p>
+        <h5>Achievements</h5>
+        <ul>
+          {% for achievement in achievements %}
+            <li>{{ achievement }}</li>
+          {% else %}
+            <li>No achievements yet.</li>
+          {% endfor %}
+        </ul>
+        <h5>Recent Activity</h5>
+        <ul>
+          <li><strong>Posts:</strong> {{ user_posts|length }}</li>
+          <li><strong>Labs Completed:</strong> {{ user.lab_completions|length }}</li>
+          <li><strong>Purchases:</strong> {{ user.purchases|length }}</li>
+        </ul>
+      </div>
     </div>
-
-    <div class="col-md-8">
-        <!-- User Posts -->
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-file-alt"></i> Posts by {{ user.username }} ({{ user_posts|length }})</h5>
-            </div>
-            <div class="card-body">
-                {% if user_posts %}
-                    {% for post in user_posts %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <h6 class="card-title">
-                                        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none">
-                                            {{ post.title }}
-                                        </a>
-                                    </h6>
-                                    <div class="mb-2">
-                                        <span class="badge bg-{{ 'primary' if post.category == 'tools' else 'danger' if post.category == 'bugs' else 'success' if post.category == 'ideas' else 'info' }}">
-                                            {{ post.category.title() }}
-                                        </span>
-                                        {% if post.is_featured %}
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="fas fa-star"></i> Featured
-                                        </span>
-                                        {% endif %}
-                                        {% if post.is_premium %}
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="fas fa-crown"></i> Premium
-                                        </span>
-                                        {% endif %}
-                                        {% if post.file_name %}
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-paperclip"></i> Attachment
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    <p class="card-text text-muted">{{ post.content[:150] }}...</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-calendar"></i> {{ post.created_at.strftime('%b %d, %Y') }}
-                                        • <i class="fas fa-eye"></i> {{ post.views }}
-                                        • <i class="fas fa-comments"></i> {{ post.comments|length }}
-                                    </small>
-                                </div>
-                                {% if post.price > 0 %}
-                                <div class="flex-shrink-0">
-                                    <div class="badge bg-success fs-6">
-                                        ${{ "%.2f"|format(post.price) }}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No posts yet</h5>
-                        <p class="text-muted">{{ user.username }} hasn't shared anything yet.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+  {% endif %}
 </div>
-{% if current_user.is_admin %}
-<div class="card mb-4">
-  <div class="card-header bg-dark text-white">
-    <h5><i class="fas fa-user-shield"></i> Admin User Overview</h5>
-  </div>
-  <div class="card-body">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item"><strong>Username:</strong> {{ user.username }}</li>
-      <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
-      <li class="list-group-item"><strong>Registered:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
-      <li class="list-group-item"><strong>Last Login:</strong> {{ user.last_login or 'Never' }}</li>
-      <li class="list-group-item"><strong>Account Status:</strong>
-        {% if user.is_banned %}<span class="badge bg-danger">Banned</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}
-      </li>
-    </ul>
-    <div class="mt-3 d-flex gap-2">
-      <button class="btn btn-danger btn-sm" disabled title="Not implemented">Ban User</button>
-      <button class="btn btn-warning btn-sm" disabled title="Not implemented">Mute User</button>
-      <button class="btn btn-secondary btn-sm" disabled title="Not implemented">Delete User</button>
-    </div>
-  </div>
-</div>
-{% endif %}
 {% endblock %}
