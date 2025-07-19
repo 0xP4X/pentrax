@@ -2210,3 +2210,13 @@ def admin_unset_premium(user_id):
     log_admin_action(current_user, user, 'unset_premium')
     flash(f'User {user.username} is no longer premium.', 'success')
     return redirect(url_for('user_profile', username=user.username))
+
+@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
+@login_required
+def admin_reset_password(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    # For demo, just flash a message
+    flash(f'Password reset link sent to {user.email} (not really).', 'info')
+    return redirect(url_for('user_profile', username=user.username))
