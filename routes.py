@@ -3272,3 +3272,49 @@ def advanced_intrusion_detection():
             ip_address=ip,
             source='firewall'
         )
+
+# Add Nmap and port scan detection
+NMAP_USER_AGENTS = [
+    'nmap', 'masscan', 'zmap', 'netsparker', 'acunetix', 'sqlmap', 'nikto', 'wpscan', 'dirbuster', 'gobuster', 'fuzz', 'scanner'
+]
+PORT_SCAN_ATTEMPTS = defaultdict(list)  # {ip: [timestamps]}
+UNCOMMON_PORTS = {2000, 5060, 8080, 8888, 3306, 5432, 6379, 11211, 27017, 5000, 9000, 10000}
+PORT_SCAN_THRESHOLD = 5
+PORT_SCAN_WINDOW = 120  # seconds
+
+@app.before_request
+def nmap_and_portscan_detection():
+    ip = request.remote_addr
+    ua = (request.user_agent.string or '').lower()
+    # 1. Detect Nmap and common scanner user agents
+    for scanner in NMAP_USER_AGENTS:
+        if scanner in ua:
+            log_siem_event(
+                event_type='nmap_scan_detected',
+                message=f'Nmap or scanner detected: {ua}',
+                severity='critical',
+                ip_address=ip,
+                source='security'
+            )
+            add_blocked_ip(ip, reason='Nmap/scan detected', blocked_by='SIEM')
+            break
+    # 2. Detect port scan attempts (for uncommon ports)
+    port = request.environ.get('REMOTE_PORT')
+    try:
+        port = int(port)
+    except (TypeError, ValueError):
+        port = None
+    if port and port in UNCOMMON_PORTS:
+        now = datetime.utcnow()
+        PORT_SCAN_ATTEMPTS[ip] = [t for t in PORT_SCAN_ATTEMPTS[ip] if (now - t).total_seconds() < PORT_SCAN_WINDOW]
+        PORT_SCAN_ATTEMPTS[ip].append(now)
+        if len(PORT_SCAN_ATTEMPTS[ip]) >= PORT_SCAN_THRESHOLD:
+            log_siem_event(
+                event_type='port_scan_detected',
+                message=f'Port scan detected from {ip} (ports: {UNCOMMON_PORTS})',
+                severity='critical',
+                ip_address=ip,
+                source='security'
+            )
+            add_blocked_ip(ip, reason='Port scan detected', blocked_by='SIEM')
+            PORT_SCAN_ATTEMPTS[ip] = []
