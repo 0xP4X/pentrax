@@ -1329,3 +1329,7 @@ body.conversation-page .ai-assistant {
 @media (min-width: 768px) {
   .fab-forum-post { display: none !important; }
 }
+
+html[data-android='true'] .forum-guidelines-android {
+  display: none !important;
+}
