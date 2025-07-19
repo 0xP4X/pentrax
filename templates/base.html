@@ -161,6 +161,7 @@
           <button class="btn btn-outline-secondary btn-sm me-2" id="theme-toggle-mobile" type="button">
             <i class="fas fa-sun" id="theme-icon-mobile"></i>
           </button>
+          {% if current_user.is_authenticated %}
           <button class="navbar-toggler" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -169,11 +170,14 @@
             <li><a class="dropdown-item" href="/forum/tools"><i class="fas fa-comments me-2"></i>Forum</a></li>
             <li><a class="dropdown-item" href="/store"><i class="fas fa-store me-2"></i>Store</a></li>
             <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Profile</a></li>
-            {% if current_user.is_authenticated %}
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-            {% endif %}
           </ul>
+          {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm ms-2 d-flex align-items-center">
+            <i class="fas fa-sign-in-alt me-1"></i> Login
+          </a>
+          {% endif %}
         </div>
       </div>
     </nav>
