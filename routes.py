@@ -19,7 +19,7 @@ from wtforms import StringField, PasswordField, SubmitField, validators
 from utils.achievements import update_user_streak, check_and_unlock_achievements
 from functools import wraps
 from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
-from utils.siem import get_deep_ip_info
+from utils.siem import get_deep_ip_info, log_siem_event
 
 @app.context_processor
 def inject_user():
@@ -39,23 +39,44 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        
+        ip = request.remote_addr
         if user and user.check_password(password):
             # Only block permanently banned users from logging in
             if user.is_permanently_banned():
+                log_siem_event(
+                    event_type='login_banned',
+                    message=f'Banned user {user.username} attempted login',
+                    severity='warning',
+                    user=user,
+                    ip_address=ip,
+                    source='auth'
+                )
                 flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
                 return render_template('login.html')
-            
             # Allow temporarily banned and muted users to log in
             # They will be redirected to ban notification by the before_request middleware
             login_user(user)
             update_user_streak(user.id)
             check_and_unlock_achievements(user)
+            log_siem_event(
+                event_type='login_success',
+                message=f'User {user.username} logged in',
+                severity='info',
+                user=user,
+                ip_address=ip,
+                source='auth'
+            )
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
+            log_siem_event(
+                event_type='login_failed',
+                message=f'Failed login attempt for {username}',
+                severity='warning',
+                ip_address=ip,
+                source='auth'
+            )
             flash('Invalid username or password', 'error')
-    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -64,37 +85,47 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        
+        ip = request.remote_addr
         # Check if user already exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
             return render_template('register.html')
-        
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
             return render_template('register.html')
-        
         # Create new user
         user = User(
             username=username,
             email=email,
             password_hash=generate_password_hash(password)
         )
-        
         db.session.add(user)
         db.session.commit()
-        
         # Log in the user automatically after registration
         login_user(user)
-        
+        log_siem_event(
+            event_type='register_success',
+            message=f'User {user.username} registered',
+            severity='info',
+            user=user,
+            ip_address=ip,
+            source='auth'
+        )
         # Redirect to onboarding for new users
         return redirect(url_for('onboarding'))
-    
     return render_template('register.html')
 
 @app.route('/logout')
 @login_required
 def logout():
+    log_siem_event(
+        event_type='logout',
+        message=f'User {current_user.username} logged out',
+        severity='info',
+        user=current_user,
+        ip_address=request.remote_addr,
+        source='auth'
+    )
     logout_user()
     return redirect(url_for('index'))
 
@@ -147,6 +178,14 @@ def change_password():
         if check_password_hash(user.password_hash, form.current_password.data):
             user.password_hash = generate_password_hash(form.new_password.data)
             db.session.commit()
+            log_siem_event(
+                event_type='password_change',
+                message=f'User {user.username} changed password',
+                severity='info',
+                user=user,
+                ip_address=request.remote_addr,
+                source='profile'
+            )
             flash('Your password has been changed successfully!', 'success')
             return redirect(url_for('profile'))
         else:
@@ -163,6 +202,7 @@ def profile():
 @app.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
+    user = current_user
     if request.method == 'POST':
         current_user.bio = request.form.get('bio', '')
         current_user.skills = request.form.get('skills', '')
@@ -206,6 +246,14 @@ def edit_profile():
                 flash('Profile picture updated successfully!', 'success')
         
         db.session.commit()
+        log_siem_event(
+            event_type='profile_update',
+            message=f'User {user.username} updated profile',
+            severity='info',
+            user=user,
+            ip_address=request.remote_addr,
+            source='profile'
+        )
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('profile'))
     return render_template('profile.html', edit_mode=True)
@@ -315,6 +363,14 @@ def create_forum_post():
         db.session.commit()
         update_user_streak(current_user.id)
         check_and_unlock_achievements(current_user)
+        log_siem_event(
+            event_type='post_create',
+            message=f'User {current_user.username} created a post',
+            severity='info',
+            user=current_user,
+            ip_address=request.remote_addr,
+            source='post'
+        )
         
         flash('Forum post created successfully!', 'success')
         return redirect(url_for('post_detail', post_id=post.id))
@@ -408,12 +464,28 @@ def add_comment(post_id):
         )
     
     flash('Comment added successfully!', 'success')
+    log_siem_event(
+        event_type='comment_create',
+        message=f'User {current_user.username} added a comment',
+        severity='info',
+        user=current_user,
+        ip_address=request.remote_addr,
+        source='comment'
+    )
     return redirect(url_for('post_detail', post_id=post_id))
 
 # File download route
 @app.route('/download/<filename>')
 @login_required
 def download_file(filename):
+    log_siem_event(
+        event_type='download',
+        message=f'User {current_user.username} downloaded file {filename}',
+        severity='info',
+        user=current_user,
+        ip_address=request.remote_addr,
+        source='download'
+    )
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # AI Assistant routes
@@ -531,6 +603,14 @@ def submit_flag(lab_id):
         update_user_streak(current_user.id)
         check_and_unlock_achievements(current_user)
         flash('Congratulations! You completed the lab and earned points!', 'success')
+        log_siem_event(
+            event_type='lab_complete',
+            message=f'User {current_user.username} completed lab {lab_id}',
+            severity='info',
+            user=current_user,
+            ip_address=request.remote_addr,
+            source='lab'
+        )
         return redirect(url_for('lab_detail', lab_id=lab_id))
     else:
         flash('Incorrect flag. Try again!', 'error')
@@ -582,6 +662,14 @@ def submit_quiz(lab_id):
     attempt.score = score
     db.session.commit()
     flash(f'Quiz submitted! You scored {score} out of {len(quiz_questions)}.', 'success')
+    log_siem_event(
+        event_type='quiz_submit',
+        message=f'User {current_user.username} submitted quiz for lab {lab_id}',
+        severity='info',
+        user=current_user,
+        ip_address=request.remote_addr,
+        source='lab'
+    )
     return redirect(url_for('lab_detail', lab_id=lab_id))
 
 @app.route('/lab/<int:lab_id>/submit_command', methods=['POST'])
@@ -895,6 +983,14 @@ def ban_user(user_id):
     db.session.commit()
     
     flash(f'User {user.username} has been {ban_type}!', 'success')
+    log_siem_event(
+        event_type='admin_ban',
+        message=f'Admin {current_user.username} banned user {user_id}',
+        severity='warning',
+        user=current_user,
+        ip_address=request.remote_addr,
+        source='admin'
+    )
     return redirect(url_for('admin_users'))
 
 @app.route('/admin/unban_user/<int:user_id>', methods=['POST'])
@@ -2076,6 +2172,14 @@ def contact():
         db.session.commit()
         
         flash('Your message has been sent successfully! We will get back to you within 24 hours.', 'success')
+        log_siem_event(
+            event_type='contact',
+            message=f'User {current_user.username} submitted contact form',
+            severity='info',
+            user=current_user,
+            ip_address=request.remote_addr,
+            source='contact'
+        )
         return redirect(url_for('contact'))
     
     return render_template('contact.html')
