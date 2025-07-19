@@ -1284,3 +1284,29 @@ body.conversation-page .ai-assistant {
 }
 
 /* Note: Cache-Control is set in server config and preferred over Expires */
+
+@media (max-width: 600px) {
+  .store-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .store-actions-row > a {
+    flex: 1 1 45%;
+    min-width: 120px;
+    margin-bottom: 0 !important;
+  }
+}
+
+[data-bs-theme="light"] .bg-dark.fixed-bottom .nav-link {
+    color: var(--primary-color) !important;
+}
+[data-bs-theme="light"] .bg-dark.fixed-bottom .nav-link.active {
+    color: #0a58ca !important;
+    font-weight: 600;
+    background: rgba(13,110,253,0.08);
+    border-radius: 12px;
+}
