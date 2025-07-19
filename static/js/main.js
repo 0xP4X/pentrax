@@ -1,3 +1,7 @@
+// Detect Android and set data-android attribute on <html>
+if (/android/i.test(navigator.userAgent)) {
+  document.documentElement.setAttribute('data-android', 'true');
+}
 // PentraX Main JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     
