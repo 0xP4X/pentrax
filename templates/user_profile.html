@@ -3,10 +3,10 @@
 {% block title %}{{ user.username }} - PentraX{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
   {% if current_user.is_admin %}
     <!-- Advanced Admin User Profile: Tabbed Interface -->
-        <div class="card mb-4">
+    <div class="card mb-4">
       <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
         <h5 class="mb-0"><i class="fas fa-user-shield"></i> Admin User Overview</h5>
         <span>
@@ -15,7 +15,7 @@
           {% if user.is_banned %}<span class="badge bg-danger" title="Banned"><i class="fas fa-ban"></i> Banned</span>{% endif %}
           {% if user.is_muted %}<span class="badge bg-info text-dark" title="Muted"><i class="fas fa-volume-mute"></i> Muted</span>{% endif %}
         </span>
-                        </div>
+      </div>
       <div class="card-body">
         <!-- Quick Stats Cards -->
         <div class="row mb-4 text-center">
@@ -137,18 +137,41 @@
           </div>
           <!-- Admin Actions Tab -->
           <div class="tab-pane fade" id="actions" role="tabpanel">
-            <div class="d-flex gap-2 mb-3">
-              <button class="btn btn-danger btn-sm" disabled title="Not implemented">Ban User</button>
-              <button class="btn btn-warning btn-sm" disabled title="Not implemented">Mute User</button>
-              <button class="btn btn-secondary btn-sm" disabled title="Not implemented">Delete User</button>
-              <button class="btn btn-info btn-sm" disabled title="Not implemented">Reset Password</button>
-              <button class="btn btn-dark btn-sm" disabled title="Not implemented">Impersonate</button>
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+              <!-- Ban/Unban -->
+              {% if not user.is_banned %}
+              <form method="post" action="{{ url_for('admin_ban_user', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to ban this user?');">
+                <button class="btn btn-danger btn-sm" {% if current_user.id == user.id or user.is_admin %}disabled{% endif %}>Ban User</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin_unban_user', user_id=user.id) }}" onsubmit="return confirm('Unban this user?');">
+                <button class="btn btn-success btn-sm">Unban User</button>
+              </form>
+              {% endif %}
+              <!-- Mute/Unmute -->
+              {% if not user.is_muted %}
+              <form method="post" action="{{ url_for('admin_mute_user', user_id=user.id) }}" onsubmit="return confirm('Mute this user?');">
+                <button class="btn btn-warning btn-sm" {% if current_user.id == user.id %}disabled{% endif %}>Mute User</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin_unmute_user', user_id=user.id) }}" onsubmit="return confirm('Unmute this user?');">
+                <button class="btn btn-info btn-sm">Unmute User</button>
+              </form>
+              {% endif %}
+              <!-- Delete (Deactivate) -->
+              <form method="post" action="{{ url_for('admin_delete_user', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this user?');">
+                <button class="btn btn-secondary btn-sm" {% if current_user.id == user.id or user.is_admin %}disabled{% endif %}>Deactivate User</button>
+              </form>
+              <!-- Reset Password -->
+              <form method="post" action="{{ url_for('admin_reset_password', user_id=user.id) }}" onsubmit="return confirm('Reset password for this user?');">
+                <button class="btn btn-info btn-sm">Reset Password</button>
+              </form>
             </div>
-            <div class="alert alert-info small">Admin actions are for demonstration. Implement as needed.</div>
-            </div>
+            <div class="alert alert-info small">All actions require confirmation and are safe. You cannot ban, mute, or delete yourself or another admin.</div>
+          </div>
         </div>
+      </div>
     </div>
-            </div>
     <script>
       // Activate Bootstrap tabs if needed
       var triggerTabList = [].slice.call(document.querySelectorAll('#adminUserTab button'));
