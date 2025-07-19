@@ -14,6 +14,7 @@ import eventlet
 import subprocess
 from datetime import datetime
 from utils.firewall import firewall_middleware
+from db import db
 
 # Load environment variables
 load_dotenv()
@@ -23,9 +24,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 class Base(DeclarativeBase):
     pass
-
-db = SQLAlchemy(model_class=Base)
-migrate = Migrate()
 
 # Create the app
 app = Flask(__name__)
@@ -62,6 +60,7 @@ def set_security_headers(response):
 
 # Initialize extensions
 db.init_app(app)
+migrate = Migrate()
 migrate.init_app(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -77,7 +76,6 @@ socketio = SocketIO(app, async_mode='eventlet')
 def handle_add_reaction(data):
     # data: {message_id, conversation_id, emoji, user_id}
     from models import Message, MessageReaction
-    from app import db
     message = Message.query.get(data['message_id'])
     if message:
         # Check if reaction already exists
