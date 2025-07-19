@@ -19,7 +19,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top d-none d-md-block">
         <!-- Desktop navigation only -->
-        <div class="container-fluid navbar-offset">
+        <div class="container-fluid navbar-offset px-3">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
                 PentraX
             </a>
@@ -100,7 +100,7 @@
                                 {% endif %}
                                 <span class="text-nowrap">{{ current_user.username }}</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userDropdown" style="min-width: 220px; right: 0; left: auto;">
                                 {% if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user() %}
                                     <li><a class="dropdown-item text-danger" href="{{ url_for('ban_notification') }}">
                                         <i class="fas fa-exclamation-triangle"></i> Account Status</a></li>
