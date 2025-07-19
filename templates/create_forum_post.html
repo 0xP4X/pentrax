@@ -63,27 +63,33 @@
                         </div>
                     </div>
 
-                    <div class="row">
+                    <!-- Show More Options button for Android/mobile -->
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-2 d-block d-md-none forum-advanced-toggle" style="width:100%;" onclick="document.querySelector('.forum-advanced-fields').classList.toggle('show'); this.style.display='none';">
+                      <i class="fas fa-sliders-h"></i> Show More Options
+                    </button>
+                    <div class="forum-advanced-fields" style="display:none;">
+                      <div class="row">
                         <div class="col-md-8">
-                            <div class="mb-3">
-                                <label for="tags" class="form-label">
-                                    <i class="fas fa-hashtag"></i> Tags
-                                </label>
-                                <input type="text" class="form-control forum-input" id="tags" name="tags" 
-                                       placeholder="python, web-security, api, linux">
-                                <div class="form-text">Add relevant tags to help others find your post</div>
-                            </div>
+                          <div class="mb-3">
+                            <label for="tags" class="form-label">
+                              <i class="fas fa-hashtag"></i> Tags
+                            </label>
+                            <input type="text" class="form-control forum-input" id="tags" name="tags" 
+                                   placeholder="python, web-security, api, linux">
+                            <div class="form-text">Add relevant tags to help others find your post</div>
+                          </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="file" class="form-label">
-                                    <i class="fas fa-paperclip"></i> Attachment (Optional)
-                                </label>
-                                <input type="file" class="form-control forum-file" id="file" name="file" 
-                                       accept=".txt,.py,.sh,.rb,.pl,.php,.js,.html,.css,.json,.xml,.md,.zip,.tar,.gz">
-                                <div class="form-text">Max 16MB</div>
-                            </div>
+                          <div class="mb-3">
+                            <label for="file" class="form-label">
+                              <i class="fas fa-paperclip"></i> Attachment (Optional)
+                            </label>
+                            <input type="file" class="form-control forum-file" id="file" name="file" 
+                                   accept=".txt,.py,.sh,.rb,.pl,.php,.js,.html,.css,.json,.xml,.md,.zip,.tar,.gz">
+                            <div class="form-text">Max 16MB</div>
+                          </div>
                         </div>
+                      </div>
                     </div>
 
                     <!-- Forum-specific guidelines -->

@@ -1358,4 +1358,17 @@ html[data-android='true'] .forum-guidelines-android {
     padding: 0.5rem 1.2rem !important;
     font-size: 1rem;
   }
+  html[data-android='true'] .forum-advanced-fields {
+    display: none;
+  }
+  html[data-android='true'] .forum-advanced-fields.show {
+    display: block;
+  }
+  .forum-advanced-toggle {
+    margin-top: 1rem;
+  }
+}
+@media (min-width: 768px) {
+  .forum-advanced-fields { display: block !important; }
+  .forum-advanced-toggle { display: none !important; }
 }
