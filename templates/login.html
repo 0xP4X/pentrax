@@ -28,6 +28,12 @@
                                 <i class="fas fa-eye" id="toggleIcon"></i>
                             </button>
                         </div>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 8px;">
+                                <div id="passwordStrengthBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%; transition: width 0.4s;"></div>
+                            </div>
+                            <div id="passwordStrengthText" class="small mt-1 text-muted">&nbsp;</div>
+                        </div>
                     </div>
                     
                     <div class="d-grid">
@@ -60,12 +66,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const password = document.getElementById('password');
     const toggleIcon = document.getElementById('toggleIcon');
-    
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+
     togglePassword.addEventListener('click', function() {
         // Toggle the type attribute
         const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
         password.setAttribute('type', type);
-        
         // Toggle the icon
         if (type === 'text') {
             toggleIcon.classList.remove('fa-eye');
@@ -74,6 +81,31 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleIcon.classList.remove('fa-eye-slash');
             toggleIcon.classList.add('fa-eye');
         }
+    });
+
+    password.addEventListener('input', function() {
+        const val = password.value;
+        let score = 0;
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+        // Animate bar and text
+        let width = 0, color = 'bg-danger', label = 'Weak';
+        if (score === 0) {
+            width = 0; color = 'bg-danger'; label = '';
+        } else if (score === 1) {
+            width = 33; color = 'bg-danger'; label = 'Weak';
+        } else if (score === 2) {
+            width = 66; color = 'bg-warning'; label = 'Medium';
+        } else if (score === 3) {
+            width = 90; color = 'bg-info'; label = 'Strong';
+        } else if (score === 4) {
+            width = 100; color = 'bg-success'; label = 'Very Strong';
+        }
+        strengthBar.style.width = width + '%';
+        strengthBar.className = 'progress-bar ' + color;
+        strengthText.textContent = label;
     });
 });
 </script>
