@@ -1601,7 +1601,40 @@ def admin_reorder_terminal_commands(lab_id, command_id):
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template('404.html'), 404
+    ip = request.remote_addr
+    path = request.path
+    now = datetime.utcnow()
+    # Log all 404s
+    log_siem_event(
+        event_type='not_found',
+        message=f'404 on {path}',
+        severity='info',
+        ip_address=ip,
+        source='security'
+    )
+    # Track repeated 404s for brute force
+    REPEATED_404S[ip] = [t for t in REPEATED_404S[ip] if (now - t).total_seconds() < ADMIN_404_WINDOW]
+    REPEATED_404S[ip].append(now)
+    # If path is sensitive or repeated 404s, escalate
+    if path in SENSITIVE_PATHS or any(s in path for s in SENSITIVE_PATHS):
+        log_siem_event(
+            event_type='sensitive_404',
+            message=f'404 on sensitive path {path}',
+            severity='warning',
+            ip_address=ip,
+            source='security'
+        )
+        if len(REPEATED_404S[ip]) >= ADMIN_404_THRESHOLD:
+            log_siem_event(
+                event_type='dir_bruteforce_detected',
+                message=f'Repeated 404s from {ip} (possible dir brute force)',
+                severity='critical',
+                ip_address=ip,
+                source='security'
+            )
+            add_blocked_ip(ip, reason='Directory brute force detected', blocked_by='SIEM')
+            REPEATED_404S[ip] = []
+    return make_response(render_template('404.html'), 404)
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -3318,3 +3351,62 @@ def nmap_and_portscan_detection():
             )
             add_blocked_ip(ip, reason='Port scan detected', blocked_by='SIEM')
             PORT_SCAN_ATTEMPTS[ip] = []
+
+# Directory brute force and admin protection
+REPEATED_404S = defaultdict(list)  # {ip: [timestamps]}
+SENSITIVE_PATHS = ['/admin', '/admin/', '/wp-admin', '/phpmyadmin', '/.env', '/config', '/setup', '/install', '/login', '/register']
+ADMIN_404_THRESHOLD = 5
+ADMIN_404_WINDOW = 180  # seconds
+
+@app.errorhandler(404)
+def not_found_error(error):
+    ip = request.remote_addr
+    path = request.path
+    now = datetime.utcnow()
+    # Log all 404s
+    log_siem_event(
+        event_type='not_found',
+        message=f'404 on {path}',
+        severity='info',
+        ip_address=ip,
+        source='security'
+    )
+    # Track repeated 404s for brute force
+    REPEATED_404S[ip] = [t for t in REPEATED_404S[ip] if (now - t).total_seconds() < ADMIN_404_WINDOW]
+    REPEATED_404S[ip].append(now)
+    # If path is sensitive or repeated 404s, escalate
+    if path in SENSITIVE_PATHS or any(s in path for s in SENSITIVE_PATHS):
+        log_siem_event(
+            event_type='sensitive_404',
+            message=f'404 on sensitive path {path}',
+            severity='warning',
+            ip_address=ip,
+            source='security'
+        )
+        if len(REPEATED_404S[ip]) >= ADMIN_404_THRESHOLD:
+            log_siem_event(
+                event_type='dir_bruteforce_detected',
+                message=f'Repeated 404s from {ip} (possible dir brute force)',
+                severity='critical',
+                ip_address=ip,
+                source='security'
+            )
+            add_blocked_ip(ip, reason='Directory brute force detected', blocked_by='SIEM')
+            REPEATED_404S[ip] = []
+    return make_response(render_template('404.html'), 404)
+
+# Extra admin protection: log and block unauthorized admin access attempts
+@app.before_request
+def admin_protection():
+    ip = request.remote_addr
+    path = request.path
+    if path.startswith('/admin'):
+        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
+            log_siem_event(
+                event_type='unauthorized_admin_access',
+                message=f'Unauthorized admin access attempt to {path}',
+                severity='critical',
+                ip_address=ip,
+                source='admin'
+            )
+            add_blocked_ip(ip, reason='Unauthorized admin access', blocked_by='SIEM')
