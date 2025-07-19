@@ -148,7 +148,24 @@
                 <button class="btn btn-success btn-sm">Unban User</button>
               </form>
               {% endif %}
-              {# Mute/Unmute, Delete, and Reset Password actions removed for now #}
+              <!-- Mute/Unmute -->
+              {% if not user.is_muted %}
+              <form method="post" action="{{ url_for('mute_user', user_id=user.id) }}" onsubmit="return confirm('Mute this user?');">
+                <button class="btn btn-warning btn-sm" {% if current_user.id == user.id %}disabled{% endif %}>Mute User</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('unmute_user', user_id=user.id) }}" onsubmit="return confirm('Unmute this user?');">
+                <button class="btn btn-info btn-sm">Unmute User</button>
+              </form>
+              {% endif %}
+              <!-- Delete (Deactivate) -->
+              <form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this user?');">
+                <button class="btn btn-secondary btn-sm" {% if current_user.id == user.id or user.is_admin %}disabled{% endif %}>Deactivate User</button>
+              </form>
+              <!-- Reset Password -->
+              <form method="post" action="{{ url_for('reset_user_password', user_id=user.id) }}" onsubmit="return confirm('Reset password for this user?');">
+                <button class="btn btn-info btn-sm">Reset Password</button>
+              </form>
             </div>
             <div class="alert alert-info small">All actions require confirmation and are safe. You cannot ban, mute, or delete yourself or another admin.</div>
           </div>

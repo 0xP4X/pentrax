@@ -2865,3 +2865,47 @@ def admin_mass_mail():
         </html>
         '''
         # ... existing code for sending email, using html_body as the HTML version ...
+
+@app.route('/admin/mute_user/<int:user_id>', methods=['POST'])
+@login_required
+def mute_user(user_id):
+    if not current_user.is_admin or current_user.id == user_id:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    user.is_muted = True
+    db.session.commit()
+    flash(f'User {user.username} has been muted.', 'success')
+    return redirect(request.referrer or url_for('user_profile', username=user.username))
+
+@app.route('/admin/unmute_user/<int:user_id>', methods=['POST'])
+@login_required
+def unmute_user(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    user.is_muted = False
+    db.session.commit()
+    flash(f'User {user.username} has been unmuted.', 'success')
+    return redirect(request.referrer or url_for('user_profile', username=user.username))
+
+@app.route('/admin/delete/user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if not current_user.is_admin or current_user.id == user_id:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    user.is_active = False
+    db.session.commit()
+    flash(f'User {user.username} has been deactivated.', 'success')
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
+@login_required
+def reset_user_password(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    user.set_password('changeme123')
+    db.session.commit()
+    flash(f'Password for {user.username} has been reset to "changeme123".', 'info')
+    return redirect(request.referrer or url_for('user_profile', username=user.username))
