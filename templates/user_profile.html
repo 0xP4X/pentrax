@@ -3,20 +3,10 @@
 {% block title %}{{ user.username }} - PentraX{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+<div class="container mt-4">
   {% if current_user.is_admin %}
     <!-- Advanced Admin User Profile: Tabbed Interface -->
-    <div class="card mb-4">
+        <div class="card mb-4">
       <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
         <h5 class="mb-0"><i class="fas fa-user-shield"></i> Admin User Overview</h5>
         <span>
@@ -25,7 +15,7 @@
           {% if user.is_banned %}<span class="badge bg-danger" title="Banned"><i class="fas fa-ban"></i> Banned</span>{% endif %}
           {% if user.is_muted %}<span class="badge bg-info text-dark" title="Muted"><i class="fas fa-volume-mute"></i> Muted</span>{% endif %}
         </span>
-      </div>
+                        </div>
       <div class="card-body">
         <!-- Quick Stats Cards -->
         <div class="row mb-4 text-center">
@@ -35,9 +25,9 @@
                 <div class="fs-4"><i class="fas fa-file-alt"></i></div>
                 <div class="fw-bold">{{ user_posts|length }}</div>
                 <div class="small">Posts</div>
-              </div>
+                </div>
             </div>
-          </div>
+        </div>
           <div class="col-md-2 col-6 mb-2">
             <div class="card bg-success text-white">
               <div class="card-body p-2">
@@ -46,23 +36,23 @@
                 <div class="small">Labs</div>
               </div>
             </div>
-          </div>
+                    </div>
           <div class="col-md-2 col-6 mb-2">
             <div class="card bg-warning text-dark">
               <div class="card-body p-2">
                 <div class="fs-4"><i class="fas fa-shopping-cart"></i></div>
                 <div class="fw-bold">{{ user.purchases|length }}</div>
                 <div class="small">Purchases</div>
-              </div>
-            </div>
-          </div>
+                    </div>
+                </div>
+                    </div>
           <div class="col-md-2 col-6 mb-2">
             <div class="card bg-info text-white">
               <div class="card-body p-2">
                 <div class="fs-4"><i class="fas fa-star"></i></div>
                 <div class="fw-bold">{{ user.reputation }}</div>
                 <div class="small">Reputation</div>
-              </div>
+                </div>
             </div>
           </div>
           <div class="col-md-2 col-6 mb-2">
@@ -118,9 +108,9 @@
                   <a href="{{ url_for('post_detail', post_id=post.id) }}">{{ post.title }}</a>
                   <span class="text-muted small">({{ post.created_at.strftime('%Y-%m-%d') }})</span>
                 </li>
-              {% else %}
+            {% else %}
                 <li class="list-group-item text-muted">No recent posts.</li>
-              {% endfor %}
+                  {% endfor %}
             </ul>
             <h6>Recent Labs Completed</h6>
             <ul class="list-group">
@@ -133,7 +123,7 @@
                 <li class="list-group-item text-muted">No recent labs.</li>
               {% endfor %}
             </ul>
-          </div>
+            </div>
           <!-- Security Tab -->
           <div class="tab-pane fade" id="security" role="tabpanel">
             <ul class="list-group mb-3">
@@ -147,34 +137,18 @@
           </div>
           <!-- Admin Actions Tab -->
           <div class="tab-pane fade" id="actions" role="tabpanel">
-            <div class="d-flex gap-2 mb-3 flex-wrap">
-              <form method="post" action="{{ url_for('admin_ban_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-danger btn-sm" {% if user.is_banned %}disabled{% endif %} onclick="return confirm('Ban this user?');">Ban User</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_unban_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-success btn-sm" {% if not user.is_banned %}disabled{% endif %} onclick="return confirm('Unban this user?');">Unban User</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_mute_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-warning btn-sm" {% if user.is_muted %}disabled{% endif %} onclick="return confirm('Mute this user?');">Mute User</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_unmute_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-info btn-sm" {% if not user.is_muted %}disabled{% endif %} onclick="return confirm('Unmute this user?');">Unmute User</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_delete_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Delete this user? This cannot be undone.');">Delete User</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_reset_password', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-info btn-sm">Reset Password</button>
-              </form>
-              <form method="post" action="{{ url_for('admin_impersonate_user', user_id=user.id) }}" style="display:inline;">
-                <button type="submit" class="btn btn-dark btn-sm">Impersonate</button>
-              </form>
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-danger btn-sm" disabled title="Not implemented">Ban User</button>
+              <button class="btn btn-warning btn-sm" disabled title="Not implemented">Mute User</button>
+              <button class="btn btn-secondary btn-sm" disabled title="Not implemented">Delete User</button>
+              <button class="btn btn-info btn-sm" disabled title="Not implemented">Reset Password</button>
+              <button class="btn btn-dark btn-sm" disabled title="Not implemented">Impersonate</button>
             </div>
-            <div class="alert alert-info small">All admin actions are now live. Use with caution.</div>
-          </div>
+            <div class="alert alert-info small">Admin actions are for demonstration. Implement as needed.</div>
+            </div>
         </div>
-      </div>
     </div>
+            </div>
     <script>
       // Activate Bootstrap tabs if needed
       var triggerTabList = [].slice.call(document.querySelectorAll('#adminUserTab button'));
@@ -197,9 +171,9 @@
           <a href="{{ url_for('follow_user', username=user.username) }}" class="btn btn-primary btn-sm">
             <i class="fas fa-user-plus"></i> Follow
           </a>
-        </div>
-        {% endif %}
-      </div>
+                                </div>
+                                {% endif %}
+                            </div>
       <div class="col-md-8">
         <h4>About</h4>
         <p>{{ user.bio or 'No bio provided.' }}</p>
@@ -209,7 +183,7 @@
             <li>{{ achievement }}</li>
           {% else %}
             <li>No achievements yet.</li>
-          {% endfor %}
+                    {% endfor %}
         </ul>
         <h5>Recent Activity</h5>
         <ul>
@@ -217,7 +191,7 @@
           <li><strong>Labs Completed:</strong> {{ user.lab_completions|length }}</li>
           <li><strong>Purchases:</strong> {{ user.purchases|length }}</li>
         </ul>
-      </div>
+        </div>
     </div>
   {% endif %}
 </div>

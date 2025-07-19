@@ -788,6 +788,7 @@ def admin_dashboard():
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
+    
     # Basic stats
     total_users = User.query.count()
     total_posts = Post.query.count()
@@ -795,15 +796,19 @@ def admin_dashboard():
     banned_users = User.query.filter_by(is_banned=True).count()
     total_downloads = UserAction.query.filter_by(action_type='file_download').count()
     total_views = sum(post.views for post in Post.query.all())
+    
     # Contact statistics
     pending_contacts = Contact.query.filter_by(status='pending').count()
     total_contacts = Contact.query.count()
+    
     # Recent activity
     recent_users = User.query.order_by(desc(User.created_at)).limit(10).all()
     recent_posts = Post.query.order_by(desc(Post.created_at)).limit(10).all()
     recent_actions = UserAction.query.order_by(desc(UserAction.timestamp)).limit(20).all()
+    
     # Revenue calculation (mock for now)
     revenue = sum(post.price for post in Post.query.filter(Post.price > 0).all()) * 0.15  # 15% commission
+    
     return render_template('admin_dashboard.html', 
                          total_users=total_users, total_posts=total_posts,
                          premium_users=premium_users, banned_users=banned_users,
@@ -857,49 +862,764 @@ def admin_users():
 
 @app.route('/admin/ban_user/<int:user_id>', methods=['POST'])
 @login_required
-def admin_ban_user(user_id):
+def ban_user(user_id):
     if not current_user.is_admin:
-        abort(403)
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
     user = User.query.get_or_404(user_id)
+    if user.username == 'admin':
+        flash('Cannot ban admin user.', 'error')
+        return redirect(url_for('admin_users'))
+    
+    reason = request.form.get('reason', 'Violation of community guidelines')
+    ban_type = request.form.get('ban_type', 'temporary')
+    
     user.is_banned = True
+    if ban_type == 'mute':
+        user.is_muted = True
+        user.is_banned = False
+    
+    ban_record = UserBan(
+        user_id=user_id,
+        banned_by=current_user.id,
+        reason=reason,
+        ban_type=ban_type
+    )
+    
+    db.session.add(ban_record)
     db.session.commit()
-    flash(f'User {user.username} has been banned.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
+    
+    flash(f'User {user.username} has been {ban_type}!', 'success')
+    return redirect(url_for('admin_users'))
 
 @app.route('/admin/unban_user/<int:user_id>', methods=['POST'])
 @login_required
-def admin_unban_user(user_id):
+def unban_user(user_id):
     if not current_user.is_admin:
-        abort(403)
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
     user = User.query.get_or_404(user_id)
     user.is_banned = False
-    db.session.commit()
-    flash(f'User {user.username} has been unbanned.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/mute_user/<int:user_id>', methods=['POST'])
-@login_required
-def admin_mute_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    user.is_muted = True
-    db.session.commit()
-    flash(f'User {user.username} has been muted.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/unmute_user/<int:user_id>', methods=['POST'])
-@login_required
-def admin_unmute_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
     user.is_muted = False
+    
+    # Deactivate ban records
+    UserBan.query.filter_by(user_id=user_id, is_active=True).update({'is_active': False})
+    
     db.session.commit()
-    flash(f'User {user.username} has been unmuted.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
+    flash(f'User {user.username} has been unbanned!', 'success')
+    return redirect(url_for('admin_users'))
 
-@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@app.route('/admin/settings', methods=['GET', 'POST'])
+@login_required
+def admin_settings():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        # Handle platform free mode toggle
+        platform_free_mode = request.form.get('platform_free_mode') == 'on'
+        if set_platform_free_mode(platform_free_mode):
+            mode_text = 'enabled' if platform_free_mode else 'disabled'
+            flash(f'Platform free mode {mode_text} successfully!', 'success')
+        else:
+            flash('Failed to update platform free mode setting.', 'error')
+        
+        # Handle SMTP security radio button
+        smtp_security = request.form.get('smtp_security', 'tls')
+        smtp_use_tls = 'true' if smtp_security == 'tls' else 'false'
+        smtp_use_ssl = 'true' if smtp_security == 'ssl' else 'false'
+
+        # Update API keys and settings
+        settings_to_update = [
+            ('openai_api_key', 'OpenAI API Key for AI Assistant'),
+            ('paystack_public_key', 'Paystack Public Key for Payments'),
+            ('paystack_secret_key', 'Paystack Secret Key for Payments'),
+            ('commission_rate', 'Platform Commission Rate (%)'),
+            ('platform_name', 'Platform Name'),
+            ('max_file_size', 'Maximum File Upload Size (MB)'),
+            # SMTP Settings
+            ('smtp_server', 'SMTP Server Address'),
+            ('smtp_port', 'SMTP Port Number'),
+            ('smtp_username', 'SMTP Username/Email'),
+            ('smtp_password', 'SMTP Password/App Password'),
+            ('smtp_from_email', 'SMTP From Email Address'),
+            ('smtp_from_name', 'SMTP From Name'),
+            ('smtp_use_tls', 'SMTP Use TLS'),
+            ('smtp_use_ssl', 'SMTP Use SSL')
+        ]
+        
+        for key, description in settings_to_update:
+            if key == 'smtp_use_tls':
+                value = smtp_use_tls
+            elif key == 'smtp_use_ssl':
+                value = smtp_use_ssl
+            else:
+                value = request.form.get(key)
+            if value is not None:
+                setting = AdminSettings.query.filter_by(key=key).first()
+                if setting:
+                    setting.value = value
+                    setting.updated_by = current_user.id
+                    setting.updated_at = datetime.utcnow()
+                else:
+                    setting = AdminSettings(
+                        key=key,
+                        value=value,
+                        description=description,
+                        updated_by=current_user.id
+                    )
+                    db.session.add(setting)
+        
+        db.session.commit()
+        flash('Settings updated successfully!', 'success')
+        return redirect(url_for('admin_settings'))
+    
+    # Get current settings
+    settings = {s.key: s.value for s in AdminSettings.query.all()}
+    return render_template('admin_settings.html', settings=settings, is_free_mode=is_platform_free_mode())
+
+@app.route('/admin/test-smtp', methods=['POST'])
+@login_required
+def test_smtp_connection():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Access denied.'})
+    
+    try:
+        # Get SMTP settings from form
+        smtp_settings = {
+            'smtp_server': request.form.get('smtp_server'),
+            'smtp_port': request.form.get('smtp_port'),
+            'smtp_username': request.form.get('smtp_username'),
+            'smtp_password': request.form.get('smtp_password'),
+            'smtp_use_tls': request.form.get('smtp_use_tls') == 'true',
+            'smtp_use_ssl': request.form.get('smtp_use_ssl') == 'true'
+        }
+        
+        # Validate required fields
+        required_fields = ['smtp_server', 'smtp_port', 'smtp_username', 'smtp_password']
+        for field in required_fields:
+            if not smtp_settings[field]:
+                return jsonify({
+                    'success': False, 
+                    'message': f'Missing required field: {field}'
+                })
+        
+        # Test connection
+        import smtplib
+        import ssl
+        
+        try:
+            # Create SMTP connection
+            if smtp_settings['smtp_use_ssl']:
+                server = smtplib.SMTP_SSL(smtp_settings['smtp_server'], int(smtp_settings['smtp_port']))
+            else:
+                server = smtplib.SMTP(smtp_settings['smtp_server'], int(smtp_settings['smtp_port']))
+            
+            # Start TLS if required
+            if smtp_settings['smtp_use_tls']:
+                server.starttls(context=ssl.create_default_context())
+            
+            # Login
+            server.login(smtp_settings['smtp_username'], smtp_settings['smtp_password'])
+            
+            # Close connection
+            server.quit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'SMTP connection test successful! Your email configuration is working correctly.'
+            })
+            
+        except smtplib.SMTPAuthenticationError:
+            return jsonify({
+                'success': False,
+                'message': 'Authentication failed. Please check your username and password/app password.'
+            })
+        except smtplib.SMTPConnectError:
+            return jsonify({
+                'success': False,
+                'message': 'Connection failed. Please check your SMTP server and port settings.'
+            })
+        except smtplib.SMTPException as e:
+            return jsonify({
+                'success': False,
+                'message': f'SMTP error: {str(e)}'
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Connection test failed: {str(e)}'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Test failed: {str(e)}'
+        })
+
+@app.route('/admin/analytics')
+@login_required
+def admin_analytics():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    # User analytics
+    total_users = User.query.count()
+    new_users_today = User.query.filter(User.created_at >= datetime.utcnow().date()).count()
+    premium_users = User.query.filter_by(is_premium=True).count()
+    banned_users = User.query.filter_by(is_banned=True).count()
+    
+    # Content analytics
+    total_posts = Post.query.count()
+    premium_posts = Post.query.filter_by(is_premium=True).count()
+    featured_posts = Post.query.filter_by(is_featured=True).count()
+    total_views = sum(post.views for post in Post.query.all())
+    
+    # Category breakdown
+    tools_count = Post.query.filter_by(category='tools').count()
+    bugs_count = Post.query.filter_by(category='bugs').count()
+    ideas_count = Post.query.filter_by(category='ideas').count()
+    jobs_count = Post.query.filter_by(category='jobs').count()
+    
+    # Revenue analytics
+    total_revenue = sum(post.price for post in Post.query.filter(Post.price > 0).all())
+    platform_revenue = total_revenue * 0.15  # 15% commission
+    
+    # Download statistics
+    total_downloads = UserAction.query.filter_by(action_type='file_download').count()
+    
+    # Popular posts
+    popular_posts = Post.query.order_by(desc(Post.views)).limit(10).all()
+    
+    return render_template('admin_analytics.html',
+                         total_users=total_users, new_users_today=new_users_today,
+                         premium_users=premium_users, banned_users=banned_users,
+                         total_posts=total_posts, premium_posts=premium_posts,
+                         featured_posts=featured_posts, total_views=total_views,
+                         tools_count=tools_count, bugs_count=bugs_count,
+                         ideas_count=ideas_count, jobs_count=jobs_count,
+                         total_revenue=total_revenue, platform_revenue=platform_revenue,
+                         total_downloads=total_downloads, popular_posts=popular_posts)
+
+@app.route('/admin/activity')
+@login_required
+def admin_activity():
+    if not current_user.is_admin:
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
+    
+    page = request.args.get('page', 1, type=int)
+    actions = UserAction.query.order_by(desc(UserAction.timestamp)).paginate(
+        page=page, per_page=50, error_out=False)
+    
+    return render_template('admin_activity.html', actions=actions)
+
+# Follow/Unfollow routes
+@app.route('/follow/<username>')
+@login_required
+def follow_user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    if user == current_user:
+        flash('You cannot follow yourself!', 'error')
+        return redirect(url_for('user_profile', username=username))
+    
+    if Follow.query.filter_by(follower_id=current_user.id, followed_id=user.id).first():
+        flash('You are already following this user!', 'info')
+        return redirect(url_for('user_profile', username=username))
+    
+    follow = Follow(follower_id=current_user.id, followed_id=user.id)
+    db.session.add(follow)
+    db.session.commit()
+    
+    create_notification(user.id, 'New Follower', f'{current_user.username} started following you!')
+    flash(f'You are now following {username}!', 'success')
+    return redirect(url_for('user_profile', username=username))
+
+@app.route('/unfollow/<username>')
+@login_required
+def unfollow_user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    follow = Follow.query.filter_by(follower_id=current_user.id, followed_id=user.id).first()
+    
+    if follow:
+        db.session.delete(follow)
+        db.session.commit()
+        flash(f'You unfollowed {username}.', 'success')
+    else:
+        flash('You are not following this user.', 'info')
+    
+    return redirect(url_for('user_profile', username=username))
+
+# Like/Unlike routes
+@app.route('/like_post/<int:post_id>', methods=['POST'])
+@login_required
+def like_post(post_id):
+    # Check if user is banned or muted
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+        return jsonify({'success': False, 'message': 'You cannot like posts while your account is suspended or muted.'})
+    
+    post = Post.query.get_or_404(post_id)
+    
+    # Check if user already liked this post
+    existing_like = PostLike.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+    
+    if existing_like:
+        # Unlike the post
+        db.session.delete(existing_like)
+        post.likes -= 1
+        db.session.commit()
+        return jsonify({'success': True, 'liked': False, 'count': post.likes})
+    else:
+        # Like the post
+        like = PostLike(user_id=current_user.id, post_id=post_id)
+        db.session.add(like)
+        post.likes += 1
+        db.session.commit()
+        
+        # Create notification for post author
+        if post.user_id != current_user.id:
+            create_notification(
+                post.user_id,
+                'Post Liked',
+                f'{current_user.username} liked your post "{post.title}"'
+            )
+        
+        return jsonify({'success': True, 'liked': True, 'count': post.likes})
+
+@app.route('/like_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def like_comment(comment_id):
+    # Check if user is banned or muted
+    if current_user.is_permanently_banned() or current_user.is_temporarily_banned() or current_user.is_muted_user():
+        return jsonify({'success': False, 'message': 'You cannot like comments while your account is suspended or muted.'})
+    
+    comment = Comment.query.get_or_404(comment_id)
+    
+    # Check if user already liked this comment
+    existing_like = CommentLike.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+    
+    if existing_like:
+        # Unlike the comment
+        db.session.delete(existing_like)
+        db.session.commit()
+        return jsonify({'success': True, 'liked': False})
+    else:
+        # Like the comment
+        like = CommentLike(user_id=current_user.id, comment_id=comment_id)
+        db.session.add(like)
+        db.session.commit()
+        
+        # Create notification for comment author
+        if comment.user_id != current_user.id:
+            create_notification(
+                comment.user_id,
+                'Comment Liked',
+                f'{current_user.username} liked your comment'
+            )
+        
+        return jsonify({'success': True, 'liked': True})
+
+# Admin: List Labs
+@app.route('/admin/labs')
+@login_required
+def admin_labs():
+    if not current_user.is_admin:
+        abort(403)
+    labs = Lab.query.order_by(Lab.id.desc()).all()
+    return render_template('admin_labs.html', labs=labs)
+
+# Admin: Create Lab
+@app.route('/admin/labs/new', methods=['GET', 'POST'])
+@login_required
+def admin_create_lab():
+    if not current_user.is_admin:
+        abort(403)
+    if request.method == 'POST':
+        data = request.form
+        lab = Lab(
+            title=data['title'],
+            description=data['description'],
+            difficulty=data['difficulty'],
+            category=data['category'],
+            lab_type=data.get('lab_type', 'standard'),
+            points=int(data['points']),
+            hints=data.get('hints', ''),
+            solution=data.get('solution', ''),
+            flag=data['flag'],
+            instructions=data.get('instructions', ''),
+            tools_needed=data.get('tools_needed', ''),
+            learning_objectives=data.get('learning_objectives', ''),
+            is_premium=('is_premium' in data),
+            is_active=('is_active' in data),
+            estimated_time=int(data.get('estimated_time', 0)),
+            sandbox_url=data.get('sandbox_url', ''),
+            sandbox_instructions=data.get('sandbox_instructions', ''),
+            required_command=data.get('required_command', ''),
+            command_success_criteria=data.get('command_success_criteria', ''),
+            # Terminal lab fields
+            terminal_enabled=(data.get('lab_type') == 'terminal'),
+            terminal_instructions=data.get('terminal_instructions', ''),
+            terminal_shell=data.get('terminal_shell', 'bash'),
+            terminal_timeout=int(data.get('terminal_timeout', 300)),
+            allow_command_hints=('allow_command_hints' in data),
+            strict_order=('strict_order' in data),
+            allow_retry=('allow_retry' in data)
+        )
+        db.session.add(lab)
+        db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
+        flash('Lab created!', 'success')
+        return redirect(url_for('admin_labs'))
+    return render_template('admin_lab_form.html', lab=None)
+
+# Admin: Edit Lab
+@app.route('/admin/labs/edit/<int:lab_id>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_lab(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    lab = Lab.query.get_or_404(lab_id)
+    if request.method == 'POST':
+        data = request.form
+        lab.title = data['title']
+        lab.description = data['description']
+        lab.difficulty = data['difficulty']
+        lab.category = data['category']
+        lab.lab_type = data.get('lab_type', 'standard')
+        lab.points = int(data['points'])
+        lab.hints = data.get('hints', '')
+        lab.solution = data.get('solution', '')
+        lab.flag = data['flag']
+        lab.instructions = data.get('instructions', '')
+        lab.tools_needed = data.get('tools_needed', '')
+        lab.learning_objectives = data.get('learning_objectives', '')
+        lab.is_premium = ('is_premium' in data)
+        lab.is_active = ('is_active' in data)
+        lab.estimated_time = int(data.get('estimated_time', 0))
+        lab.sandbox_url = data.get('sandbox_url', '')
+        lab.sandbox_instructions = data.get('sandbox_instructions', '')
+        lab.required_command = data.get('required_command', '')
+        lab.command_success_criteria = data.get('command_success_criteria', '')
+        # Terminal lab fields
+        lab.terminal_enabled = (data.get('lab_type') == 'terminal')
+        lab.terminal_instructions = data.get('terminal_instructions', '')
+        lab.terminal_shell = data.get('terminal_shell', 'bash')
+        lab.terminal_timeout = int(data.get('terminal_timeout', 300))
+        lab.allow_command_hints = ('allow_command_hints' in data)
+        lab.strict_order = ('strict_order' in data)
+        lab.allow_retry = ('allow_retry' in data)
+        db.session.commit()
+        update_user_streak(current_user.id)
+        check_and_unlock_achievements(current_user)
+        flash('Lab updated!', 'success')
+        return redirect(url_for('admin_labs'))
+    # Attach options_list for quiz questions
+    if lab.quiz_questions:
+        for q in lab.quiz_questions:
+            try:
+                q.options_list = json.loads(q.options)
+            except Exception:
+                q.options_list = []
+    return render_template('admin_lab_form.html', lab=lab)
+
+# Admin: Delete Lab
+@app.route('/admin/labs/delete/<int:lab_id>', methods=['POST'])
+@login_required
+def admin_delete_lab(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    lab = Lab.query.get_or_404(lab_id)
+    db.session.delete(lab)
+    db.session.commit()
+    flash('Lab deleted.', 'info')
+    return redirect(url_for('admin_labs'))
+
+@app.route('/admin/labs/<int:lab_id>/add_quiz_question', methods=['POST'])
+@login_required
+def admin_add_quiz_question(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    lab = Lab.query.get_or_404(lab_id)
+    question = request.form['question']
+    options = [opt.strip() for opt in request.form['options'].split(',') if opt.strip()]
+    correct_answer = request.form['correct_answer']
+    explanation = request.form.get('explanation', '')
+    marks = int(request.form.get('marks', 1))
+    order = len(lab.quiz_questions)
+    qq = LabQuizQuestion(
+        lab_id=lab.id,
+        question=question,
+        options=json.dumps(options),
+        correct_answer=correct_answer,
+        explanation=explanation,
+        marks=marks,
+        order=order
+    )
+    db.session.add(qq)
+    db.session.commit()
+    flash('Quiz question added!', 'success')
+    return redirect(url_for('admin_edit_lab', lab_id=lab.id))
+
+@app.route('/admin/labs/<int:lab_id>/delete_quiz_question/<int:question_id>', methods=['POST'])
+@login_required
+def admin_delete_quiz_question(lab_id, question_id):
+    if not current_user.is_admin:
+        abort(403)
+    qq = LabQuizQuestion.query.get_or_404(question_id)
+    db.session.delete(qq)
+    db.session.commit()
+    flash('Quiz question deleted.', 'info')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+# Terminal Command Management Routes
+@app.route('/admin/labs/<int:lab_id>/add_terminal_command', methods=['POST'])
+@login_required
+def admin_add_terminal_command(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        order = int(request.form.get('order', 1))
+        command = request.form.get('command', '').strip()
+        expected_output = request.form.get('expected_output', '').strip()
+        points = int(request.form.get('points', 1))
+        hint = request.form.get('hint', '').strip()
+        description = request.form.get('description', '').strip()
+        is_optional = 'is_optional' in request.form
+        
+        if not command:
+            flash('Command is required.', 'error')
+            return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+        
+        # Create terminal command
+        terminal_command = LabTerminalCommand(
+            lab_id=lab_id,
+            command=command,
+            expected_output=expected_output if expected_output else None,
+            order=order,
+            points=points,
+            hint=hint if hint else None,
+            description=description if description else None,
+            is_optional=is_optional
+        )
+        
+        db.session.add(terminal_command)
+        db.session.commit()
+        
+        flash('Terminal command added successfully!', 'success')
+        
+    except ValueError as e:
+        flash(f'Invalid input: {str(e)}', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/edit_terminal_command/<int:command_id>', methods=['POST'])
+@login_required
+def admin_edit_terminal_command(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    
+    try:
+        command.order = int(request.form.get('order', command.order))
+        command.command = request.form.get('command', '').strip()
+        command.expected_output = request.form.get('expected_output', '').strip()
+        command.points = int(request.form.get('points', command.points))
+        command.hint = request.form.get('hint', '').strip()
+        command.description = request.form.get('description', '').strip()
+        command.is_optional = 'is_optional' in request.form
+        
+        if not command.command:
+            flash('Command is required.', 'error')
+            return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+        
+        db.session.commit()
+        flash('Terminal command updated successfully!', 'success')
+        
+    except ValueError as e:
+        flash(f'Invalid input: {str(e)}', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/delete_terminal_command/<int:command_id>', methods=['POST'])
+@login_required
+def admin_delete_terminal_command(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    
+    try:
+        db.session.delete(command)
+        db.session.commit()
+        flash('Terminal command deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/reorder_terminal_commands', methods=['POST'])
+@login_required
+def admin_reorder_terminal_commands(lab_id, command_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    try:
+        command_orders = request.get_json()
+        if not command_orders:
+            return jsonify({'success': False, 'message': 'No data provided'})
+        
+        for command_id, new_order in command_orders.items():
+            command = LabTerminalCommand.query.get(command_id)
+            if command and command.lab_id == lab_id:
+                command.order = new_order
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Commands reordered successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error reordering commands: {str(e)}'})
+
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500
+
+# Admin Content Deletion Routes
+@app.route('/admin/delete/post/<int:post_id>', methods=['POST'])
+@login_required
+def admin_delete_post(post_id):
+    """Admin can delete any post (premium or not, purchased or not)"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    post = Post.query.get_or_404(post_id)
+    
+    try:
+        # Delete associated purchases
+        Purchase.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated comments
+        Comment.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated likes
+        PostLike.query.filter_by(post_id=post_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='post', target_id=post_id).delete()
+        
+        # Delete the post file if it exists
+        if post.file_path and os.path.exists(post.file_path):
+            os.remove(post.file_path)
+        
+        # Delete the post
+        db.session.delete(post)
+        db.session.commit()
+        
+        flash(f'Post "{post.title}" has been permanently deleted along with all associated data.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting post: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete/comment/<int:comment_id>', methods=['POST'])
+@login_required
+def admin_delete_comment(comment_id):
+    """Admin can delete any comment"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    comment = Comment.query.get_or_404(comment_id)
+    
+    try:
+        # Delete associated likes
+        CommentLike.query.filter_by(comment_id=comment_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='comment', target_id=comment_id).delete()
+        
+        # Delete the comment
+        db.session.delete(comment)
+        db.session.commit()
+        
+        flash(f'Comment has been permanently deleted.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting comment: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('admin_dashboard'))
+
+@app.route('/admin/delete/lab/<int:lab_id>', methods=['POST'])
+@login_required
+def admin_delete_lab_comprehensive(lab_id):
+    """Admin can delete any lab with all associated data"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        # Delete lab completions
+        LabCompletion.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete quiz attempts
+        LabQuizAttempt.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete quiz questions
+        LabQuizQuestion.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal commands
+        LabTerminalCommand.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal attempts
+        LabTerminalAttempt.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete terminal sessions
+        LabTerminalSession.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete associated user actions
+        UserAction.query.filter_by(target_type='lab', target_id=lab_id).delete()
+        
+        # Delete the lab
+        db.session.delete(lab)
+        db.session.commit()
+        
+        flash(f'Lab "{lab.title}" has been permanently deleted along with all associated data.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting lab: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_labs'))
+
+@app.route('/admin/delete/user/<int:user_id>', methods=['POST'])
 @login_required
 def admin_delete_user(user_id):
     """Admin can delete any user (except other admins) with all their content"""
@@ -2090,159 +2810,57 @@ def admin_mass_mail():
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
+
+    from models import User
+    from utils import send_email
+    users = User.query.order_by(User.email).all()
+    user_choices = [(u.email, f"{u.username} ({u.email})") for u in users]
+
     if request.method == 'POST':
-        flash('Mass mail sent (demo).', 'success')
-        return redirect(url_for('admin_mass_mail'))
-    return render_template('admin_mass_mail.html')
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        recipient = request.form.get('recipient', 'all')
 
-class AdminActionLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    action = db.Column(db.String(64))
-    reason = db.Column(db.String(256))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-def log_admin_action(admin, user, action, reason=None):
-    log = AdminActionLog(admin_id=admin.id, user_id=user.id, action=action, reason=reason)
-    db.session.add(log)
-    db.session.commit()
-
-@app.route('/admin/set_admin/<int:user_id>', methods=['POST'])
-@login_required
-def admin_set_admin(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    user.set_admin(True)
-    db.session.commit()
-    log_admin_action(current_user, user, 'set_admin')
-    flash(f'User {user.username} is now an admin.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/unset_admin/<int:user_id>', methods=['POST'])
-@login_required
-def admin_unset_admin(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    user.set_admin(False)
-    db.session.commit()
-    log_admin_action(current_user, user, 'unset_admin')
-    flash(f'User {user.username} is no longer an admin.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/set_premium/<int:user_id>', methods=['POST'])
-@login_required
-def admin_set_premium(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    user.set_premium(True)
-    db.session.commit()
-    log_admin_action(current_user, user, 'set_premium')
-    flash(f'User {user.username} is now premium.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/unset_premium/<int:user_id>', methods=['POST'])
-@login_required
-def admin_unset_premium(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    user.set_premium(False)
-    db.session.commit()
-    log_admin_action(current_user, user, 'unset_premium')
-    flash(f'User {user.username} is no longer premium.', 'success')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
-@login_required
-def admin_reset_password(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    # For demo, just flash a message
-    flash(f'Password reset link sent to {user.email} (not really).', 'info')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/impersonate/<int:user_id>', methods=['POST'])
-@login_required
-def admin_impersonate_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    session['impersonate_id'] = user.id
-    flash(f'You are now impersonating {user.username}. (Demo only)', 'info')
-    return redirect(url_for('user_profile', username=user.username))
-
-@app.route('/admin/labs')
-@login_required
-def admin_labs():
-    if not current_user.is_admin:
-        abort(403)
-    labs = Lab.query.order_by(Lab.id.desc()).all()
-    return render_template('admin_labs.html', labs=labs)
-
-@app.route('/admin/settings', methods=['GET', 'POST'])
-@login_required
-def admin_settings():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    if request.method == 'POST':
-        flash('Settings updated (demo).', 'success')
-        return redirect(url_for('admin_settings'))
-    return render_template('admin_settings.html')
-
-@app.route('/admin/analytics')
-@login_required
-def admin_analytics():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    # Minimal demo context
-    return render_template('admin_analytics.html', total_users=0, new_users_today=0, premium_users=0)
-
-@app.route('/admin/contacts')
-@login_required
-def admin_contacts():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    return render_template('admin_contacts.html')
-
-@app.route('/admin/activation-keys')
-@login_required
-def admin_activation_keys():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    return render_template('admin_activation_keys.html')
-
-@app.route('/admin/payment-plans')
-@login_required
-def admin_payment_plans():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    return render_template('admin_payment_plans.html')
-
-@app.route('/admin/users')
-@login_required
-def admin_users():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    return render_template('admin_users.html')
-
-@app.route('/admin/mass-mail', methods=['GET', 'POST'])
-@login_required
-def admin_mass_mail():
-    if not current_user.is_admin:
-        flash('Access denied.', 'error')
-        return redirect(url_for('index'))
-    if request.method == 'POST':
-        flash('Mass mail sent (demo).', 'success')
-        return redirect(url_for('admin_mass_mail'))
-    return render_template('admin_mass_mail.html')
+        # Compose premium HTML email
+        html_body = f'''
+        <html>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6fb; margin: 0; padding: 0;">
+          <table width="100%" bgcolor="#f4f6fb" cellpadding="0" cellspacing="0" style="padding: 0; margin: 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); margin: 40px 0;">
+                  <tr>
+                    <td style="background: #1a2235; border-radius: 12px 12px 0 0; padding: 32px 0; text-align: center;">
+                      <h1 style="color: #fff; margin: 0; font-size: 2.2rem; letter-spacing: 2px;">PentraX Security</h1>
+                      <p style="color: #b0b8d1; margin: 0; font-size: 1.1rem;">Your trusted cybersecurity platform</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 36px 40px 24px 40px; color: #222;">
+                      <h2 style="color: #007bff; margin-top: 0;">{subject}</h2>
+                      <div style="font-size: 1.1rem; line-height: 1.7; color: #222; margin-bottom: 24px;">
+                        {message.replace(chr(10), '<br>')}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 40px 36px 40px;">
+                      <div style="background: #f8f9fa; border-radius: 8px; padding: 18px 24px; color: #444; font-size: 1rem;">
+                        <strong>Stay Secure:</strong> PentraX will never ask for your password or sensitive information by email.<br>
+                        If you have any doubts, contact our support team directly from the platform.
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background: #1a2235; border-radius: 0 0 12px 12px; padding: 18px 0; text-align: center; color: #b0b8d1; font-size: 0.95rem;">
+                      &copy; {datetime.utcnow().year} PentraX Security. All rights reserved.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        '''
+        # ... existing code for sending email, using html_body as the HTML version ...

@@ -21,7 +21,6 @@ class User(UserMixin, db.Model):
     onboarding_complete = db.Column(db.Boolean, default=False)
     reputation = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime)
-    last_ip = db.Column(db.String(64))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -142,36 +141,6 @@ class User(UserMixin, db.Model):
         if self.is_permanently_banned() or self.is_temporarily_banned():
             return False
         return True
-
-    def set_admin(self, value=True):
-        """Set or unset admin status."""
-        self.is_admin = value
-
-    def set_premium(self, value=True):
-        """Set or unset premium status."""
-        self.is_premium = value
-
-    def ban(self):
-        """Ban the user."""
-        self.is_banned = True
-
-    def unban(self):
-        """Unban the user."""
-        self.is_banned = False
-
-    def mute(self):
-        """Mute the user."""
-        self.is_muted = True
-
-    def unmute(self):
-        """Unmute the user."""
-        self.is_muted = False
-
-    def update_last_login(self, dt, ip=None):
-        """Update last login time and optionally IP."""
-        self.last_login = dt
-        if ip:
-            self.last_ip = ip
 
 class Follow(db.Model):
     id = db.Column(db.Integer, primary_key=True)
