@@ -3,7 +3,17 @@
 {% block title %}{{ user.username }} - PentraX{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
   {% if current_user.is_admin %}
     <!-- Advanced Admin User Profile: Tabbed Interface -->
     <div class="card mb-4">
@@ -137,14 +147,30 @@
           </div>
           <!-- Admin Actions Tab -->
           <div class="tab-pane fade" id="actions" role="tabpanel">
-            <div class="d-flex gap-2 mb-3">
-              <button class="btn btn-danger btn-sm" disabled title="Not implemented">Ban User</button>
-              <button class="btn btn-warning btn-sm" disabled title="Not implemented">Mute User</button>
-              <button class="btn btn-secondary btn-sm" disabled title="Not implemented">Delete User</button>
-              <button class="btn btn-info btn-sm" disabled title="Not implemented">Reset Password</button>
-              <button class="btn btn-dark btn-sm" disabled title="Not implemented">Impersonate</button>
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+              <form method="post" action="{{ url_for('admin_ban_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm" {% if user.is_banned %}disabled{% endif %} onclick="return confirm('Ban this user?');">Ban User</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_unban_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-success btn-sm" {% if not user.is_banned %}disabled{% endif %} onclick="return confirm('Unban this user?');">Unban User</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_mute_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-warning btn-sm" {% if user.is_muted %}disabled{% endif %} onclick="return confirm('Mute this user?');">Mute User</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_unmute_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-info btn-sm" {% if not user.is_muted %}disabled{% endif %} onclick="return confirm('Unmute this user?');">Unmute User</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_delete_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Delete this user? This cannot be undone.');">Delete User</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_reset_password', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-info btn-sm">Reset Password</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_impersonate_user', user_id=user.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-dark btn-sm">Impersonate</button>
+              </form>
             </div>
-            <div class="alert alert-info small">Admin actions are for demonstration. Implement as needed.</div>
+            <div class="alert alert-info small">All admin actions are now live. Use with caution.</div>
           </div>
         </div>
       </div>
