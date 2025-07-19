@@ -4,6 +4,7 @@ from flask_login import UserMixin
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -567,3 +568,19 @@ class UserAchievement(db.Model):
 
     user = db.relationship('User', backref='user_achievements')
     achievement = db.relationship('Achievement', backref='user_achievements')
+
+class SIEMEvent(db.Model):
+    __tablename__ = 'siem_events'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    event_type = db.Column(db.String(64), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    username = db.Column(db.String(64), nullable=True)
+    ip_address = db.Column(db.String(64), nullable=True)
+    source = db.Column(db.String(64), nullable=True)
+    severity = db.Column(db.String(16), nullable=False, default='info')
+    message = db.Column(db.Text, nullable=False)
+    raw_data = db.Column(JSONB, nullable=True)
+
+    def __repr__(self):
+        return f'<SIEMEvent {self.event_type} {self.timestamp}>'

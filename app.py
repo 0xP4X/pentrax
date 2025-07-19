@@ -13,6 +13,7 @@ import eventlet
 # import select  # Commented out for Windows compatibility
 import subprocess
 from datetime import datetime
+from utils.firewall import firewall_middleware
 
 # Load environment variables
 load_dotenv()
@@ -30,6 +31,7 @@ migrate = Migrate()
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+firewall_middleware(app)
 
 # Configure the database - use Supabase PostgreSQL
 database_url = os.environ.get("DATABASE_URL", "postgresql://postgres.lmpticqxipcdkpcmfpvi:HH8m1MvSUtxBjTKV@aws-0-eu-north-1.pooler.supabase.com:5432/postgres")
