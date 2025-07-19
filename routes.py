@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
@@ -2922,3 +2922,32 @@ def terms():
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
+
+@app.route('/admin/siem')
+@login_required
+def admin_siem_dashboard():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    # Filters
+    event_type = request.args.get('event_type')
+    severity = request.args.get('severity')
+    ip = request.args.get('ip')
+    user = request.args.get('user')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+    query = SIEMEvent.query
+    if event_type:
+        query = query.filter_by(event_type=event_type)
+    if severity:
+        query = query.filter_by(severity=severity)
+    if ip:
+        query = query.filter(SIEMEvent.ip_address == ip)
+    if user:
+        query = query.filter(SIEMEvent.username.ilike(f'%{user}%'))
+    if date_from:
+        query = query.filter(SIEMEvent.timestamp >= date_from)
+    if date_to:
+        query = query.filter(SIEMEvent.timestamp <= date_to)
+    events = query.order_by(SIEMEvent.timestamp.desc()).limit(200).all()
+    return render_template('admin_siem_dashboard.html', events=events, event_type=event_type, severity=severity, ip=ip, user=user, date_from=date_from, date_to=date_to)
