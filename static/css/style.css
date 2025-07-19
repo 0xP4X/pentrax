@@ -393,6 +393,14 @@ body {
     box-shadow: 0 2px 8px rgba(102,126,234,0.15);
 }
 
+@media screen and (pointer: coarse) {
+  html[data-bs-theme="light"][data-android="true"] .category-bar .nav-link.active {
+    background: linear-gradient(135deg, #ffe066, #ffd60a);
+    color: #333 !important;
+    box-shadow: 0 2px 8px rgba(255,224,102,0.15);
+  }
+}
+
 /* Loading Spinner */
 .spinner-border-sm {
     width: 1rem;
