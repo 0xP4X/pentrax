@@ -1277,5 +1277,10 @@ body.conversation-page .ai-assistant {
     border-top: 1px solid #222831 !important;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.08) !important;
 }
+[data-bs-theme="light"] .bg-dark.fixed-bottom.border-top.shadow-lg {
+    background: #fff !important;
+    border-top: 1px solid #e0e0e0 !important;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.08) !important;
+}
 
 /* Note: Cache-Control is set in server config and preferred over Expires */

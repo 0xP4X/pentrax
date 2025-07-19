@@ -624,7 +624,8 @@ def store():
         return redirect(url_for('activate_premium'))
     
     premium_posts = Post.query.filter_by(is_premium=True).order_by(desc(Post.created_at)).all()
-    return render_template('store.html', premium_posts=premium_posts, is_free_mode=is_platform_free_mode())
+    # Pass a default category for the category_bar macro
+    return render_template('store.html', premium_posts=premium_posts, is_free_mode=is_platform_free_mode(), category='tools')
 
 @app.route('/purchase/<int:post_id>', methods=['POST'])
 @login_required
