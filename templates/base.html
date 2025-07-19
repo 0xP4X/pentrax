@@ -213,27 +213,9 @@
       </div>
     </nav>
 
-    <!-- Mobile Footer -->
-    <footer class="bg-dark text-center text-white p-3 d-md-none mt-5">
-        <div class="container">
-            <section class="mb-3">
-                <a href="https://twitter.com/" target="_blank" class="btn btn-outline-light btn-floating m-1" role="button" title="Twitter"><i class="fab fa-twitter"></i></a>
-                <a href="https://github.com/" target="_blank" class="btn btn-outline-light btn-floating m-1" role="button" title="GitHub"><i class="fab fa-github"></i></a>
-                <a href="mailto:admpentrax@gmail.com" class="btn btn-outline-light btn-floating m-1" role="button" title="Email"><i class="fas fa-envelope"></i></a>
-            </section>
-        </div>
-        <div class="text-center p-3 d-flex justify-content-center align-items-center flex-wrap" style="background-color: rgba(0, 0, 0, 0.2);">
-            <span class="align-middle">&copy; {{ current_year }} PentraX</span>
-            <span class="mx-2 align-middle">|</span>
-            <a href="/about" class="fw-bold align-middle text-decoration-underline text-white" style="text-shadow:0 1px 2px #000;">About</a>
-            <span class="mx-2 align-middle">|</span>
-            <a href="/terms" class="fw-bold align-middle text-decoration-underline text-white" style="text-shadow:0 1px 2px #000;">Terms &amp; Conditions</a>
-        </div>
-    </footer>
-
     <!-- AI Assistant Popup -->
     {% if current_user.is_authenticated %}
-    <div id="ai-assistant" class="ai-assistant">
+    <div id="ai-assistant" class="ai-assistant mb-5 mb-md-0">
         <div class="ai-toggle" id="ai-toggle">
             <i class="fas fa-robot"></i>
         </div>
