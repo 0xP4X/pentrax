@@ -8,7 +8,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from typing import Optional, List
-from app import db
 from models import Notification, AdminSettings
 
 ALLOWED_EXTENSIONS = {'txt', 'py', 'sh', 'rb', 'pl', 'php', 'js', 'html', 'css', 'json', 'xml', 'md', 'zip', 'tar', 'gz'}
