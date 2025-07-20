@@ -4814,4 +4814,56 @@ def admin_lab_analytics(lab_id):
 @app.route('/admin/advanced-labs/create', methods=['GET', 'POST'])
 @admin_required
 def admin_create_advanced_lab():
-    ...
+    """Create a new lab with advanced features (advanced admin)"""
+    if request.method == 'POST':
+        try:
+            # Create new lab
+            lab = Lab(
+                title=request.form['title'],
+                description=request.form['description'],
+                difficulty=request.form['difficulty'],
+                category=request.form['category'],
+                subcategory=request.form.get('subcategory'),
+                points=int(request.form.get('points', 10)),
+                estimated_time=int(request.form.get('estimated_time', 30)),
+                lab_type=request.form.get('lab_type', 'standard'),
+                lab_format=request.form.get('lab_format', 'individual'),
+                flag=request.form.get('flag'),
+                hints=request.form.get('hints'),
+                solution=request.form.get('solution'),
+                instructions=request.form.get('instructions'),
+                tools_needed=request.form.get('tools_needed'),
+                learning_objectives=request.form.get('learning_objectives'),
+                prerequisites=request.form.get('prerequisites'),
+                is_premium=bool(request.form.get('is_premium')),
+                is_active=bool(request.form.get('is_active', True)),
+                user_id=current_user.id
+            )
+            # Set lab-specific configurations
+            if lab.lab_type == 'terminal':
+                lab.terminal_enabled = True
+                lab.terminal_instructions = request.form.get('terminal_instructions')
+                lab.terminal_shell = request.form.get('terminal_shell', 'bash')
+                lab.terminal_timeout = int(request.form.get('terminal_timeout', 300))
+                lab.allow_command_hints = bool(request.form.get('allow_command_hints'))
+                lab.strict_order = bool(request.form.get('strict_order'))
+                lab.allow_retry = bool(request.form.get('allow_retry'))
+            elif lab.lab_type == 'sandbox':
+                lab.sandbox_url = request.form.get('sandbox_url')
+                lab.sandbox_instructions = request.form.get('sandbox_instructions')
+                lab.environment_type = request.form.get('environment_type', 'docker')
+                lab.environment_config = request.form.get('environment_config')
+            elif lab.lab_type == 'ctf':
+                lab.ctf_category = request.form.get('ctf_category')
+                lab.ctf_points = int(request.form.get('ctf_points', 100))
+                lab.challenge_type = request.form.get('challenge_type', 'static')
+                lab.time_limit = int(request.form.get('time_limit', 0)) if request.form.get('time_limit') else None
+                lab.max_attempts = int(request.form.get('max_attempts', 0)) if request.form.get('max_attempts') else 0
+            db.session.add(lab)
+            db.session.commit()
+            flash(f'Lab "{lab.title}" created successfully!', 'success')
+            return redirect(url_for('admin_edit_advanced_lab', lab_id=lab.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating lab: {str(e)}', 'error')
+    return render_template('admin_lab_form.html')
