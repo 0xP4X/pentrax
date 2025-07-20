@@ -60,10 +60,12 @@ def log_siem_event(event_type, message, severity='info', source=None, user=None,
         raw_data['ip_info'] = ip_info
     if user is None:
         user = getattr(current_user, '_get_current_object', lambda: None)()
+    user_id = user.id if user and hasattr(user, 'is_authenticated') and user.is_authenticated else None
+    username = user.username if user and hasattr(user, 'is_authenticated') and user.is_authenticated else None
     event = SIEMEvent(
         event_type=event_type,
-        user_id=user.id if user else None,
-        username=user.username if user else None,
+        user_id=user_id,
+        username=username,
         ip_address=ip_address or (request.remote_addr if request else None),
         source=source,
         severity=severity,
