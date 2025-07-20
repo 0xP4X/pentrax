@@ -212,21 +212,21 @@ setInterval(function() {
   background: var(--bs-card-bg);
 }
 .achievement-card.unlocked {
-  background: linear-gradient(135deg, #e0ffe7 0%, #b2f7ef 100%);
-  box-shadow: 0 4px 16px 0 rgba(40,167,69,0.15), 0 1.5px 8px 0 rgba(0,0,0,0.07);
-  border: 2px solid #28a745;
+  background: linear-gradient(135deg, #e3f0ff 0%, #b6d0ff 100%);
+  box-shadow: 0 4px 16px 0 rgba(0,123,255,0.15), 0 1.5px 8px 0 rgba(0,0,0,0.07);
+  border: 2px solid #007bff;
 }
 .achievement-card.locked {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  opacity: 0.92;
+  opacity: 0.96;
 }
 .achievement-card .fa-3x {
-  filter: drop-shadow(0 0 6px #b2f7ef);
+  filter: drop-shadow(0 0 6px #ffe066);
   transition: filter 0.2s;
 }
 .achievement-card.unlocked .fa-3x {
-  color: #28a745 !important;
-  filter: drop-shadow(0 0 12px #28a745);
+  color: #ffc107 !important;
+  filter: drop-shadow(0 0 12px #ffc107);
 }
 .achievement-card.locked .fa-3x {
   color: #adb5bd !important;
@@ -244,12 +244,12 @@ setInterval(function() {
   margin: 0 0.2em;
 }
 .achievement-type-badge.Quiz { background: #007bff; color: #fff; }
-.achievement-type-badge.CTF { background: #fd7e14; color: #fff; }
-.achievement-type-badge.Guided { background: #20c997; color: #fff; }
-.achievement-type-badge[title="Real-Time"] { background: #6610f2; color: #fff; }
+.achievement-type-badge.CTF { background: #ffc107; color: #212529; }
+.achievement-type-badge.Guided { background: #007bff; color: #fff; }
+.achievement-type-badge[title="Real-Time"] { background: #ffc107; color: #212529; }
 .achievement-type-badge.Other { background: #6c757d; color: #fff; }
 .progress-bar {
-  background: linear-gradient(90deg, #20c997 0%, #007bff 100%);
+  background: linear-gradient(90deg, #ffc107 0%, #007bff 100%);
 }
 </style>
 {% endblock %} 
