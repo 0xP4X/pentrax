@@ -16,8 +16,6 @@ import requests
 import hashlib
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
-from utils.achievements import update_user_streak, check_and_unlock_achievements, get_user_achievements_with_progress, get_leaderboard_data, get_user_stats
-from functools import wraps
 from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
 from utils.siem import get_deep_ip_info, log_siem_event
 import re
@@ -3410,75 +3408,3 @@ def admin_protection():
                 source='admin'
             )
             add_blocked_ip(ip, reason='Unauthorized admin access', blocked_by='SIEM')
-
-# Achievements and Streaks Routes
-@app.route('/achievements')
-@login_required
-def achievements_dashboard():
-    """Display user's achievements with progress tracking"""
-    achievements_with_progress = get_user_achievements_with_progress(current_user)
-    user_stats = get_user_stats(current_user)
-    
-    # Group achievements by type
-    achievement_groups = {}
-    for item in achievements_with_progress:
-        ach_type = item['achievement'].type
-        if ach_type not in achievement_groups:
-            achievement_groups[ach_type] = []
-        achievement_groups[ach_type].append(item)
-    
-    return render_template('achievements.html', 
-                         achievements_with_progress=achievements_with_progress,
-                         achievement_groups=achievement_groups,
-                         user_stats=user_stats)
-
-@app.route('/streaks')
-@login_required
-def streaks_dashboard():
-    """Display user's streak information and progress"""
-    user_stats = get_user_stats(current_user)
-    streak = current_user.streak
-    
-    # Calculate streak milestones
-    streak_milestones = [3, 7, 14, 30, 60, 100]
-    current_streak = user_stats['current_streak']
-    longest_streak = user_stats['longest_streak']
-    
-    # Get next milestone
-    next_milestone = None
-    for milestone in streak_milestones:
-        if current_streak < milestone:
-            next_milestone = milestone
-            break
-    
-    return render_template('streaks.html',
-                         user_stats=user_stats,
-                         streak=streak,
-                         streak_milestones=streak_milestones,
-                         next_milestone=next_milestone)
-
-@app.route('/leaderboard')
-def leaderboard():
-    """Display leaderboards for streaks, achievements, and reputation"""
-    leaderboard_data = get_leaderboard_data()
-    
-    return render_template('leaderboard.html',
-                         leaderboard_data=leaderboard_data)
-
-@app.route('/api/achievement_progress')
-@login_required
-def api_achievement_progress():
-    """API endpoint to get achievement progress for AJAX updates"""
-    achievements_with_progress = get_user_achievements_with_progress(current_user)
-    
-    # Return only essential data for AJAX
-    progress_data = []
-    for item in achievements_with_progress:
-        progress_data.append({
-            'id': item['achievement'].id,
-            'name': item['achievement'].name,
-            'progress': item['progress'],
-            'unlocked': item['unlocked']
-        })
-    
-    return jsonify(progress_data)
