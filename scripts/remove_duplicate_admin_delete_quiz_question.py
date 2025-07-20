@@ -1,72 +1,47 @@
 import re
 
-ROUTES_FILE = 'routes.py'  # Corrected path
+ROUTE_PATTERN = re.compile(r"^@app\.route\('/admin/quiz-questions/<int:question_id>/delete', methods=\['POST'\]\)")
+ADMIN_DECORATOR_PATTERN = re.compile(r"^@admin_required")
+DEF_PATTERN = re.compile(r"^def admin_delete_quiz_question_global\(")
 
-with open(ROUTES_FILE, 'r', encoding='utf-8') as f:
-    lines = f.readlines()
 
-pattern = re.compile(r'^@app\.route\(["\"]/admin/quiz-questions/<int:question_id>/delete["\"][^)]*\)')
-def_pattern = re.compile(r'^def admin_delete_quiz_question_global\(')
+def remove_duplicate_admin_delete_quiz_question_global(filepath):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
 
-found_first = False
-new_lines = []
-i = 0
-while i < len(lines):
-    if pattern.match(lines[i].strip()):
-        # Check if this is the first occurrence
-        if not found_first:
-            found_first = True
-            new_lines.append(lines[i])
-            i += 1
-            # Copy decorators and function definition
-            while i < len(lines) and (lines[i].strip().startswith('@') or def_pattern.match(lines[i].strip()) or lines[i].strip() == ''):
+    new_lines = []
+    found_first = False
+    i = 0
+    n = len(lines)
+    while i < n:
+        # Look for the route decorator
+        if ROUTE_PATTERN.match(lines[i].strip()):
+            # Check for @admin_required and def on next lines
+            if i+1 < n and ADMIN_DECORATOR_PATTERN.match(lines[i+1].strip()) and i+2 < n and DEF_PATTERN.match(lines[i+2].strip()):
+                if not found_first:
+                    # Keep the first occurrence
+                    found_first = True
+                    new_lines.extend(lines[i:i+3])
+                    i += 3
+                    # Copy the function body
+                    while i < n and not lines[i].strip().startswith('@app.route('):
+                        new_lines.append(lines[i])
+                        i += 1
+                else:
+                    # Skip this duplicate occurrence
+                    i += 3
+                    # Skip the function body
+                    while i < n and not lines[i].strip().startswith('@app.route('):
+                        i += 1
+            else:
                 new_lines.append(lines[i])
                 i += 1
-            # Copy function body
-            indent = None
-            while i < len(lines):
-                if lines[i].strip() == '':
-                    new_lines.append(lines[i])
-                    i += 1
-                    continue
-                if indent is None:
-                    match = re.match(r'^(\s+)', lines[i])
-                    if match:
-                        indent = match.group(1)
-                    else:
-                        break
-                if lines[i].startswith(indent):
-                    new_lines.append(lines[i])
-                    i += 1
-                else:
-                    break
         else:
-            # Skip this duplicate route and function
+            new_lines.append(lines[i])
             i += 1
-            # Skip decorators and function definition
-            while i < len(lines) and (lines[i].strip().startswith('@') or def_pattern.match(lines[i].strip()) or lines[i].strip() == ''):
-                i += 1
-            # Skip function body
-            indent = None
-            while i < len(lines):
-                if lines[i].strip() == '':
-                    i += 1
-                    continue
-                if indent is None:
-                    match = re.match(r'^(\s+)', lines[i])
-                    if match:
-                        indent = match.group(1)
-                    else:
-                        break
-                if lines[i].startswith(indent):
-                    i += 1
-                else:
-                    break
-    else:
-        new_lines.append(lines[i])
-        i += 1
 
-with open(ROUTES_FILE, 'w', encoding='utf-8') as f:
-    f.writelines(new_lines)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.writelines(new_lines)
 
-print('Duplicate admin_delete_quiz_question_global definitions removed.') 
+if __name__ == '__main__':
+    remove_duplicate_admin_delete_quiz_question_global('routes.py') 
