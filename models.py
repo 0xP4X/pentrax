@@ -595,3 +595,14 @@ class BlockedIP(db.Model):
 
     def __repr__(self):
         return f'<BlockedIP {self.ip_address}>'
+
+class LabPhase(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
+    order = db.Column(db.Integer, default=1)  # Order of the phase in the lab
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)  # Main instructional content
+    notes = db.Column(db.Text)  # Broad notes, tips, or resources
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    lab = db.relationship('Lab', backref='phases')

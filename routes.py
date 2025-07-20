@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent, BlockedIP
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent, BlockedIP, LabPhase
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
@@ -3571,3 +3571,47 @@ def admin_edit_ctf(lab_id, ctf_id):
         return redirect(url_for('admin_edit_lab', lab_id=lab_id))
     # For GET, just render a placeholder
     return 'CTF edit form placeholder.'
+
+@app.route('/admin/labs/<int:lab_id>/add_phase', methods=['POST'])
+@login_required
+def admin_add_phase(lab_id):
+    if not current_user.is_admin:
+        abort(403)
+    lab = Lab.query.get_or_404(lab_id)
+    try:
+        order = int(request.form.get('order', 1))
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        notes = request.form.get('notes', '').strip()
+        if not title or not content:
+            flash('Title and content are required for a phase.', 'error')
+            return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+        phase = LabPhase(
+            lab_id=lab_id,
+            order=order,
+            title=title,
+            content=content,
+            notes=notes if notes else None
+        )
+        db.session.add(phase)
+        db.session.commit()
+        flash('Phase added successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding phase: {str(e)}', 'error')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/delete_phase/<int:phase_id>', methods=['POST'])
+@login_required
+def admin_delete_phase(lab_id, phase_id):
+    if not current_user.is_admin:
+        abort(403)
+    phase = LabPhase.query.get_or_404(phase_id)
+    try:
+        db.session.delete(phase)
+        db.session.commit()
+        flash('Phase deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting phase: {str(e)}', 'error')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
