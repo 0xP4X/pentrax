@@ -3545,3 +3545,29 @@ def sandbox_command(lab_id):
             "completed": False,
             "prompt": "user@pentrax:~$"
         })
+
+# --- Admin CTF Management Stubs ---
+@app.route('/admin/labs/<int:lab_id>/ctf/add', methods=['POST'])
+@login_required
+def admin_add_ctf(lab_id):
+    # TODO: Implement actual logic
+    # For now, just flash and redirect
+    flash('CTF add stub called.', 'info')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/ctf/<int:ctf_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_ctf(lab_id, ctf_id):
+    # TODO: Implement actual logic
+    flash('CTF delete stub called.', 'info')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/labs/<int:lab_id>/ctf/<int:ctf_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_edit_ctf(lab_id, ctf_id):
+    # TODO: Implement actual logic
+    if request.method == 'POST':
+        flash('CTF edit stub called (POST).', 'info')
+        return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+    # For GET, just render a placeholder
+    return 'CTF edit form placeholder.'
