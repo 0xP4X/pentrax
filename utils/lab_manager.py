@@ -4,7 +4,16 @@ import uuid
 import time
 from datetime import datetime, timedelta
 from models import db, Lab, LearningPath, CTFChallenge, SandboxEnvironment, UserSandboxSession, LabProgress, LabHint, UserHintUsage, LabRating, User, CTFSubmission
-from utils import create_notification, log_siem_event
+# Import utils functions with fallbacks
+try:
+    from utils import create_notification, log_siem_event
+except ImportError:
+    # Fallback functions if utils are not available
+    def create_notification(user_id, title, message):
+        print(f"Notification: {title} - {message} for user {user_id}")
+    
+    def log_siem_event(event_type, message, severity='info', user_id=None, username=None, ip_address=None, source=None, raw_data=None):
+        print(f"SIEM Event [{severity}]: {event_type} - {message}")
 
 # Optional docker import
 try:

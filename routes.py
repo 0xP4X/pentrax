@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime, timedelta
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, abort, make_response, g
 from flask_login import login_user, logout_user, login_required, current_user
+from functools import wraps
+from flask import abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
@@ -24,6 +26,15 @@ import re
 from collections import defaultdict
 from utils.lab_manager import LabManager, LAB_CATEGORIES, LAB_DIFFICULTIES, CTF_CATEGORIES
 from models import LearningPath, CTFChallenge, SandboxEnvironment, UserSandboxSession, CTFSubmission
+
+def admin_required(f):
+    """Decorator to require admin privileges"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            abort(403)  # Forbidden
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.context_processor
 def inject_user():

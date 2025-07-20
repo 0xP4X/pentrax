@@ -276,4 +276,42 @@ You received this email because you have notifications enabled for {notification
     </html>
     """
     
-    return send_email(to_email, subject, body, html_body) 
+    return send_email(to_email, subject, body, html_body)
+
+def log_siem_event(event_type: str, message: str, severity: str = 'info', 
+                  user_id: int = None, username: str = None, 
+                  ip_address: str = None, source: str = None, 
+                  raw_data: dict = None):
+    """
+    Log security events to SIEM system
+    
+    Args:
+        event_type: Type of event (login, logout, file_access, etc.)
+        message: Event description
+        severity: Event severity (info, warning, error, critical)
+        user_id: User ID if applicable
+        username: Username if applicable
+        ip_address: IP address if applicable
+        source: Source of the event
+        raw_data: Additional event data
+    """
+    try:
+        from models import SIEMEvent, db
+        from datetime import datetime
+        
+        event = SIEMEvent(
+            event_type=event_type,
+            message=message,
+            severity=severity,
+            user_id=user_id,
+            username=username,
+            ip_address=ip_address,
+            source=source,
+            raw_data=raw_data
+        )
+        
+        db.session.add(event)
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"Failed to log SIEM event: {str(e)}") 
