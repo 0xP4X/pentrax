@@ -1482,7 +1482,7 @@ def admin_add_quiz_question(lab_id):
 
 @app.route('/admin/labs/<int:lab_id>/delete_quiz_question/<int:question_id>', methods=['POST'])
 @login_required
-def admin_delete_quiz_question_global(lab_id, question_id):
+def admin_delete_quiz_question_global(question_id, lab_id):
     if not current_user.is_admin:
         abort(403)
     qq = LabQuizQuestion.query.get_or_404(question_id)
