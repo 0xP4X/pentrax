@@ -7,16 +7,25 @@
     <div class="col-12">
         <!-- Header -->
         <div class="card mb-4">
-            <div class="card-body">
-                <h2><i class="fas fa-flask text-success"></i> Cyber Labs</h2>
-                <p class="text-muted mb-0">Practice your cybersecurity skills with hands-on challenges and scenarios</p>
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-flask text-success"></i> Cyber Labs</h2>
+                    <p class="text-muted mb-0">Practice your cybersecurity skills with hands-on challenges and scenarios</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-primary me-2" aria-label="Leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a>
+                    <a href="{{ url_for('achievements') }}" class="btn btn-outline-success" aria-label="Achievements"><i class="fas fa-medal"></i> Achievements</a>
+                </div>
             </div>
         </div>
 
-        <!-- Lab Filters -->
-        <form class="row mb-4" method="get">
-            <div class="col-md-3">
-                <select class="form-select" name="category">
+        <!-- Lab Filters (collapsible on mobile) -->
+        <button class="btn btn-secondary d-md-none mb-2 w-100" type="button" data-bs-toggle="collapse" data-bs-target="#labFilters" aria-expanded="false" aria-controls="labFilters">
+            <i class="fas fa-filter"></i> Filters
+        </button>
+        <form class="row mb-4 collapse d-md-flex" id="labFilters" method="get" aria-label="Lab Filters">
+            <div class="col-md-2 mb-2 mb-md-0">
+                <select class="form-select" name="category" aria-label="Category">
                     <option value="">All Categories</option>
                     <option value="web">Web Security</option>
                     <option value="network">Network Security</option>
@@ -24,21 +33,37 @@
                     <option value="osint">OSINT</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <select class="form-select" name="difficulty">
+            <div class="col-md-2 mb-2 mb-md-0">
+                <select class="form-select" name="difficulty" aria-label="Difficulty">
                     <option value="">All Difficulties</option>
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
                     <option value="hard">Hard</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <input type="text" class="form-control" name="search" placeholder="Search labs...">
+            <div class="col-md-2 mb-2 mb-md-0">
+                <select class="form-select" name="type" aria-label="Lab Type">
+                    <option value="">All Types</option>
+                    <option value="guided">Guided</option>
+                    <option value="ctf">CTF</option>
+                    <option value="quiz">Quiz</option>
+                    <option value="realtime">Real-Time</option>
+                </select>
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">
+            <div class="col-md-3 mb-2 mb-md-0">
+                <input type="text" class="form-control" name="search" placeholder="Search labs..." aria-label="Search Labs">
+            </div>
+            <div class="col-md-2 mb-2 mb-md-0">
+                <select class="form-select" name="sort" aria-label="Sort By">
+                    <option value="newest">Newest</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="difficulty">Difficulty</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100" aria-label="Apply Filters">
                     <i class="fas fa-search"></i> Filter
-                            </button>
+                </button>
             </div>
         </form>
 
@@ -47,15 +72,23 @@
         <div class="row">
             {% for lab in labs %}
             <div class="col-md-6 mb-4">
-                <div class="card h-100 border-{{ 'success' if lab.id in completed_labs else 'primary' }}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span class="badge bg-{{ 'success' if lab.id in completed_labs else 'primary' }}">
+                <div class="card h-100 border-{{ 'success' if lab.id in completed_labs else 'primary' }}" aria-label="Lab Card">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+                        <span class="badge bg-{{ 'success' if lab.id in completed_labs else 'primary' }}" aria-label="Difficulty">
                             {{ lab.difficulty.title() }}
                         </span>
                         {% if lab.is_premium %}
-                        <span class="badge bg-warning text-dark"><i class="fas fa-crown"></i> Premium</span>
+                        <span class="badge bg-warning text-dark" aria-label="Premium"><i class="fas fa-crown"></i> Premium</span>
                         {% endif %}
-                        <span class="badge bg-info">{{ lab.category.title() }}</span>
+                        <span class="badge bg-info" aria-label="Category">{{ lab.category.title() }}</span>
+                        <span class="badge bg-secondary" aria-label="Lab Type">
+                            {% if lab.type == 'guided' %}<i class="fas fa-route"></i> Guided{% elif lab.type == 'ctf' %}<i class="fas fa-flag"></i> CTF{% elif lab.type == 'quiz' %}<i class="fas fa-question"></i> Quiz{% elif lab.type == 'realtime' %}<i class="fas fa-bolt"></i> Real-Time{% else %}{{ lab.type.title() }}{% endif %}
+                        </span>
+                        {% if lab.tags %}
+                        <span class="badge bg-light text-dark" aria-label="Tags">
+                            {% for tag in lab.tags %}<span class="me-1">#{{ tag }}</span>{% endfor %}
+                        </span>
+                        {% endif %}
                     </div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ lab.title }}</h5>
@@ -64,17 +97,31 @@
                             <small class="text-muted">
                                 <i class="fas fa-star"></i> {{ lab.points }} points
                                 • <i class="fas fa-clock"></i> {{ lab.estimated_time }} mins
+                                {% if lab.progress %}
+                                • <i class="fas fa-tasks"></i> {{ lab.progress }}% complete
+                                {% endif %}
                             </small>
                         </div>
+                        <div class="mb-2">
+                            {% if lab.session_status == 'in_progress' %}
+                                <span class="badge bg-warning text-dark" aria-label="In Progress"><i class="fas fa-redo"></i> In Progress</span>
+                            {% elif lab.id in completed_labs %}
+                                <span class="badge bg-success" aria-label="Completed"><i class="fas fa-check-circle"></i> Completed</span>
+                            {% endif %}
+                        </div>
                         <div class="mt-auto">
-                            {% if lab.id in completed_labs %}
-                            <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-success w-100">
-                                <i class="fas fa-check-circle"></i> Completed
-                            </a>
+                            {% if lab.session_status == 'in_progress' %}
+                                <a href="{{ url_for('lab_workspace', session_id=lab.active_session_id) }}" class="btn btn-warning w-100" aria-label="Resume Lab">
+                                    <i class="fas fa-redo"></i> Resume
+                                </a>
+                            {% elif lab.id in completed_labs %}
+                                <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-success w-100" aria-label="View Lab">
+                                    <i class="fas fa-check-circle"></i> Completed
+                                </a>
                             {% else %}
-                            <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-primary w-100">
-                                <i class="fas fa-play"></i> Start Lab
-                            </a>
+                                <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-primary w-100" aria-label="Start Lab">
+                                    <i class="fas fa-play"></i> Start Lab
+                                </a>
                             {% endif %}
                         </div>
                     </div>
@@ -102,6 +149,12 @@
 
 .blink {
     animation: blink 1s infinite;
+}
+
+@media (max-width: 767.98px) {
+    #labFilters {
+        margin-bottom: 1rem;
+    }
 }
 </style>
 {% endblock %}
