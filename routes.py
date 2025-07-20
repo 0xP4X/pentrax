@@ -4810,3 +4810,8 @@ def admin_lab_analytics(lab_id):
     }
     
     return render_template('admin_lab_analytics.html', lab=lab, analytics=analytics)
+
+@app.route('/admin/advanced-labs/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_advanced_lab():
+    ...
