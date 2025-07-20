@@ -4867,3 +4867,17 @@ def admin_create_advanced_lab_v3():
             db.session.rollback()
             flash(f'Error creating lab: {str(e)}', 'error')
     return render_template('admin_lab_form.html')
+
+@app.route('/admin/terminal-commands/<int:command_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_advanced_terminal_command(command_id, lab_id):
+    """Delete a terminal command (advanced admin)"""
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    try:
+        db.session.delete(command)
+        db.session.commit()
+        flash('Terminal command deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting command: {str(e)}', 'error')
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
