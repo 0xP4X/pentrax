@@ -4115,54 +4115,6 @@ def admin_add_advanced_terminal_command(lab_id):
     
     return redirect(url_for('admin_edit_lab', lab_id=lab_id))
 
-@app.route('/admin/terminal-commands/<int:command_id>/delete', methods=['POST'])
-@admin_required
-def admin_delete_terminal_command(command_id, lab_id):
-    """Delete a terminal command"""
-    command = LabTerminalCommand.query.get_or_404(command_id)
-    
-    try:
-        db.session.delete(command)
-        db.session.commit()
-        flash('Terminal command deleted successfully!', 'success')
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting command: {str(e)}', 'error')
-    
-    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
-
-# Quiz Question Management
-@app.route('/admin/labs/<int:lab_id>/quiz-questions/add', methods=['POST'])
-@admin_required
-def admin_add_quiz_question(lab_id, question_id=None):
-    """Add a quiz question to a lab"""
-    lab = Lab.query.get_or_404(lab_id)
-    
-    try:
-        options = request.form['options'].split(',')
-        options = [opt.strip() for opt in options if opt.strip()]
-        
-        question = LabQuizQuestion(
-            lab_id=lab_id,
-            question=request.form['question'],
-            options=json.dumps(options),
-            correct_answer=request.form['correct_answer'],
-            explanation=request.form.get('explanation'),
-            order=int(request.form.get('order', 1)),
-            marks=int(request.form.get('marks', 1))
-        )
-        
-        db.session.add(question)
-        db.session.commit()
-        flash('Quiz question added successfully!', 'success')
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error adding question: {str(e)}', 'error')
-    
-    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
-
 @app.route('/admin/quiz-questions/<int:question_id>/delete', methods=['POST'])
 @admin_required
 def admin_delete_quiz_question(question_id, lab_id):
