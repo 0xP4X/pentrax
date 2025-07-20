@@ -4833,3 +4833,20 @@ def admin_delete_advanced_terminal_command(command_id, lab_id):
         db.session.rollback()
         flash(f'Error deleting command: {str(e)}', 'error')
     return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/quiz-questions/<int:question_id>/delete', methods=['POST'], endpoint='admin_delete_quiz_question_global')
+@admin_required
+def admin_delete_quiz_question_global(question_id, lab_id):
+    """Delete a quiz question"""
+    question = LabQuizQuestion.query.get_or_404(question_id)
+    
+    try:
+        db.session.delete(question)
+        db.session.commit()
+        flash('Quiz question deleted successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting question: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
