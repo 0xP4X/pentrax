@@ -5,26 +5,66 @@ ROUTES_FILE = "routes.py"
 with open(ROUTES_FILE, "r", encoding="utf-8") as f:
     content = f.read()
 
-# Pattern to find the advanced admin edit route/function
-pattern = re.compile(
-    r"(@app\.route\(['\"]\/admin\/labs\/<int:lab_id>\/edit['\"].*?\)\s*@admin_required\s*def )admin_edit_lab(\s*\()",
-    re.DOTALL
-)
+# Track changes
+changes_made = []
 
-def replacer(match):
-    return (
-        "@app.route('/admin/advanced-labs/<int:lab_id>/edit', methods=['GET', 'POST'])\n"
-        "@admin_required\n"
-        "def admin_edit_advanced_lab("
+# List of known advanced admin function name conflicts and their new names/routes
+conflict_patterns = [
+    # (function name, new function name, new route, route pattern)
+    ("admin_add_quiz_question", "admin_add_advanced_quiz_question", "/admin/advanced-labs/<int:lab_id>/quiz/add", r"/admin/labs/<int:lab_id>/quiz/add"),
+    ("admin_delete_quuiz_question", "admin_delete_advanced_quuiz_question", "/admin/advanced-labs/<int:lab_id>/quiz/delete", r"/admin/labs/<int:lab_id>/quiz/delete"),
+    ("admin_add_terminal_command", "admin_add_advanced_terminal_command", "/admin/advanced-labs/<int:lab_id>/terminal-commands/add", r"/admin/labs/<int:lab_id>/terminal-commands/add"),
+    ("admin_delete_terminal_command", "admin_delete_advanced_terminal_command", "/admin/advanced-labs/<int:lab_id>/terminal-commands/delete", r"/admin/labs/<int:lab_id>/terminal-commands/delete"),
+    ("admin_learning_paths", "admin_advanced_learning_paths", "/admin/advanced-labs/learning-paths", r"/admin/labs/learning-paths"),
+    ("admin_ctf_challenges", "admin_advanced_ctf_challenges", "/admin/advanced-labs/ctf-challenges", r"/admin/labs/ctf-challenges"),
+    ("admin_sandbox_environments", "admin_advanced_sandbox_environments", "/admin/advanced-labs/sandbox-environments", r"/admin/labs/sandbox-environments"),
+    ("admin_create_advanced_lab_v2", "admin_create_advanced_lab_v3", "/admin/advanced-labs/create-v3", r"/admin/advanced-labs/create-v2"),
+]
+
+for func, new_func, new_route, old_route_pattern in conflict_patterns:
+    # Regex to find the advanced admin route/function
+    pattern = re.compile(
+        rf"(@app\.route\(['\"]{old_route_pattern}['\"].*?\)\s*@admin_required\s*def ){func}(\s*\(.*?\):)",
+        re.DOTALL
     )
+    def make_replacer(new_func=new_func, new_route=new_route):
+        def replacer(match):
+            changes_made.append(f"{func} -> {new_func}")
+            return (
+                f"@app.route('{new_route}', methods=['GET', 'POST'])\n"
+                "@admin_required\n"
+                f"def {new_func}{match.group(2)}"
+            )
+        return replacer
+    content, count = pattern.subn(make_replacer(), content)
 
-new_content, count = pattern.subn(replacer, content)
-
-if count > 0:
+# Write changes back to file
+if changes_made:
     with open(ROUTES_FILE, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    print(f"✅ Fixed {count} advanced admin lab edit route(s) in {ROUTES_FILE}.")
+        f.write(content)
+    print(f"✅ Fixed {len(changes_made)} route conflicts in {ROUTES_FILE}:")
+    for change in changes_made:
+        print(f"   - {change}")
 else:
-    print("⚠️ No advanced admin lab edit route found to fix.")
+    print("✅ No route conflicts found to fix.")
 
-# Optionally, update template references if needed.
+# Verify no more duplicates
+print("\n🔍 Checking for remaining conflicts...")
+with open(ROUTES_FILE, "r", encoding="utf-8") as f:
+    content = f.read()
+
+# Check for any remaining duplicate function names
+function_pattern = re.compile(r'def (admin_\w+)[\(:]', re.MULTILINE)
+functions = function_pattern.findall(content)
+duplicates = {}
+for func in functions:
+    if func in duplicates:
+        duplicates[func] += 1
+    else:
+        duplicates[func] = 1
+
+conflicts = [func for func, count in duplicates.items() if count > 1]
+if conflicts:
+    print(f"⚠️ Remaining conflicts found: {conflicts}")
+else:
+    print("✅ No remaining function name conflicts!")

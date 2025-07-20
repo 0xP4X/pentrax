@@ -3837,9 +3837,9 @@ def admin_advanced_labs():
                          recent_activity=recent_activity,
                          categories=categories)
 
-@app.route('/admin/advanced-labs/create-v2', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/create-v3', methods=['GET', 'POST'])
 @admin_required
-def admin_create_advanced_lab_v2():
+def admin_create_advanced_lab_v3():
     """Create a new lab with advanced features"""
     if request.method == 'POST':
         try:
@@ -4087,9 +4087,9 @@ def admin_delete_advanced_lab(lab_id):
         return jsonify({'success': False, 'message': f'Error deleting lab: {str(e)}'}), 500
 
 # Terminal Command Management
-@app.route('/admin/labs/<int:lab_id>/terminal-commands/add', methods=['POST'])
+@app.route('/admin/advanced-labs/<int:lab_id>/terminal-commands/add', methods=['GET', 'POST'])
 @admin_required
-def admin_add_terminal_command(lab_id):
+def admin_add_advanced_terminal_command(lab_id):
     """Add a terminal command to a lab"""
     lab = Lab.query.get_or_404(lab_id)
     
@@ -4811,9 +4811,9 @@ def admin_lab_analytics(lab_id):
     
     return render_template('admin_lab_analytics.html', lab=lab, analytics=analytics)
 
-@app.route('/admin/advanced-labs/create-v2', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/create-v3', methods=['GET', 'POST'])
 @admin_required
-def admin_create_advanced_lab_v2():
+def admin_create_advanced_lab_v3():
     """Create a new lab with advanced features (advanced admin)"""
     if request.method == 'POST':
         try:
