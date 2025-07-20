@@ -368,7 +368,7 @@ class LabHint(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    lab = db.relationship('Lab', backref='hints')
+    lab = db.relationship('Lab', backref='lab_hints')
 
 class UserHintUsage(db.Model):
     """Model for tracking hint usage by users"""
@@ -394,7 +394,7 @@ class LabRating(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='lab_ratings')
-    lab = db.relationship('Lab', backref='ratings')
+    lab = db.relationship('Lab', backref='lab_ratings')
     
     # Ensure one rating per user per lab
     __table_args__ = (db.UniqueConstraint('user_id', 'lab_id', name='unique_user_lab_rating'),)
@@ -406,7 +406,7 @@ class LabCompletion(db.Model):
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='lab_completions')
-    lab = db.relationship('Lab', backref='completions')
+    lab = db.relationship('Lab', backref='lab_completions')
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -576,7 +576,7 @@ class LabQuizAttempt(db.Model):
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='quiz_attempts')
-    lab = db.relationship('Lab', backref='quiz_attempts')
+    lab = db.relationship('Lab', backref='lab_quiz_attempts')
 
 class ActivationKey(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -683,7 +683,7 @@ class LabTerminalAttempt(db.Model):
     attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='terminal_attempts')
-    lab = db.relationship('Lab', backref='terminal_attempts')
+    lab = db.relationship('Lab', backref='lab_terminal_attempts')
     command = db.relationship('LabTerminalCommand', backref='attempts')
 
 class LabTerminalSession(db.Model):
@@ -702,7 +702,7 @@ class LabTerminalSession(db.Model):
     completed_at = db.Column(db.DateTime)
     
     user = db.relationship('User', backref='terminal_sessions')
-    lab = db.relationship('Lab', backref='terminal_sessions')
+    lab = db.relationship('Lab', backref='lab_terminal_sessions')
 
 class Contact(db.Model):
     """Model for contact form submissions"""
