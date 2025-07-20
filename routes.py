@@ -3837,9 +3837,9 @@ def admin_advanced_labs():
                          recent_activity=recent_activity,
                          categories=categories)
 
-@app.route('/admin/advanced-labs/create', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/create-v2', methods=['GET', 'POST'])
 @admin_required
-def admin_create_advanced_lab():
+def admin_create_advanced_lab_v2():
     """Create a new lab with advanced features"""
     if request.method == 'POST':
         try:
@@ -4061,9 +4061,9 @@ def admin_duplicate_lab(lab_id):
         flash(f'Error duplicating lab: {str(e)}', 'error')
         return redirect(url_for('admin_advanced_labs'))
 
-@app.route('/admin/labs/<int:lab_id>/delete', methods=['POST'])
+@app.route('/admin/advanced-labs/<int:lab_id>/delete', methods=['POST'])
 @admin_required
-def admin_delete_lab(lab_id):
+def admin_delete_advanced_lab(lab_id):
     """Delete a lab"""
     lab = Lab.query.get_or_404(lab_id)
     
@@ -4811,9 +4811,9 @@ def admin_lab_analytics(lab_id):
     
     return render_template('admin_lab_analytics.html', lab=lab, analytics=analytics)
 
-@app.route('/admin/advanced-labs/create', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/create-v2', methods=['GET', 'POST'])
 @admin_required
-def admin_create_advanced_lab():
+def admin_create_advanced_lab_v2():
     """Create a new lab with advanced features (advanced admin)"""
     if request.method == 'POST':
         try:
