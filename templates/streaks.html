@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Streaks - PentraX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-fire"></i> Streak Dashboard</h1>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('achievements_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-trophy"></i> View Achievements
+                    </a>
+                    <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-success">
+                        <i class="fas fa-medal"></i> Leaderboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Streak Status -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-fire"></i> Current Streak</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-4 text-warning mb-3">{{ user_stats.current_streak }}</div>
+                    <p class="text-muted">days active</p>
+                    
+                    {% if next_milestone %}
+                        <div class="progress mb-3" style="height: 10px;">
+                            {% set progress = (user_stats.current_streak / next_milestone) * 100 %}
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ progress }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ user_stats.current_streak }}/{{ next_milestone }} days to next milestone</small>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-crown"></i> You've reached the maximum milestone!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> Longest Streak</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-4 text-info mb-3">{{ user_stats.longest_streak }}</div>
+                    <p class="text-muted">days record</p>
+                    
+                    {% if user_stats.current_streak == user_stats.longest_streak %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-star"></i> You're currently on your longest streak!
+                        </div>
+                    {% else %}
+                        <div class="text-muted">
+                            <small>You need {{ user_stats.longest_streak - user_stats.current_streak + 1 }} more days to break your record</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streak Milestones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-flag-checkered"></i> Streak Milestones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for milestone in streak_milestones %}
+                        <div class="col-md-2 col-4 mb-3">
+                            <div class="text-center">
+                                <div class="position-relative d-inline-block mb-2">
+                                    <i class="fas fa-fire fa-2x {% if user_stats.current_streak >= milestone %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% if user_stats.current_streak >= milestone %}
+                                        <div class="position-absolute top-0 start-100 translate-middle">
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="fw-bold {% if user_stats.current_streak >= milestone %}text-warning{% else %}text-muted{% endif %}">
+                                    {{ milestone }} Days
+                                </div>
+                                <small class="text-muted">
+                                    {% if user_stats.current_streak >= milestone %}
+                                        Achieved!
+                                    {% else %}
+                                        {{ milestone - user_stats.current_streak }} days left
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streak Tips and Motivation -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Keep Your Streak Alive!</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-check-circle text-success"></i> Daily Activities</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-file-alt text-primary"></i> Create a post</li>
+                                <li><i class="fas fa-comment text-info"></i> Leave a comment</li>
+                                <li><i class="fas fa-flask text-success"></i> Complete a lab</li>
+                                <li><i class="fas fa-thumbs-up text-warning"></i> Like content</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-exclamation-triangle text-warning"></i> Don't Break Your Streak!</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-calendar text-danger"></i> Missing a day resets to 0</li>
+                                <li><i class="fas fa-clock text-info"></i> Activities count until midnight</li>
+                                <li><i class="fas fa-sync text-warning"></i> Start fresh the next day</li>
+                                <li><i class="fas fa-trophy text-success"></i> Longer streaks = more achievements</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-fire fa-3x text-warning mb-3"></i>
+                    <h5>Today's Goal</h5>
+                    <p class="text-muted">Complete at least one activity to maintain your streak!</p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('create_forum_post') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Create Post
+                        </a>
+                        <a href="{{ url_for('cyber_labs') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-flask"></i> Complete Lab
+                        </a>
+                        <a href="{{ url_for('forum', category='tools') }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-comment"></i> Leave Comment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streak Statistics -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Streak Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-3 mb-3">
+                                <i class="fas fa-calendar-check fa-2x text-success mb-2"></i>
+                                <h4>{{ user_stats.days_since_joined }}</h4>
+                                <small class="text-muted">Days since joining</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3 mb-3">
+                                <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                                <h4>{{ "%.1f"|format((user_stats.current_streak / user_stats.days_since_joined * 100) if user_stats.days_since_joined > 0 else 0) }}%</h4>
+                                <small class="text-muted">Streak efficiency</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if streak and streak.last_active_date %}
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Last active: {{ streak.last_active_date.strftime('%Y-%m-%d') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-medal"></i> Streak Achievements</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for milestone in [3, 7, 14, 30, 60, 100] %}
+                        <div class="col-4 mb-3">
+                            <div class="text-center">
+                                <i class="fas fa-fire fa-lg {% if user_stats.longest_streak >= milestone %}text-warning{% else %}text-muted{% endif %} mb-2"></i>
+                                <div class="small {% if user_stats.longest_streak >= milestone %}text-warning{% else %}text-muted{% endif %}">
+                                    {{ milestone }}+ Days
+                                </div>
+                                {% if user_stats.longest_streak >= milestone %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add some visual effects
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate the current streak number
+    const currentStreakElement = document.querySelector('.display-4.text-warning');
+    if (currentStreakElement) {
+        const finalNumber = parseInt(currentStreakElement.textContent);
+        let currentNumber = 0;
+        const increment = finalNumber / 20;
+        
+        const timer = setInterval(() => {
+            currentNumber += increment;
+            if (currentNumber >= finalNumber) {
+                currentNumber = finalNumber;
+                clearInterval(timer);
+            }
+            currentStreakElement.textContent = Math.floor(currentNumber);
+        }, 50);
+    }
+    
+    // Add pulse effect to fire icons for current streak
+    const fireIcons = document.querySelectorAll('.fa-fire.text-warning');
+    fireIcons.forEach(icon => {
+        icon.style.animation = 'pulse 2s infinite';
+    });
+});
+
+// Add CSS for pulse animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %} 

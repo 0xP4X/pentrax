@@ -201,14 +201,35 @@
       <div class="col-md-8">
         <h4>About</h4>
         <p>{{ user.bio or 'No bio provided.' }}</p>
-        <h5>Achievements</h5>
-        <ul>
-          {% for achievement in achievements %}
-            <li>{{ achievement }}</li>
-          {% else %}
-            <li>No achievements yet.</li>
+        <h5><i class="fas fa-trophy"></i> Achievements</h5>
+        {% if achievements %}
+            <div class="row">
+                {% for achievement in achievements[:6] %}
+                <div class="col-6 mb-2">
+                    <div class="d-flex align-items-center">
+                        <i class="{{ achievement.icon }} text-warning me-2"></i>
+                        <div>
+                            <div class="small fw-bold">{{ achievement.name }}</div>
+                            <div class="small text-muted">{{ achievement.description }}</div>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-        </ul>
+            </div>
+            {% if achievements|length > 6 %}
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('achievements_dashboard') }}" class="btn btn-sm btn-outline-primary">
+                        View All {{ achievements|length }} Achievements
+                    </a>
+                    </div>
+                {% endif %}
+        {% else %}
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-trophy fa-2x mb-2"></i>
+                <p class="mb-0">No achievements yet.</p>
+                <small>Start being active to unlock achievements!</small>
+            </div>
+        {% endif %}
         <h5>Recent Activity</h5>
         <ul>
           <li><strong>Posts:</strong> {{ user_posts|length }}</li>

@@ -16,12 +16,13 @@ import requests
 import hashlib
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
-from utils.achievements import update_user_streak, check_and_unlock_achievements
+from utils.achievements import update_user_streak, check_and_unlock_achievements, get_user_achievements_with_progress, get_leaderboard_data, get_user_stats
 from functools import wraps
 from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
 from utils.siem import get_deep_ip_info, log_siem_event
 import re
 from collections import defaultdict
+from utils.lab_manager import LabManager, LAB_CATEGORIES, LAB_DIFFICULTIES, CTF_CATEGORIES
 
 @app.context_processor
 def inject_user():
@@ -3410,3 +3411,382 @@ def admin_protection():
                 source='admin'
             )
             add_blocked_ip(ip, reason='Unauthorized admin access', blocked_by='SIEM')
+
+# Achievements and Streaks Routes
+@app.route('/achievements')
+@login_required
+def achievements_dashboard():
+    """Display user's achievements with progress tracking"""
+    achievements_with_progress = get_user_achievements_with_progress(current_user)
+    user_stats = get_user_stats(current_user)
+    
+    # Group achievements by type
+    achievement_groups = {}
+    for item in achievements_with_progress:
+        ach_type = item['achievement'].type
+        if ach_type not in achievement_groups:
+            achievement_groups[ach_type] = []
+        achievement_groups[ach_type].append(item)
+    
+    return render_template('achievements.html', 
+                         achievements_with_progress=achievements_with_progress,
+                         achievement_groups=achievement_groups,
+                         user_stats=user_stats)
+
+@app.route('/streaks')
+@login_required
+def streaks_dashboard():
+    """Display user's streak information and progress"""
+    user_stats = get_user_stats(current_user)
+    streak = current_user.streak
+    
+    # Calculate streak milestones
+    streak_milestones = [3, 7, 14, 30, 60, 100]
+    current_streak = user_stats['current_streak']
+    longest_streak = user_stats['longest_streak']
+    
+    # Get next milestone
+    next_milestone = None
+    for milestone in streak_milestones:
+        if current_streak < milestone:
+            next_milestone = milestone
+            break
+    
+    return render_template('streaks.html',
+                         user_stats=user_stats,
+                         streak=streak,
+                         streak_milestones=streak_milestones,
+                         next_milestone=next_milestone)
+
+@app.route('/leaderboard')
+def leaderboard():
+    """Display leaderboards for streaks, achievements, and reputation"""
+    leaderboard_data = get_leaderboard_data()
+    
+    return render_template('leaderboard.html',
+                         leaderboard_data=leaderboard_data)
+
+@app.route('/api/achievement_progress')
+@login_required
+def api_achievement_progress():
+    """API endpoint to get achievement progress for AJAX updates"""
+    achievements_with_progress = get_user_achievements_with_progress(current_user)
+    
+    # Return only essential data for AJAX
+    progress_data = []
+    for item in achievements_with_progress:
+        progress_data.append({
+            'id': item['achievement'].id,
+            'name': item['achievement'].name,
+            'progress': item['progress'],
+            'unlocked': item['unlocked']
+        })
+    
+    return jsonify(progress_data)
+
+# Advanced Lab System Routes
+@app.route('/labs/advanced')
+@login_required
+def advanced_labs():
+    """Advanced lab dashboard with categories and learning paths"""
+    lab_manager = LabManager()
+    
+    # Get learning paths
+    learning_paths = LearningPath.query.filter_by(is_active=True).all()
+    
+    # Get labs by category
+    labs_by_category = {}
+    for category in LAB_CATEGORIES.keys():
+        labs = Lab.query.filter_by(category=category, is_active=True).all()
+        labs_by_category[category] = labs
+    
+    # Get user's progress
+    user_progress = {}
+    for lab in Lab.query.filter_by(is_active=True).all():
+        progress = lab_manager.get_lab_progress(current_user.id, lab.id)
+        user_progress[lab.id] = progress
+    
+    return render_template('advanced_labs.html',
+                         learning_paths=learning_paths,
+                         labs_by_category=labs_by_category,
+                         user_progress=user_progress,
+                         categories=LAB_CATEGORIES,
+                         difficulties=LAB_DIFFICULTIES)
+
+@app.route('/labs/learning-path/<int:path_id>')
+@login_required
+def learning_path_detail(path_id):
+    """Detailed view of a learning path"""
+    lab_manager = LabManager()
+    
+    path = LearningPath.query.get_or_404(path_id)
+    path_progress = lab_manager.get_learning_path_progress(current_user.id, path_id)
+    
+    return render_template('learning_path_detail.html',
+                         path=path,
+                         path_progress=path_progress)
+
+@app.route('/ctf')
+@login_required
+def ctf_dashboard():
+    """CTF challenges dashboard"""
+    lab_manager = LabManager()
+    
+    # Get challenges by category
+    challenges_by_category = {}
+    for category in CTF_CATEGORIES:
+        challenges = CTFChallenge.query.filter_by(
+            category=category, 
+            is_active=True
+        ).order_by(CTFChallenge.difficulty).all()
+        challenges_by_category[category] = challenges
+    
+    # Get leaderboard
+    leaderboard = lab_manager.get_ctf_leaderboard()
+    
+    # Get user's solved challenges
+    user_solved = CTFSubmission.query.filter_by(
+        user_id=current_user.id, 
+        is_correct=True
+    ).all()
+    solved_ids = {s.challenge_id for s in user_solved}
+    
+    return render_template('ctf_dashboard.html',
+                         challenges_by_category=challenges_by_category,
+                         leaderboard=leaderboard,
+                         solved_ids=solved_ids,
+                         categories=CTF_CATEGORIES)
+
+@app.route('/ctf/challenge/<int:challenge_id>')
+@login_required
+def ctf_challenge_detail(challenge_id):
+    """Individual CTF challenge view"""
+    challenge = CTFChallenge.query.get_or_404(challenge_id)
+    
+    # Check if user has solved it
+    solved = CTFSubmission.query.filter_by(
+        user_id=current_user.id,
+        challenge_id=challenge_id,
+        is_correct=True
+    ).first()
+    
+    # Get user's submission history
+    submissions = CTFSubmission.query.filter_by(
+        user_id=current_user.id,
+        challenge_id=challenge_id
+    ).order_by(CTFSubmission.submitted_at.desc()).all()
+    
+    return render_template('ctf_challenge_detail.html',
+                         challenge=challenge,
+                         solved=solved,
+                         submissions=submissions)
+
+@app.route('/ctf/submit', methods=['POST'])
+@login_required
+def submit_ctf_flag():
+    """Submit a CTF flag"""
+    challenge_id = request.form.get('challenge_id', type=int)
+    flag = request.form.get('flag', '').strip()
+    
+    if not challenge_id or not flag:
+        return jsonify({'success': False, 'message': 'Missing challenge ID or flag'})
+    
+    lab_manager = LabManager()
+    result = lab_manager.submit_ctf_flag(current_user.id, challenge_id, flag)
+    
+    return jsonify(result)
+
+@app.route('/sandbox')
+@login_required
+def sandbox_dashboard():
+    """Sandbox environments dashboard"""
+    sandboxes = SandboxEnvironment.query.filter_by(is_active=True).all()
+    
+    # Get user's active sessions
+    active_sessions = UserSandboxSession.query.filter_by(
+        user_id=current_user.id,
+        status='running'
+    ).all()
+    
+    return render_template('sandbox_dashboard.html',
+                         sandboxes=sandboxes,
+                         active_sessions=active_sessions)
+
+@app.route('/sandbox/start/<int:sandbox_id>', methods=['POST'])
+@login_required
+def start_sandbox(sandbox_id):
+    """Start a sandbox session"""
+    lab_manager = LabManager()
+    result = lab_manager.start_sandbox_session(current_user.id, sandbox_id)
+    
+    return jsonify(result)
+
+@app.route('/sandbox/stop/<session_id>', methods=['POST'])
+@login_required
+def stop_sandbox(session_id):
+    """Stop a sandbox session"""
+    lab_manager = LabManager()
+    result = lab_manager.stop_sandbox_session(session_id)
+    
+    return jsonify(result)
+
+@app.route('/labs/<int:lab_id>/hints')
+@login_required
+def get_lab_hints(lab_id):
+    """Get hints for a lab"""
+    lab_manager = LabManager()
+    hints = lab_manager.get_lab_hints(lab_id, current_user.id)
+    
+    return jsonify([{
+        'id': hint.id,
+        'text': hint.hint_text if hint.is_used else '***',
+        'order': hint.hint_order,
+        'cost': hint.cost,
+        'is_free': hint.is_free,
+        'is_used': getattr(hint, 'is_used', False)
+    } for hint in hints])
+
+@app.route('/labs/<int:lab_id>/use-hint/<int:hint_id>', methods=['POST'])
+@login_required
+def use_lab_hint(lab_id, hint_id):
+    """Use a lab hint"""
+    lab_manager = LabManager()
+    result = lab_manager.use_hint(current_user.id, hint_id)
+    
+    return jsonify(result)
+
+@app.route('/labs/<int:lab_id>/rate', methods=['POST'])
+@login_required
+def rate_lab(lab_id):
+    """Rate a lab"""
+    rating = request.form.get('rating', type=int)
+    difficulty_rating = request.form.get('difficulty_rating', type=int)
+    feedback = request.form.get('feedback', '')
+    
+    if not rating or rating < 1 or rating > 5:
+        return jsonify({'success': False, 'message': 'Invalid rating'})
+    
+    lab_manager = LabManager()
+    result = lab_manager.rate_lab(current_user.id, lab_id, rating, difficulty_rating, feedback)
+    
+    return jsonify(result)
+
+@app.route('/labs/<int:lab_id>/progress')
+@login_required
+def get_lab_progress(lab_id):
+    """Get detailed lab progress"""
+    lab_manager = LabManager()
+    progress = lab_manager.get_lab_progress(current_user.id, lab_id)
+    
+    return jsonify({
+        'progress_percentage': progress.progress_percentage,
+        'current_step': progress.current_step,
+        'total_steps': progress.total_steps,
+        'time_spent': progress.time_spent,
+        'hints_used': progress.hints_used,
+        'attempts': progress.attempts,
+        'completed': progress.completed_at is not None
+    })
+
+@app.route('/labs/<int:lab_id>/update-progress', methods=['POST'])
+@login_required
+def update_lab_progress(lab_id):
+    """Update lab progress"""
+    step_completed = request.form.get('step_completed', 'false').lower() == 'true'
+    hint_used = request.form.get('hint_used', 'false').lower() == 'true'
+    
+    lab_manager = LabManager()
+    progress = lab_manager.update_lab_progress(
+        current_user.id, 
+        lab_id, 
+        step_completed, 
+        hint_used
+    )
+    
+    return jsonify({
+        'success': True,
+        'progress_percentage': progress.progress_percentage,
+        'completed': progress.completed_at is not None
+    })
+
+# Admin routes for advanced lab management
+@app.route('/admin/learning-paths', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_learning_paths():
+    """Admin management of learning paths"""
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        difficulty = request.form.get('difficulty')
+        category = request.form.get('category')
+        
+        lab_manager = LabManager()
+        path = lab_manager.create_learning_path(
+            name=name,
+            description=description,
+            difficulty=difficulty,
+            category=category
+        )
+        
+        flash('Learning path created successfully!', 'success')
+        return redirect(url_for('admin_learning_paths'))
+    
+    paths = LearningPath.query.all()
+    return render_template('admin_learning_paths.html', paths=paths)
+
+@app.route('/admin/ctf-challenges', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_ctf_challenges():
+    """Admin management of CTF challenges"""
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        category = request.form.get('category')
+        difficulty = request.form.get('difficulty')
+        flag = request.form.get('flag')
+        points = request.form.get('points', type=int)
+        
+        lab_manager = LabManager()
+        challenge = lab_manager.create_ctf_challenge(
+            title=title,
+            description=description,
+            category=category,
+            difficulty=difficulty,
+            flag=flag,
+            points=points
+        )
+        
+        flash('CTF challenge created successfully!', 'success')
+        return redirect(url_for('admin_ctf_challenges'))
+    
+    challenges = CTFChallenge.query.all()
+    return render_template('admin_ctf_challenges.html', 
+                         challenges=challenges,
+                         categories=CTF_CATEGORIES)
+
+@app.route('/admin/sandbox-environments', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_sandbox_environments():
+    """Admin management of sandbox environments"""
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        environment_type = request.form.get('environment_type')
+        image_name = request.form.get('image_name')
+        
+        lab_manager = LabManager()
+        sandbox = lab_manager.create_sandbox_environment(
+            name=name,
+            description=description,
+            environment_type=environment_type,
+            image_name=image_name
+        )
+        
+        flash('Sandbox environment created successfully!', 'success')
+        return redirect(url_for('admin_sandbox_environments'))
+    
+    sandboxes = SandboxEnvironment.query.all()
+    return render_template('admin_sandbox_environments.html', sandboxes=sandboxes)

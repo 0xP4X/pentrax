@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - PentraX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-medal"></i> Leaderboard</h1>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('achievements_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-trophy"></i> View Achievements
+                    </a>
+                    <a href="{{ url_for('streaks_dashboard') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-fire"></i> View Streaks
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="leaderboardTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="streaks-tab" data-bs-toggle="tab" data-bs-target="#streaks" type="button" role="tab">
+                        <i class="fas fa-fire"></i> Top Streaks
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="achievements-tab" data-bs-toggle="tab" data-bs-target="#achievements" type="button" role="tab">
+                        <i class="fas fa-trophy"></i> Most Achievements
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reputation-tab" data-bs-toggle="tab" data-bs-target="#reputation" type="button" role="tab">
+                        <i class="fas fa-star"></i> Top Reputation
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="leaderboardTabContent">
+                <!-- Top Streaks Tab -->
+                <div class="tab-pane fade show active" id="streaks" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-fire"></i> Longest Active Streaks</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if leaderboard_data.top_streaks %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>User</th>
+                                                <th>Current Streak</th>
+                                                <th>Longest Streak</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user, streak in leaderboard_data.top_streaks %}
+                                            <tr>
+                                                <td>
+                                                    {% if loop.index == 1 %}
+                                                        <i class="fas fa-crown text-warning"></i>
+                                                    {% elif loop.index == 2 %}
+                                                        <i class="fas fa-medal text-secondary"></i>
+                                                    {% elif loop.index == 3 %}
+                                                        <i class="fas fa-medal text-bronze"></i>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ loop.index }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ user.avatar_url or url_for('static', filename='img/default_avatar.png') }}" 
+                                                             class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                                                        <div>
+                                                            <a href="{{ url_for('user_profile', username=user.username) }}" class="text-decoration-none">
+                                                                {{ user.username }}
+                                                            </a>
+                                                            {% if user.is_admin %}
+                                                                <span class="badge bg-danger ms-1">Admin</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-fire"></i> {{ streak.current_streak }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ streak.longest_streak }}</span>
+                                                </td>
+                                                <td>
+                                                    {% if streak.current_streak == streak.longest_streak %}
+                                                        <span class="badge bg-success">Record!</span>
+                                                    {% elif streak.current_streak > 0 %}
+                                                        <span class="badge bg-warning">Active</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-fire fa-3x mb-3"></i>
+                                    <p>No streak data available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Achievements Tab -->
+                <div class="tab-pane fade" id="achievements" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-trophy"></i> Achievement Collectors</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if leaderboard_data.top_achievements %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>User</th>
+                                                <th>Achievements</th>
+                                                <th>Completion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user, achievement_count in leaderboard_data.top_achievements %}
+                                            <tr>
+                                                <td>
+                                                    {% if loop.index == 1 %}
+                                                        <i class="fas fa-crown text-warning"></i>
+                                                    {% elif loop.index == 2 %}
+                                                        <i class="fas fa-medal text-secondary"></i>
+                                                    {% elif loop.index == 3 %}
+                                                        <i class="fas fa-medal text-bronze"></i>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ loop.index }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ user.avatar_url or url_for('static', filename='img/default_avatar.png') }}" 
+                                                             class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                                                        <div>
+                                                            <a href="{{ url_for('user_profile', username=user.username) }}" class="text-decoration-none">
+                                                                {{ user.username }}
+                                                            </a>
+                                                            {% if user.is_admin %}
+                                                                <span class="badge bg-danger ms-1">Admin</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-trophy"></i> {{ achievement_count }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% set completion_percentage = (achievement_count / 40) * 100 %}
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ completion_percentage }}%"></div>
+                                                    </div>
+                                                    <small class="text-muted">{{ "%.1f"|format(completion_percentage) }}%</small>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-trophy fa-3x mb-3"></i>
+                                    <p>No achievement data available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Reputation Tab -->
+                <div class="tab-pane fade" id="reputation" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-star"></i> Highest Reputation</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if leaderboard_data.top_reputation %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>User</th>
+                                                <th>Reputation</th>
+                                                <th>Level</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user in leaderboard_data.top_reputation %}
+                                            <tr>
+                                                <td>
+                                                    {% if loop.index == 1 %}
+                                                        <i class="fas fa-crown text-warning"></i>
+                                                    {% elif loop.index == 2 %}
+                                                        <i class="fas fa-medal text-secondary"></i>
+                                                    {% elif loop.index == 3 %}
+                                                        <i class="fas fa-medal text-bronze"></i>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ loop.index }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ user.avatar_url or url_for('static', filename='img/default_avatar.png') }}" 
+                                                             class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                                                        <div>
+                                                            <a href="{{ url_for('user_profile', username=user.username) }}" class="text-decoration-none">
+                                                                {{ user.username }}
+                                                            </a>
+                                                            {% if user.is_admin %}
+                                                                <span class="badge bg-danger ms-1">Admin</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-star"></i> {{ user.reputation }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if user.reputation >= 5000 %}
+                                                        <span class="badge bg-danger">Legendary</span>
+                                                    {% elif user.reputation >= 1000 %}
+                                                        <span class="badge bg-warning">Elite</span>
+                                                    {% elif user.reputation >= 500 %}
+                                                        <span class="badge bg-success">Veteran</span>
+                                                    {% elif user.reputation >= 100 %}
+                                                        <span class="badge bg-info">Regular</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Newcomer</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-star fa-3x mb-3"></i>
+                                    <p>No reputation data available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Info -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle"></i> How to climb the leaderboard:</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-fire text-warning"></i> Streaks</h6>
+                            <ul class="list-unstyled small">
+                                <li>• Be active daily</li>
+                                <li>• Create posts, comments, or complete labs</li>
+                                <li>• Don't miss a day to maintain your streak</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-trophy text-success"></i> Achievements</h6>
+                            <ul class="list-unstyled small">
+                                <li>• Complete various milestones</li>
+                                <li>• Participate in community activities</li>
+                                <li>• Unlock special achievements</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-star text-info"></i> Reputation</h6>
+                            <ul class="list-unstyled small">
+                                <li>• Complete labs and earn points</li>
+                                <li>• Get likes on your content</li>
+                                <li>• Help other community members</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-bronze {
+    color: #cd7f32 !important;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+</style>
+
+<script>
+// Add some interactive effects
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to table rows
+    const tableRows = document.querySelectorAll('.table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.01)';
+            this.style.transition = 'transform 0.2s ease';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Animate numbers on page load
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        const text = badge.textContent;
+        const numbers = text.match(/\d+/g);
+        if (numbers) {
+            numbers.forEach(num => {
+                const finalNum = parseInt(num);
+                let currentNum = 0;
+                const increment = finalNum / 10;
+                
+                const timer = setInterval(() => {
+                    currentNum += increment;
+                    if (currentNum >= finalNum) {
+                        currentNum = finalNum;
+                        clearInterval(timer);
+                    }
+                    badge.textContent = text.replace(num, Math.floor(currentNum));
+                }, 50);
+            });
+        }
+    });
+});
+</script>
+{% endblock %} 

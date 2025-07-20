@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}CTF Challenges - PentraX{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-flag"></i> CTF Challenges</h1>
+                    <p class="text-muted">Capture The Flag challenges - test your hacking skills!</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('advanced_labs') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-graduation-cap"></i> Learning Paths
+                    </a>
+                    <a href="{{ url_for('sandbox_dashboard') }}" class="btn btn-outline-info">
+                        <i class="fas fa-cube"></i> Sandbox
+                    </a>
+                    <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#leaderboardModal">
+                        <i class="fas fa-trophy"></i> Leaderboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-flag fa-2x mb-2"></i>
+                    <h4>{{ leaderboard|length }}</h4>
+                    <small>Active Players</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>{{ solved_ids|length }}</h4>
+                    <small>Your Solves</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x mb-2"></i>
+                    <h4>{{ leaderboard[0].points if leaderboard else 0 }}</h4>
+                    <small>Top Score</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4 id="ctfTimer">--:--:--</h4>
+                    <small>Time Remaining</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Challenge Categories -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="ctfCategoryTabs" role="tablist">
+                {% for category in categories %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                            id="{{ category }}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#{{ category }}" 
+                            type="button" 
+                            role="tab">
+                        <i class="fas fa-{{ 'globe' if category == 'web' else 'key' if category == 'crypto' else 'search' if category == 'forensics' else 'bug' if category == 'pwn' else 'code' if category == 'reverse' else 'image' if category == 'stego' else 'mobile' if category == 'mobile' else 'question' }}"></i>
+                        {{ category|title }}
+                        <span class="badge bg-secondary ms-1">{{ challenges_by_category[category]|length }}</span>
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="ctfCategoryTabContent">
+                {% for category in categories %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ category }}" role="tabpanel">
+                    <div class="row mt-3">
+                        {% for challenge in challenges_by_category[category] %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 {% if challenge.id in solved_ids %}border-success{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{{ challenge.title }}</h6>
+                                    <div>
+                                        {% if challenge.id in solved_ids %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Solved
+                                            </span>
+                                        {% endif %}
+                                        <span class="badge bg-{{ 'success' if challenge.difficulty == 'easy' else 'warning' if challenge.difficulty == 'medium' else 'danger' if challenge.difficulty == 'hard' else 'dark' }}">
+                                            {{ challenge.difficulty|title }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text small">{{ challenge.description[:150] }}{% if challenge.description|length > 150 %}...{% endif %}</p>
+                                    
+                                    <div class="row text-center small text-muted mb-3">
+                                        <div class="col-4">
+                                            <i class="fas fa-star"></i><br>
+                                            {{ challenge.points }} pts
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-users"></i><br>
+                                            {{ challenge.solved_by }} solves
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-clock"></i><br>
+                                            {% if challenge.first_blood_time %}
+                                                {{ challenge.first_blood_time.strftime('%H:%M') }}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if challenge.hints %}
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-lightbulb"></i> {{ challenge.hints|from_json|length }} hints available
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-tag"></i> {{ challenge.category|title }}
+                                        </small>
+                                        <a href="{{ url_for('ctf_challenge_detail', challenge_id=challenge.id) }}" class="btn btn-sm btn-primary">
+                                            {% if challenge.id in solved_ids %}
+                                                <i class="fas fa-eye"></i> View
+                                            {% else %}
+                                                <i class="fas fa-play"></i> Solve
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-flag fa-3x mb-3"></i>
+                                <h5>No challenges in this category yet</h5>
+                                <p>Check back soon for new challenges!</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trophy"></i> CTF Leaderboard
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Points</th>
+                                <th>Solved</th>
+                                <th>Last Solve</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in leaderboard[:20] %}
+                            <tr class="{% if entry.user.id == current_user.id %}table-primary{% endif %}">
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-crown text-warning"></i>
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-medal text-secondary"></i>
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-medal text-bronze"></i>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ loop.index }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ entry.user.avatar_url or url_for('static', filename='img/default_avatar.png') }}" 
+                                             class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                                        <div>
+                                            <a href="{{ url_for('user_profile', username=entry.user.username) }}" class="text-decoration-none">
+                                                {{ entry.user.username }}
+                                            </a>
+                                            {% if entry.user.is_admin %}
+                                                <span class="badge bg-danger ms-1">Admin</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ entry.points }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ entry.solved }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% set last_solve = entry.user.ctf_submissions|selectattr('is_correct')|sort(attribute='submitted_at')|last %}
+                                        {% if last_solve %}
+                                            {{ last_solve.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTF Timer Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // CTF Timer (example: 24-hour competition)
+    const endTime = new Date();
+    endTime.setHours(endTime.getHours() + 24); // 24 hours from now
+    
+    function updateTimer() {
+        const now = new Date();
+        const timeLeft = endTime - now;
+        
+        if (timeLeft > 0) {
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            document.getElementById('ctfTimer').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            document.getElementById('ctfTimer').textContent = '00:00:00';
+        }
+    }
+    
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    
+    // Add hover effects to challenge cards
+    const challengeCards = document.querySelectorAll('.card');
+    challengeCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('border-success')) {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                this.style.transition = 'all 0.2s ease';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Real-time updates (simulated)
+    setInterval(function() {
+        // This would normally fetch updated leaderboard and challenge stats
+        // For now, we'll just add a subtle animation to unsolved challenges
+        const unsolvedCards = document.querySelectorAll('.card:not(.border-success)');
+        unsolvedCards.forEach(card => {
+            const badge = card.querySelector('.badge:not(.bg-success)');
+            if (badge) {
+                badge.style.animation = 'pulse 1s';
+                setTimeout(() => {
+                    badge.style.animation = '';
+                }, 1000);
+            }
+        });
+    }, 30000);
+});
+
+// Add CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .card {
+        transition: all 0.2s ease;
+    }
+    
+    .text-bronze {
+        color: #cd7f32 !important;
+    }
+    
+    .table-primary {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %} 

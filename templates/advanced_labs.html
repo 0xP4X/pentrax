@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Labs - PentraX{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-graduation-cap"></i> Advanced Cybersecurity Labs</h1>
+                    <p class="text-muted">Master cybersecurity skills through hands-on practice</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('ctf_dashboard') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-flag"></i> CTF Challenges
+                    </a>
+                    <a href="{{ url_for('sandbox_dashboard') }}" class="btn btn-outline-info">
+                        <i class="fas fa-cube"></i> Sandbox
+                    </a>
+                    <a href="{{ url_for('cyber_labs') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-flask"></i> Basic Labs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Paths Section -->
+    {% if learning_paths %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2><i class="fas fa-road"></i> Learning Paths</h2>
+            <p class="text-muted">Structured learning paths to guide your cybersecurity journey</p>
+            
+            <div class="row">
+                {% for path in learning_paths %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">{{ path.name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ path.description }}</p>
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <i class="fas fa-clock text-info"></i>
+                                        <div class="small">{{ path.estimated_duration }}h</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <i class="fas fa-star text-warning"></i>
+                                        <div class="small">{{ path.difficulty|title }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <i class="fas fa-users text-success"></i>
+                                        <div class="small">{{ path.enrolled_users }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <a href="{{ url_for('learning_path_detail', path_id=path.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-play"></i> Start Path
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-tag"></i> {{ path.category|replace('_', ' ')|title }}
+                                {% if path.is_premium %}
+                                    <span class="badge bg-warning ms-2">Premium</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lab Categories -->
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-th-large"></i> Lab Categories</h2>
+            <p class="text-muted">Explore labs by category and difficulty level</p>
+            
+            <!-- Category Tabs -->
+            <ul class="nav nav-tabs" id="labCategoryTabs" role="tablist">
+                {% for category, subcategories in categories.items() %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                            id="{{ category }}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#{{ category }}" 
+                            type="button" 
+                            role="tab">
+                        <i class="fas fa-{{ 'globe' if category == 'web' else 'network-wired' if category == 'network' else 'key' if category == 'crypto' else 'search' if category == 'forensics' else 'code' if category == 'reverse_engineering' else 'bug' if category == 'exploitation' else 'wifi' if category == 'wireless' else 'mobile' }}"></i>
+                        {{ category|title }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="labCategoryTabContent">
+                {% for category, subcategories in categories.items() %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ category }}" role="tabpanel">
+                    <div class="row mt-3">
+                        <!-- Subcategories -->
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Subcategories</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        <a href="#" class="list-group-item list-group-item-action active" data-subcategory="all">
+                                            All {{ category|title }} Labs
+                                        </a>
+                                        {% for subcategory in subcategories %}
+                                        <a href="#" class="list-group-item list-group-item-action" data-subcategory="{{ subcategory }}">
+                                            {{ subcategory|replace('_', ' ')|title }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Labs -->
+                        <div class="col-md-9">
+                            <div class="row">
+                                {% for lab in labs_by_category[category] %}
+                                <div class="col-lg-6 mb-4 lab-item" data-subcategory="{{ lab.subcategory or 'all' }}">
+                                    <div class="card h-100 {% if user_progress[lab.id] and user_progress[lab.id].completed_at %}border-success{% endif %}">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">{{ lab.title }}</h6>
+                                            <div>
+                                                {% if lab.is_premium %}
+                                                    <span class="badge bg-warning">Premium</span>
+                                                {% endif %}
+                                                <span class="badge bg-{{ 'success' if lab.difficulty == 'easy' else 'warning' if lab.difficulty == 'medium' else 'danger' if lab.difficulty == 'hard' else 'dark' }}">
+                                                    {{ lab.difficulty|title }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text small">{{ lab.description[:100] }}{% if lab.description|length > 100 %}...{% endif %}</p>
+                                            
+                                            <!-- Progress Bar -->
+                                            {% if user_progress[lab.id] %}
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                                    <span>Progress</span>
+                                                    <span>{{ "%.1f"|format(user_progress[lab.id].progress_percentage) }}%</span>
+                                                </div>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar {% if user_progress[lab.id].completed_at %}bg-success{% else %}bg-primary{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ user_progress[lab.id].progress_percentage }}%"></div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <div class="row text-center small text-muted">
+                                                <div class="col-4">
+                                                    <i class="fas fa-clock"></i><br>
+                                                    {{ lab.estimated_time }}m
+                                                </div>
+                                                <div class="col-4">
+                                                    <i class="fas fa-star"></i><br>
+                                                    {{ lab.points }} pts
+                                                </div>
+                                                <div class="col-4">
+                                                    <i class="fas fa-{{ 'terminal' if lab.terminal_enabled else 'question-circle' if lab.lab_type == 'quiz' else 'flag' if lab.lab_type == 'ctf' else 'cube' if lab.lab_type == 'sandbox' else 'flask' }}"></i><br>
+                                                    {{ lab.lab_type|title }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    {% if lab.subcategory %}
+                                                        {{ lab.subcategory|replace('_', ' ')|title }}
+                                                    {% endif %}
+                                                </small>
+                                                <a href="{{ url_for('lab_detail', lab_id=lab.id) }}" class="btn btn-sm btn-primary">
+                                                    {% if user_progress[lab.id] and user_progress[lab.id].completed_at %}
+                                                        <i class="fas fa-check"></i> Completed
+                                                    {% elif user_progress[lab.id] and user_progress[lab.id].progress_percentage > 0 %}
+                                                        <i class="fas fa-play"></i> Continue
+                                                    {% else %}
+                                                        <i class="fas fa-play"></i> Start
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="col-12">
+                                    <div class="text-center text-muted py-5">
+                                        <i class="fas fa-flask fa-3x mb-3"></i>
+                                        <h5>No labs available in this category yet</h5>
+                                        <p>Check back soon for new labs!</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Difficulty Legend -->
+<div class="modal fade" id="difficultyLegend" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Difficulty Levels</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    {% for difficulty, info in difficulties.items() %}
+                    <div class="col-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-{{ 'success' if difficulty == 'easy' else 'warning' if difficulty == 'medium' else 'danger' if difficulty == 'hard' else 'dark' }} me-2">
+                                {{ difficulty|title }}
+                            </span>
+                            <div>
+                                <div class="small fw-bold">{{ info.points }} points</div>
+                                <div class="small text-muted">{{ info.time }} min • {{ info.hints }} hints</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Subcategory filtering
+    const subcategoryLinks = document.querySelectorAll('[data-subcategory]');
+    const labItems = document.querySelectorAll('.lab-item');
+    
+    subcategoryLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Update active state
+            subcategoryLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            
+            const selectedSubcategory = this.getAttribute('data-subcategory');
+            
+            // Filter labs
+            labItems.forEach(item => {
+                const itemSubcategory = item.getAttribute('data-subcategory');
+                if (selectedSubcategory === 'all' || itemSubcategory === selectedSubcategory) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Add hover effects
+    const labCards = document.querySelectorAll('.card');
+    labCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            this.style.transition = 'all 0.2s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Auto-refresh progress every 30 seconds
+    setInterval(function() {
+        // Refresh progress bars for active labs
+        const activeLabs = document.querySelectorAll('.lab-item');
+        activeLabs.forEach(labItem => {
+            const progressBar = labItem.querySelector('.progress-bar');
+            if (progressBar && !progressBar.classList.contains('bg-success')) {
+                // This would normally make an AJAX call to update progress
+                // For now, we'll just add a subtle animation
+                progressBar.style.animation = 'pulse 1s';
+                setTimeout(() => {
+                    progressBar.style.animation = '';
+                }, 1000);
+            }
+        });
+    }, 30000);
+});
+
+// Add CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .card {
+        transition: all 0.2s ease;
+    }
+    
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %} 
