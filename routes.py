@@ -3901,9 +3901,9 @@ def admin_create_advanced_lab():
     
     return render_template('admin_lab_form.html')
 
-@app.route('/admin/labs/<int:lab_id>/edit', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/<int:lab_id>/edit', methods=['GET', 'POST'])
 @admin_required
-def admin_edit_lab(lab_id):
+def admin_edit_advanced_lab(lab_id):
     """Edit an existing lab with all advanced features"""
     lab = Lab.query.get_or_404(lab_id)
     
