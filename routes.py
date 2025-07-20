@@ -23,6 +23,7 @@ from utils.siem import get_deep_ip_info, log_siem_event
 import re
 from collections import defaultdict
 from utils.lab_manager import LabManager, LAB_CATEGORIES, LAB_DIFFICULTIES, CTF_CATEGORIES
+from models import LearningPath, CTFChallenge, SandboxEnvironment, UserSandboxSession, CTFSubmission
 
 @app.context_processor
 def inject_user():

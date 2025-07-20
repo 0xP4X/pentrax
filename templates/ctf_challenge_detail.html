@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}{{ challenge.title }} - PentraX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('ctf_dashboard') }}">CTF Challenges</a></li>
+                    <li class="breadcrumb-item active">{{ challenge.title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1><i class="fas fa-flag"></i> {{ challenge.title }}</h1>
+                        <p class="text-muted mb-0">{{ challenge.category|title }} • {{ challenge.difficulty|title }}</p>
+                    </div>
+                    <div>
+                        {% if solved %}
+                            <span class="badge bg-success fs-5">
+                                <i class="fas fa-check"></i> Solved
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-warning fs-5">{{ challenge.points }} pts</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4>Description</h4>
+                            <p>{{ challenge.description }}</p>
+                            
+                            {% if challenge.files %}
+                            <div class="mb-4">
+                                <h5>Files</h5>
+                                <div class="list-group">
+                                    {% for file in challenge.files|from_json %}
+                                    <a href="#" class="list-group-item list-group-item-action">
+                                        <i class="fas fa-download"></i> {{ file }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Flag Submission -->
+                            {% if not solved %}
+                            <div class="mb-4">
+                                <h5>Submit Flag</h5>
+                                <form id="flagForm" class="row g-3">
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="flagInput" 
+                                               placeholder="Enter flag (format: flag{...})" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-paper-plane"></i> Submit
+                                        </button>
+                                    </div>
+                                </form>
+                                <div id="flagResult" class="mt-3"></div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> 
+                                <strong>Congratulations!</strong> You've solved this challenge and earned {{ challenge.points }} points!
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Challenge Stats -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Challenge Stats</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="border rounded p-2">
+                                                <i class="fas fa-users text-info"></i>
+                                                <div class="small">{{ challenge.solved_by }} solves</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="border rounded p-2">
+                                                <i class="fas fa-star text-warning"></i>
+                                                <div class="small">{{ challenge.points }} points</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if challenge.first_blood_time %}
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-trophy text-warning"></i> 
+                                            First blood: {{ challenge.first_blood_time.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Hints -->
+                            {% if challenge.hints %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Hints</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% for hint in challenge.hints|from_json %}
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-outline-secondary w-100 text-start" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#hint{{ loop.index }}">
+                                            <i class="fas fa-lightbulb"></i> Hint {{ loop.index }}
+                                        </button>
+                                        <div class="collapse mt-2" id="hint{{ loop.index }}">
+                                            <div class="card card-body">
+                                                {{ hint }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Submission History -->
+                    {% if submissions %}
+                    <div class="mt-4">
+                        <h5>Your Submission History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Flag</th>
+                                        <th>Result</th>
+                                        <th>Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in submissions %}
+                                    <tr>
+                                        <td>{{ submission.submitted_at.strftime('%H:%M:%S') }}</td>
+                                        <td><code>{{ submission.submitted_flag[:20] }}...</code></td>
+                                        <td>
+                                            {% if submission.is_correct %}
+                                                <span class="badge bg-success">Correct</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Incorrect</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ submission.points_earned }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const flagForm = document.getElementById('flagForm');
+    const flagInput = document.getElementById('flagInput');
+    const flagResult = document.getElementById('flagResult');
+    
+    if (flagForm) {
+        flagForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const flag = flagInput.value.trim();
+            if (!flag) return;
+            
+            // Show loading
+            flagResult.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Submitting...</div>';
+            
+            // Submit flag
+            fetch('{{ url_for("submit_ctf_flag") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `challenge_id={{ challenge.id }}&flag=${encodeURIComponent(flag)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.correct) {
+                        flagResult.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle"></i> ${data.message}</div>`;
+                        // Reload page after a short delay to show solved state
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        flagResult.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> ${data.message}</div>`;
+                    }
+                } else {
+                    flagResult.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                flagResult.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error submitting flag</div>';
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

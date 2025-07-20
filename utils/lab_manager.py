@@ -1,21 +1,29 @@
 import json
-import docker
 import subprocess
 import uuid
 import time
 from datetime import datetime, timedelta
-from models import db, Lab, LearningPath, CTFChallenge, SandboxEnvironment, UserSandboxSession, LabProgress, LabHint, UserHintUsage, LabRating
+from models import db, Lab, LearningPath, CTFChallenge, SandboxEnvironment, UserSandboxSession, LabProgress, LabHint, UserHintUsage, LabRating, User, CTFSubmission
 from utils import create_notification, log_siem_event
+
+# Optional docker import
+try:
+    import docker
+    DOCKER_AVAILABLE = True
+except ImportError:
+    DOCKER_AVAILABLE = False
+    docker = None
 
 class LabManager:
     """Advanced lab management system for cybersecurity training"""
     
     def __init__(self):
         self.docker_client = None
-        try:
-            self.docker_client = docker.from_env()
-        except:
-            pass  # Docker not available
+        if DOCKER_AVAILABLE:
+            try:
+                self.docker_client = docker.from_env()
+            except:
+                pass  # Docker not available
     
     def create_learning_path(self, name, description, difficulty, category, **kwargs):
         """Create a structured learning path"""
@@ -148,7 +156,7 @@ class LabManager:
         
         session_id = str(uuid.uuid4())
         
-        if sandbox.environment_type == 'docker' and self.docker_client:
+        if sandbox.environment_type == 'docker' and DOCKER_AVAILABLE and self.docker_client:
             try:
                 # Start Docker container
                 container = self.docker_client.containers.run(
@@ -198,7 +206,7 @@ class LabManager:
         if not session:
             return {'success': False, 'message': 'Session not found'}
         
-        if session.container_id and self.docker_client:
+        if session.container_id and DOCKER_AVAILABLE and self.docker_client:
             try:
                 container = self.docker_client.containers.get(session.container_id)
                 container.stop()
