@@ -3837,9 +3837,9 @@ def admin_advanced_labs():
                          recent_activity=recent_activity,
                          categories=categories)
 
-@app.route('/admin/labs/create', methods=['GET', 'POST'])
+@app.route('/admin/advanced-labs/create', methods=['GET', 'POST'])
 @admin_required
-def admin_create_lab():
+def admin_create_advanced_lab():
     """Create a new lab with advanced features"""
     if request.method == 'POST':
         try:
