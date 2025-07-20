@@ -25,6 +25,23 @@ def update_user_streak(user_id):
 
 def get_user_stats(user):
     """Get comprehensive user statistics for achievement checking"""
+    if not user or not hasattr(user, 'is_authenticated') or not user.is_authenticated:
+        return {
+            'posts': 0,
+            'comments': 0,
+            'post_likes_given': 0,
+            'post_likes_received': 0,
+            'comment_likes_given': 0,
+            'comment_likes_received': 0,
+            'labs_completed': 0,
+            'reputation': 0,
+            'days_since_joined': 0,
+            'followers': 0,
+            'following': 0,
+            'current_streak': 0,
+            'longest_streak': 0,
+            'total_reactions': 0,
+        }
     post_ids_select = select(Post.id).where(Post.user_id == user.id)
     comment_ids_select = select(Comment.id).where(Comment.user_id == user.id)
     stats = {
