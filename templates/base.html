@@ -61,16 +61,17 @@
                 </ul>
                 
                 <ul class="navbar-nav me-5">
-                    <!-- Theme Toggle -->
+                    <!-- Theme Toggle and Streak -->
                     <li class="nav-item d-flex align-items-center">
-                        <button class="btn btn-outline-secondary btn-sm me-2" id="theme-toggle" title="Toggle theme">
-                            <i class="fas fa-sun" id="theme-icon"></i>
-                        </button>
                         {% if current_user.is_authenticated and current_user.streak %}
-                        <span class="badge bg-dark text-warning ms-1" title="Current Streak">
-                            <i class="fas fa-fire"></i> {{ current_user.streak.current_streak }}
+                        <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em;">
+                            <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
+                            <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
                         </span>
                         {% endif %}
+                        <button class="btn btn-outline-secondary btn-sm" id="theme-toggle" title="Toggle theme">
+                            <i class="fas fa-sun" id="theme-icon"></i>
+                        </button>
                     </li>
                     
                     {% if current_user.is_authenticated %}
@@ -163,14 +164,15 @@
       <div class="container-fluid px-2 d-flex align-items-center justify-content-between">
         <a class="navbar-brand fw-bold" href="/">PentraX</a>
         <div class="d-flex align-items-center">
-          <button class="btn btn-outline-secondary btn-sm me-2" id="theme-toggle-mobile" type="button" title="Toggle theme">
-            <i class="fas fa-sun" id="theme-icon-mobile"></i>
-          </button>
           {% if current_user.is_authenticated and current_user.streak %}
-          <span class="badge bg-dark text-warning ms-1" title="Current Streak">
-            <i class="fas fa-fire"></i> {{ current_user.streak.current_streak }}
+          <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em;">
+            <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
+            <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
           </span>
           {% endif %}
+          <button class="btn btn-outline-secondary btn-sm" id="theme-toggle-mobile" type="button" title="Toggle theme">
+            <i class="fas fa-sun" id="theme-icon-mobile"></i>
+          </button>
           {% if current_user.is_authenticated %}
           <button class="navbar-toggler" type="button" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
             <span class="navbar-toggler-icon"></span>
