@@ -217,7 +217,7 @@ setInterval(function() {
   border: 2px solid #007bff;
 }
 .achievement-card.locked {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #69c414 0%, #3f0cca 100%);
   opacity: 0.96;
 }
 .achievement-card .fa-3x {
@@ -250,6 +250,47 @@ setInterval(function() {
 .achievement-type-badge.Other { background: #6c757d; color: #fff; }
 .progress-bar {
   background: linear-gradient(90deg, #ffc107 0%, #007bff 100%);
+}
+body.dark-mode .achievement-card.locked {
+  background: rgba(30,40,60,0.95);
+  color: #b0b8c9;
+}
+body.dark-mode .achievement-card.unlocked {
+  background: linear-gradient(135deg, #1e293b 0%, #3a8dde 100%);
+  color: #fff;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 12px 0 #ffd70044;
+}
+body.dark-mode .achievement-card .fa-3x {
+  color: #3a8dde;
+  filter: none;
+}
+body.dark-mode .achievement-card.unlocked .fa-3x {
+  color: #ffd700 !important;
+  text-shadow: 0 0 8px #ffd700;
+}
+body.dark-mode .achievement-card.locked .fa-3x {
+  color: #3a8dde !important;
+}
+body.dark-mode .achievement-type-badge.Quiz,
+body.dark-mode .achievement-type-badge.Guided {
+  background: #3a8dde;
+  color: #fff;
+}
+body.dark-mode .achievement-type-badge.CTF,
+body.dark-mode .achievement-type-badge[title="Real-Time"] {
+  background: #ffd700;
+  color: #212529;
+}
+body.dark-mode .achievement-type-badge.Other {
+  background: #444a5a;
+  color: #fff;
+}
+body.dark-mode .progress-bar {
+  background: linear-gradient(90deg, #ffd700 0%, #3a8dde 100%);
+}
+body.dark-mode .card, body.dark-mode .card-header, body.dark-mode .card-body {
+  background: transparent;
 }
 </style>
 {% endblock %} 
