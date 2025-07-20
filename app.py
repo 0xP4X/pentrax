@@ -123,31 +123,9 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 # Import routes
 from routes import *
 
-@app.template_filter('from_json')
-def from_json_filter(value):
-    """Convert JSON string to Python object"""
-    if not value:
-        return None
-    try:
-        import json
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError):
-        return None
-
 @app.context_processor
 def inject_now():
     return {'current_year': datetime.now().year}
-
-@app.template_filter('from_json')
-def from_json_filter(value):
-    """Convert JSON string to Python object"""
-    if not value:
-        return None
-    try:
-        import json
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError):
-        return None
 
 # Terminal functionality commented out for Windows compatibility
 # @socketio.on('start_terminal', namespace='/terminals')

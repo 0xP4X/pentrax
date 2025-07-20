@@ -184,9 +184,8 @@ class Lab(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    difficulty = db.Column(db.String(20), nullable=False)  # easy, medium, hard, expert
-    category = db.Column(db.String(50), nullable=False)  # web, network, crypto, forensics, reverse_engineering, etc.
-    subcategory = db.Column(db.String(50))  # sql_injection, xss, buffer_overflow, etc.
+    difficulty = db.Column(db.String(20), nullable=False)  # easy, medium, hard
+    category = db.Column(db.String(50), nullable=False)  # web, network, crypto, etc.
     points = db.Column(db.Integer, default=10)
     hints = db.Column(db.Text)
     solution = db.Column(db.Text)
@@ -194,210 +193,25 @@ class Lab(db.Model):
     instructions = db.Column(db.Text)  # Detailed step-by-step instructions
     tools_needed = db.Column(db.String(500))  # Required tools/software
     learning_objectives = db.Column(db.Text)  # What students will learn
-    prerequisites = db.Column(db.Text)  # Required knowledge/skills
-    estimated_time = db.Column(db.Integer, default=30)  # minutes
     is_premium = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    estimated_time = db.Column(db.Integer, default=30)  # minutes
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Advanced lab features
-    lab_type = db.Column(db.String(20), default='standard')  # standard, terminal, sandbox, quiz, ctf, real_hacking
-    lab_format = db.Column(db.String(20), default='individual')  # individual, team, competition
-    
-    # Sandbox and environment
+    # New fields for sandbox labs
     sandbox_url = db.Column(db.String(500))  # URL or connection info for sandbox
     sandbox_instructions = db.Column(db.Text)  # How to use the sandbox
-    environment_type = db.Column(db.String(50))  # docker, vm, cloud, local
-    environment_config = db.Column(db.Text)  # JSON config for environment setup
-    
-    # Real-time hacking features
+    # New fields for real-time hacking labs
     required_command = db.Column(db.Text)  # Command user must run
     command_success_criteria = db.Column(db.Text)  # Output or flag to check for success
-    allow_multiple_flags = db.Column(db.Boolean, default=False)  # Multiple flags for different difficulty levels
-    flag_hints = db.Column(db.Text)  # JSON array of hints for each flag
-    
-    # Terminal-based labs
-    terminal_enabled = db.Column(db.Boolean, default=False)
-    terminal_instructions = db.Column(db.Text)
+    # New fields for terminal-based labs
+    lab_type = db.Column(db.String(20), default='standard')  # standard, terminal, sandbox, quiz
+    terminal_enabled = db.Column(db.Boolean, default=False)  # Whether terminal is enabled
+    terminal_instructions = db.Column(db.Text)  # Instructions for terminal lab
     terminal_shell = db.Column(db.String(20), default='bash')  # bash, powershell, cmd, etc.
     terminal_timeout = db.Column(db.Integer, default=300)  # Timeout in seconds
-    allow_command_hints = db.Column(db.Boolean, default=True)
-    strict_order = db.Column(db.Boolean, default=True)
-    allow_retry = db.Column(db.Boolean, default=True)
-    
-    # CTF and competition features
-    ctf_category = db.Column(db.String(50))  # web, crypto, forensics, pwn, reverse, misc
-    ctf_points = db.Column(db.Integer, default=0)  # Dynamic points based on solves
-    ctf_solves = db.Column(db.Integer, default=0)  # Number of successful solves
-    ctf_first_blood = db.Column(db.Integer, db.ForeignKey('user.id'))  # First to solve
-    ctf_first_blood_time = db.Column(db.DateTime)
-    
-    # Learning path integration
-    learning_path_id = db.Column(db.Integer, db.ForeignKey('learning_path.id'))
-    path_order = db.Column(db.Integer, default=0)  # Order in learning path
-    
-    # Progress tracking
-    completion_rate = db.Column(db.Float, default=0.0)  # Percentage of users who complete
-    average_time = db.Column(db.Float, default=0.0)  # Average completion time in minutes
-    difficulty_rating = db.Column(db.Float, default=0.0)  # User-rated difficulty (1-5)
-    
-    # Relationships
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    learning_path = db.relationship('LearningPath', backref='labs')
-    first_blood_user = db.relationship('User', foreign_keys=[ctf_first_blood])
-
-class LearningPath(db.Model):
-    """Model for structured learning paths like TryHackMe paths"""
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    difficulty = db.Column(db.String(20), nullable=False)  # beginner, intermediate, advanced, expert
-    category = db.Column(db.String(50), nullable=False)  # web_security, network_security, etc.
-    estimated_duration = db.Column(db.Integer, default=0)  # hours
-    total_points = db.Column(db.Integer, default=0)
-    is_premium = db.Column(db.Boolean, default=False)
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Learning path features
-    prerequisites = db.Column(db.Text)  # Required knowledge
-    learning_objectives = db.Column(db.Text)  # What students will learn
-    target_audience = db.Column(db.String(200))  # Who this path is for
-    certification = db.Column(db.String(100))  # Certification offered (if any)
-    
-    # Progress tracking
-    enrolled_users = db.Column(db.Integer, default=0)
-    completed_users = db.Column(db.Integer, default=0)
-    average_rating = db.Column(db.Float, default=0.0)
-
-class CTFChallenge(db.Model):
-    """Model for CTF-style challenges"""
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(50), nullable=False)  # web, crypto, forensics, pwn, reverse, misc
-    difficulty = db.Column(db.String(20), nullable=False)  # easy, medium, hard, expert
-    points = db.Column(db.Integer, default=100)
-    flag = db.Column(db.String(200), nullable=False)
-    hints = db.Column(db.Text)  # JSON array of hints
-    files = db.Column(db.Text)  # JSON array of downloadable files
-    solved_by = db.Column(db.Integer, default=0)  # Number of solves
-    first_blood = db.Column(db.Integer, db.ForeignKey('user.id'))
-    first_blood_time = db.Column(db.DateTime)
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Challenge features
-    challenge_type = db.Column(db.String(50))  # static, dynamic, jeopardy, attack_defense
-    time_limit = db.Column(db.Integer)  # Time limit in minutes (if any)
-    max_attempts = db.Column(db.Integer, default=0)  # 0 = unlimited
-    
-    # Relationships
-    first_blood_user = db.relationship('User', foreign_keys=[first_blood])
-
-class CTFSubmission(db.Model):
-    """Model for CTF flag submissions"""
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    challenge_id = db.Column(db.Integer, db.ForeignKey('ctf_challenge.id'), nullable=False)
-    submitted_flag = db.Column(db.String(200), nullable=False)
-    is_correct = db.Column(db.Boolean, default=False)
-    points_earned = db.Column(db.Integer, default=0)
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    user = db.relationship('User', backref='ctf_submissions')
-    challenge = db.relationship('CTFChallenge', backref='submissions')
-
-class SandboxEnvironment(db.Model):
-    """Model for sandbox environments"""
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    environment_type = db.Column(db.String(50), nullable=False)  # docker, vm, cloud
-    image_name = db.Column(db.String(200))  # Docker image or VM template
-    configuration = db.Column(db.Text)  # JSON configuration
-    resources = db.Column(db.Text)  # CPU, RAM, storage requirements
-    is_active = db.Column(db.Boolean, default=True)
-    max_concurrent_users = db.Column(db.Integer, default=10)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class UserSandboxSession(db.Model):
-    """Model for user sandbox sessions"""
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    sandbox_id = db.Column(db.Integer, db.ForeignKey('sandbox_environment.id'), nullable=False)
-    session_id = db.Column(db.String(100), unique=True, nullable=False)
-    container_id = db.Column(db.String(100))  # Docker container ID or VM ID
-    status = db.Column(db.String(20), default='starting')  # starting, running, stopped, error
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    stopped_at = db.Column(db.DateTime)
-    access_url = db.Column(db.String(500))  # URL to access the sandbox
-    
-    # Relationships
-    user = db.relationship('User', backref='sandbox_sessions')
-    sandbox = db.relationship('SandboxEnvironment', backref='user_sessions')
-
-class LabProgress(db.Model):
-    """Model for tracking detailed lab progress"""
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
-    progress_percentage = db.Column(db.Float, default=0.0)
-    current_step = db.Column(db.Integer, default=1)
-    total_steps = db.Column(db.Integer, default=1)
-    time_spent = db.Column(db.Integer, default=0)  # seconds
-    hints_used = db.Column(db.Integer, default=0)
-    attempts = db.Column(db.Integer, default=0)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
-    completed_at = db.Column(db.DateTime)
-    
-    # Relationships
-    user = db.relationship('User', backref='lab_progress')
-    lab = db.relationship('Lab', backref='user_progress')
-
-class LabHint(db.Model):
-    """Model for lab hints with progressive reveal"""
-    id = db.Column(db.Integer, primary_key=True)
-    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
-    hint_text = db.Column(db.Text, nullable=False)
-    hint_order = db.Column(db.Integer, default=1)  # Order of hint reveal
-    cost = db.Column(db.Integer, default=0)  # Points cost to reveal hint
-    is_free = db.Column(db.Boolean, default=True)  # Whether hint is free
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    lab = db.relationship('Lab', backref='lab_hints')
-
-class UserHintUsage(db.Model):
-    """Model for tracking hint usage by users"""
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    hint_id = db.Column(db.Integer, db.ForeignKey('lab_hint.id'), nullable=False)
-    used_at = db.Column(db.DateTime, default=datetime.utcnow)
-    points_spent = db.Column(db.Integer, default=0)
-    
-    # Relationships
-    user = db.relationship('User', backref='hint_usage')
-    hint = db.relationship('LabHint', backref='usage')
-
-class LabRating(db.Model):
-    """Model for user ratings and feedback on labs"""
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
-    rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
-    difficulty_rating = db.Column(db.Integer)  # 1-5 difficulty
-    feedback = db.Column(db.Text)  # User feedback
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    user = db.relationship('User', backref='lab_ratings')
-    lab = db.relationship('Lab', backref='lab_ratings')
-    
-    # Ensure one rating per user per lab
-    __table_args__ = (db.UniqueConstraint('user_id', 'lab_id', name='unique_user_lab_rating'),)
+    allow_command_hints = db.Column(db.Boolean, default=True)  # Show hints for commands
+    strict_order = db.Column(db.Boolean, default=True)  # Commands must be in order
+    allow_retry = db.Column(db.Boolean, default=True)  # Allow retrying commands
 
 class LabCompletion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -406,7 +220,7 @@ class LabCompletion(db.Model):
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='lab_completions')
-    lab = db.relationship('Lab', backref='lab_completions')
+    lab = db.relationship('Lab', backref='completions')
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -576,7 +390,7 @@ class LabQuizAttempt(db.Model):
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='quiz_attempts')
-    lab = db.relationship('Lab', backref='lab_quiz_attempts')
+    lab = db.relationship('Lab', backref='quiz_attempts')
 
 class ActivationKey(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -683,7 +497,7 @@ class LabTerminalAttempt(db.Model):
     attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='terminal_attempts')
-    lab = db.relationship('Lab', backref='lab_terminal_attempts')
+    lab = db.relationship('Lab', backref='terminal_attempts')
     command = db.relationship('LabTerminalCommand', backref='attempts')
 
 class LabTerminalSession(db.Model):
@@ -702,7 +516,7 @@ class LabTerminalSession(db.Model):
     completed_at = db.Column(db.DateTime)
     
     user = db.relationship('User', backref='terminal_sessions')
-    lab = db.relationship('Lab', backref='lab_terminal_sessions')
+    lab = db.relationship('Lab', backref='terminal_sessions')
 
 class Contact(db.Model):
     """Model for contact form submissions"""

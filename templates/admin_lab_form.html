@@ -225,7 +225,7 @@
                         <em>Options:</em> {{ q.options_list|join(', ') }}<br>
                         <em>Answer:</em> {{ q.correct_answer }}<br>
                         <em>Explanation:</em> {{ q.explanation }}<br>
-                        <form method="post" action="{{ url_for('admin_delete_quiz_question_global', question_id=q.id, lab_id=lab.id) }}" style="display:inline;">
+                        <form method="post" action="{{ url_for('admin_delete_quiz_question', question_id=q.id, lab_id=lab.id) }}" style="display:inline;">
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
                     </li>
