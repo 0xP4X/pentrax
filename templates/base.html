@@ -64,10 +64,12 @@
                     <!-- Theme Toggle and Streak -->
                     <li class="nav-item d-flex align-items-center">
                         {% if current_user.is_authenticated and current_user.streak %}
-                        <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em;">
-                            <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
-                            <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
-                        </span>
+                        <a href="{{ url_for('streaks_dashboard') }}" class="text-decoration-none">
+                            <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em; cursor:pointer;">
+                                <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
+                                <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
+                            </span>
+                        </a>
                         {% endif %}
                         <button class="btn btn-outline-secondary btn-sm" id="theme-toggle" title="Toggle theme">
                             <i class="fas fa-sun" id="theme-icon"></i>
@@ -165,10 +167,12 @@
         <a class="navbar-brand fw-bold" href="/">PentraX</a>
         <div class="d-flex align-items-center">
           {% if current_user.is_authenticated and current_user.streak %}
-          <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em;">
-            <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
-            <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
-          </span>
+          <a href="{{ url_for('streaks_dashboard') }}" class="text-decoration-none">
+            <span class="badge bg-dark text-warning me-2 d-flex align-items-center" style="font-size:1.1em; cursor:pointer;">
+              <i class="fas fa-fire me-1" style="font-size:1.2em;"></i>
+              <span class="fw-bold">{{ current_user.streak.current_streak }}</span>
+            </span>
+          </a>
           {% endif %}
           <button class="btn btn-outline-secondary btn-sm" id="theme-toggle-mobile" type="button" title="Toggle theme">
             <i class="fas fa-sun" id="theme-icon-mobile"></i>
