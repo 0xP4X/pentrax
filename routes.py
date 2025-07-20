@@ -3802,3 +3802,1011 @@ def admin_sandbox_environments():
     
     sandboxes = SandboxEnvironment.query.all()
     return render_template('admin_sandbox_environments.html', sandboxes=sandboxes)
+
+# Advanced Admin Lab Management Routes
+
+@app.route('/admin/advanced-labs')
+@admin_required
+def admin_advanced_labs():
+    """Advanced lab management dashboard"""
+    # Get statistics
+    stats = {
+        'total_labs': Lab.query.count(),
+        'active_users': User.query.filter_by(is_banned=False).count(),
+        'ctf_challenges': CTFChallenge.query.count(),
+        'learning_paths': LearningPath.query.count()
+    }
+    
+    # Get all labs with related data
+    labs = Lab.query.all()
+    
+    # Get recent activity (you can implement this based on your needs)
+    recent_activity = []
+    
+    # Get categories with counts
+    categories = db.session.query(
+        Lab.category,
+        db.func.count(Lab.id).label('count')
+    ).group_by(Lab.category).all()
+    
+    categories = [{'name': cat.category, 'count': cat.count} for cat in categories]
+    
+    return render_template('admin_advanced_lab_manager.html', 
+                         labs=labs, 
+                         stats=stats, 
+                         recent_activity=recent_activity,
+                         categories=categories)
+
+@app.route('/admin/labs/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_lab():
+    """Create a new lab with advanced features"""
+    if request.method == 'POST':
+        try:
+            # Create new lab
+            lab = Lab(
+                title=request.form['title'],
+                description=request.form['description'],
+                difficulty=request.form['difficulty'],
+                category=request.form['category'],
+                subcategory=request.form.get('subcategory'),
+                points=int(request.form.get('points', 10)),
+                estimated_time=int(request.form.get('estimated_time', 30)),
+                lab_type=request.form.get('lab_type', 'standard'),
+                lab_format=request.form.get('lab_format', 'individual'),
+                flag=request.form.get('flag'),
+                hints=request.form.get('hints'),
+                solution=request.form.get('solution'),
+                instructions=request.form.get('instructions'),
+                tools_needed=request.form.get('tools_needed'),
+                learning_objectives=request.form.get('learning_objectives'),
+                prerequisites=request.form.get('prerequisites'),
+                is_premium=bool(request.form.get('is_premium')),
+                is_active=bool(request.form.get('is_active', True)),
+                user_id=current_user.id
+            )
+            
+            # Set lab-specific configurations
+            if lab.lab_type == 'terminal':
+                lab.terminal_enabled = True
+                lab.terminal_instructions = request.form.get('terminal_instructions')
+                lab.terminal_shell = request.form.get('terminal_shell', 'bash')
+                lab.terminal_timeout = int(request.form.get('terminal_timeout', 300))
+                lab.allow_command_hints = bool(request.form.get('allow_command_hints'))
+                lab.strict_order = bool(request.form.get('strict_order'))
+                lab.allow_retry = bool(request.form.get('allow_retry'))
+            
+            elif lab.lab_type == 'sandbox':
+                lab.sandbox_url = request.form.get('sandbox_url')
+                lab.sandbox_instructions = request.form.get('sandbox_instructions')
+                lab.environment_type = request.form.get('environment_type', 'docker')
+                lab.environment_config = request.form.get('environment_config')
+            
+            elif lab.lab_type == 'ctf':
+                lab.ctf_category = request.form.get('ctf_category')
+                lab.ctf_points = int(request.form.get('ctf_points', 100))
+                lab.challenge_type = request.form.get('challenge_type', 'static')
+                lab.time_limit = int(request.form.get('time_limit', 0)) if request.form.get('time_limit') else None
+                lab.max_attempts = int(request.form.get('max_attempts', 0)) if request.form.get('max_attempts') else 0
+            
+            db.session.add(lab)
+            db.session.commit()
+            
+            flash(f'Lab "{lab.title}" created successfully!', 'success')
+            return redirect(url_for('admin_edit_lab', lab_id=lab.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating lab: {str(e)}', 'error')
+    
+    return render_template('admin_lab_form.html')
+
+@app.route('/admin/labs/<int:lab_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_lab(lab_id):
+    """Edit an existing lab with all advanced features"""
+    lab = Lab.query.get_or_404(lab_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update basic lab information
+            lab.title = request.form['title']
+            lab.description = request.form['description']
+            lab.difficulty = request.form['difficulty']
+            lab.category = request.form['category']
+            lab.subcategory = request.form.get('subcategory')
+            lab.points = int(request.form.get('points', 10))
+            lab.estimated_time = int(request.form.get('estimated_time', 30))
+            lab.lab_type = request.form.get('lab_type', 'standard')
+            lab.lab_format = request.form.get('lab_format', 'individual')
+            lab.flag = request.form.get('flag')
+            lab.hints = request.form.get('hints')
+            lab.solution = request.form.get('solution')
+            lab.instructions = request.form.get('instructions')
+            lab.tools_needed = request.form.get('tools_needed')
+            lab.learning_objectives = request.form.get('learning_objectives')
+            lab.prerequisites = request.form.get('prerequisites')
+            lab.is_premium = bool(request.form.get('is_premium'))
+            lab.is_active = bool(request.form.get('is_active'))
+            
+            # Update lab-specific configurations
+            if lab.lab_type == 'terminal':
+                lab.terminal_enabled = True
+                lab.terminal_instructions = request.form.get('terminal_instructions')
+                lab.terminal_shell = request.form.get('terminal_shell', 'bash')
+                lab.terminal_timeout = int(request.form.get('terminal_timeout', 300))
+                lab.allow_command_hints = bool(request.form.get('allow_command_hints'))
+                lab.strict_order = bool(request.form.get('strict_order'))
+                lab.allow_retry = bool(request.form.get('allow_retry'))
+            
+            elif lab.lab_type == 'sandbox':
+                lab.sandbox_url = request.form.get('sandbox_url')
+                lab.sandbox_instructions = request.form.get('sandbox_instructions')
+                lab.environment_type = request.form.get('environment_type', 'docker')
+                lab.environment_config = request.form.get('environment_config')
+            
+            elif lab.lab_type == 'ctf':
+                lab.ctf_category = request.form.get('ctf_category')
+                lab.ctf_points = int(request.form.get('ctf_points', 100))
+                lab.challenge_type = request.form.get('challenge_type', 'static')
+                lab.time_limit = int(request.form.get('time_limit', 0)) if request.form.get('time_limit') else None
+                lab.max_attempts = int(request.form.get('max_attempts', 0)) if request.form.get('max_attempts') else 0
+            
+            db.session.commit()
+            flash(f'Lab "{lab.title}" updated successfully!', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating lab: {str(e)}', 'error')
+    
+    return render_template('admin_lab_form.html', lab=lab)
+
+@app.route('/admin/labs/<int:lab_id>/duplicate')
+@admin_required
+def admin_duplicate_lab(lab_id):
+    """Duplicate an existing lab"""
+    original_lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        # Create new lab with copied data
+        new_lab = Lab(
+            title=f"{original_lab.title} (Copy)",
+            description=original_lab.description,
+            difficulty=original_lab.difficulty,
+            category=original_lab.category,
+            subcategory=original_lab.subcategory,
+            points=original_lab.points,
+            estimated_time=original_lab.estimated_time,
+            lab_type=original_lab.lab_type,
+            lab_format=original_lab.lab_format,
+            flag=original_lab.flag,
+            hints=original_lab.hints,
+            solution=original_lab.solution,
+            instructions=original_lab.instructions,
+            tools_needed=original_lab.tools_needed,
+            learning_objectives=original_lab.learning_objectives,
+            prerequisites=original_lab.prerequisites,
+            is_premium=original_lab.is_premium,
+            is_active=False,  # Start as inactive
+            user_id=current_user.id,
+            # Copy lab-specific configurations
+            terminal_enabled=original_lab.terminal_enabled,
+            terminal_instructions=original_lab.terminal_instructions,
+            terminal_shell=original_lab.terminal_shell,
+            terminal_timeout=original_lab.terminal_timeout,
+            allow_command_hints=original_lab.allow_command_hints,
+            strict_order=original_lab.strict_order,
+            allow_retry=original_lab.allow_retry,
+            sandbox_url=original_lab.sandbox_url,
+            sandbox_instructions=original_lab.sandbox_instructions,
+            environment_type=original_lab.environment_type,
+            environment_config=original_lab.environment_config,
+            ctf_category=original_lab.ctf_category,
+            ctf_points=original_lab.ctf_points,
+            challenge_type=original_lab.challenge_type,
+            time_limit=original_lab.time_limit,
+            max_attempts=original_lab.max_attempts
+        )
+        
+        db.session.add(new_lab)
+        db.session.commit()
+        
+        # Copy terminal commands if they exist
+        if original_lab.terminal_commands:
+            for cmd in original_lab.terminal_commands:
+                new_cmd = LabTerminalCommand(
+                    lab_id=new_lab.id,
+                    command=cmd.command,
+                    expected_output=cmd.expected_output,
+                    order=cmd.order,
+                    points=cmd.points,
+                    hint=cmd.hint,
+                    description=cmd.description,
+                    is_optional=cmd.is_optional
+                )
+                db.session.add(new_cmd)
+        
+        # Copy quiz questions if they exist
+        if original_lab.quiz_questions:
+            for question in original_lab.quiz_questions:
+                new_question = LabQuizQuestion(
+                    lab_id=new_lab.id,
+                    question=question.question,
+                    options=question.options,
+                    correct_answer=question.correct_answer,
+                    explanation=question.explanation,
+                    order=question.order,
+                    marks=question.marks
+                )
+                db.session.add(new_question)
+        
+        # Copy lab hints if they exist
+        if original_lab.lab_hints:
+            for hint in original_lab.lab_hints:
+                new_hint = LabHint(
+                    lab_id=new_lab.id,
+                    hint_text=hint.hint_text,
+                    hint_order=hint.hint_order,
+                    cost=hint.cost,
+                    is_free=hint.is_free
+                )
+                db.session.add(new_hint)
+        
+        db.session.commit()
+        flash(f'Lab "{original_lab.title}" duplicated successfully!', 'success')
+        return redirect(url_for('admin_edit_lab', lab_id=new_lab.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error duplicating lab: {str(e)}', 'error')
+        return redirect(url_for('admin_advanced_labs'))
+
+@app.route('/admin/labs/<int:lab_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_lab(lab_id):
+    """Delete a lab"""
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        # Delete related data first
+        LabTerminalCommand.query.filter_by(lab_id=lab_id).delete()
+        LabQuizQuestion.query.filter_by(lab_id=lab_id).delete()
+        LabHint.query.filter_by(lab_id=lab_id).delete()
+        LabProgress.query.filter_by(lab_id=lab_id).delete()
+        LabCompletion.query.filter_by(lab_id=lab_id).delete()
+        LabRating.query.filter_by(lab_id=lab_id).delete()
+        
+        # Delete the lab
+        db.session.delete(lab)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Lab deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting lab: {str(e)}'}), 500
+
+# Terminal Command Management
+@app.route('/admin/labs/<int:lab_id>/terminal-commands/add', methods=['POST'])
+@admin_required
+def admin_add_terminal_command(lab_id):
+    """Add a terminal command to a lab"""
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        command = LabTerminalCommand(
+            lab_id=lab_id,
+            command=request.form['command'],
+            expected_output=request.form.get('expected_output'),
+            order=int(request.form['order']),
+            points=int(request.form.get('points', 1)),
+            hint=request.form.get('hint'),
+            description=request.form.get('description'),
+            is_optional=bool(request.form.get('is_optional'))
+        )
+        
+        db.session.add(command)
+        db.session.commit()
+        flash('Terminal command added successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/terminal-commands/<int:command_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_terminal_command(command_id, lab_id):
+    """Delete a terminal command"""
+    command = LabTerminalCommand.query.get_or_404(command_id)
+    
+    try:
+        db.session.delete(command)
+        db.session.commit()
+        flash('Terminal command deleted successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting command: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+# Quiz Question Management
+@app.route('/admin/labs/<int:lab_id>/quiz-questions/add', methods=['POST'])
+@admin_required
+def admin_add_quiz_question(lab_id, question_id=None):
+    """Add a quiz question to a lab"""
+    lab = Lab.query.get_or_404(lab_id)
+    
+    try:
+        options = request.form['options'].split(',')
+        options = [opt.strip() for opt in options if opt.strip()]
+        
+        question = LabQuizQuestion(
+            lab_id=lab_id,
+            question=request.form['question'],
+            options=json.dumps(options),
+            correct_answer=request.form['correct_answer'],
+            explanation=request.form.get('explanation'),
+            order=int(request.form.get('order', 1)),
+            marks=int(request.form.get('marks', 1))
+        )
+        
+        db.session.add(question)
+        db.session.commit()
+        flash('Quiz question added successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding question: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/quiz-questions/<int:question_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_quiz_question(question_id, lab_id):
+    """Delete a quiz question"""
+    question = LabQuizQuestion.query.get_or_404(question_id)
+    
+    try:
+        db.session.delete(question)
+        db.session.commit()
+        flash('Quiz question deleted successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting question: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+# Learning Path Management
+@app.route('/admin/learning-paths')
+@admin_required
+def admin_learning_paths():
+    """Manage learning paths"""
+    paths = LearningPath.query.all()
+    return render_template('admin_learning_paths.html', paths=paths)
+
+@app.route('/admin/learning-paths/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_learning_path():
+    """Create a new learning path"""
+    if request.method == 'POST':
+        try:
+            path = LearningPath(
+                name=request.form['name'],
+                description=request.form['description'],
+                difficulty=request.form['difficulty'],
+                category=request.form['category'],
+                estimated_duration=int(request.form.get('estimated_duration', 0)),
+                total_points=int(request.form.get('total_points', 0)),
+                is_premium=bool(request.form.get('is_premium')),
+                is_active=bool(request.form.get('is_active', True)),
+                prerequisites=request.form.get('prerequisites'),
+                learning_objectives=request.form.get('learning_objectives'),
+                target_audience=request.form.get('target_audience'),
+                certification=request.form.get('certification')
+            )
+            
+            db.session.add(path)
+            db.session.commit()
+            flash(f'Learning path "{path.name}" created successfully!', 'success')
+            return redirect(url_for('admin_learning_paths'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating learning path: {str(e)}', 'error')
+    
+    return render_template('admin_learning_path_form.html')
+
+# CTF Challenge Management
+@app.route('/admin/ctf-challenges')
+@admin_required
+def admin_ctf_challenges():
+    """Manage CTF challenges"""
+    challenges = CTFChallenge.query.all()
+    return render_template('admin_ctf_challenges.html', challenges=challenges)
+
+@app.route('/admin/ctf-challenges/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_ctf_challenge():
+    """Create a new CTF challenge"""
+    if request.method == 'POST':
+        try:
+            challenge = CTFChallenge(
+                title=request.form['title'],
+                description=request.form['description'],
+                category=request.form['category'],
+                difficulty=request.form['difficulty'],
+                points=int(request.form.get('points', 100)),
+                flag=request.form['flag'],
+                hints=request.form.get('hints'),
+                files=request.form.get('files'),
+                challenge_type=request.form.get('challenge_type', 'static'),
+                time_limit=int(request.form.get('time_limit', 0)) if request.form.get('time_limit') else None,
+                max_attempts=int(request.form.get('max_attempts', 0)) if request.form.get('max_attempts') else 0,
+                is_active=bool(request.form.get('is_active', True))
+            )
+            
+            db.session.add(challenge)
+            db.session.commit()
+            flash(f'CTF challenge "{challenge.title}" created successfully!', 'success')
+            return redirect(url_for('admin_ctf_challenges'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating CTF challenge: {str(e)}', 'error')
+    
+    return render_template('admin_ctf_challenge_form.html')
+
+# Sandbox Environment Management
+@app.route('/admin/sandbox-environments')
+@admin_required
+def admin_sandbox_environments():
+    """Manage sandbox environments"""
+    environments = SandboxEnvironment.query.all()
+    return render_template('admin_sandbox_environments.html', environments=environments)
+
+@app.route('/admin/sandbox-environments/create', methods=['GET', 'POST'])
+@admin_required
+def admin_create_sandbox_environment():
+    """Create a new sandbox environment"""
+    if request.method == 'POST':
+        try:
+            environment = SandboxEnvironment(
+                name=request.form['name'],
+                description=request.form['description'],
+                environment_type=request.form['environment_type'],
+                image_name=request.form.get('image_name'),
+                configuration=request.form.get('configuration'),
+                resources=request.form.get('resources'),
+                max_concurrent_users=int(request.form.get('max_concurrent_users', 10)),
+                is_active=bool(request.form.get('is_active', True))
+            )
+            
+            db.session.add(environment)
+            db.session.commit()
+            flash(f'Sandbox environment "{environment.name}" created successfully!', 'success')
+            return redirect(url_for('admin_sandbox_environments'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating sandbox environment: {str(e)}', 'error')
+    
+    return render_template('admin_sandbox_environment_form.html')
+
+# Bulk Operations
+@app.route('/admin/labs/bulk-actions', methods=['POST'])
+@admin_required
+def admin_bulk_actions():
+    """Perform bulk actions on labs"""
+    action = request.form.get('action')
+    lab_ids = request.form.getlist('lab_ids')
+    
+    if not lab_ids:
+        flash('No labs selected', 'error')
+        return redirect(url_for('admin_advanced_labs'))
+    
+    try:
+        labs = Lab.query.filter(Lab.id.in_(lab_ids)).all()
+        
+        if action == 'activate':
+            for lab in labs:
+                lab.is_active = True
+            flash(f'{len(labs)} labs activated', 'success')
+            
+        elif action == 'deactivate':
+            for lab in labs:
+                lab.is_active = False
+            flash(f'{len(labs)} labs deactivated', 'success')
+            
+        elif action == 'make_premium':
+            for lab in labs:
+                lab.is_premium = True
+            flash(f'{len(labs)} labs made premium', 'success')
+            
+        elif action == 'remove_premium':
+            for lab in labs:
+                lab.is_premium = False
+            flash(f'{len(labs)} labs removed from premium', 'success')
+            
+        elif action == 'delete':
+            for lab in labs:
+                db.session.delete(lab)
+            flash(f'{len(labs)} labs deleted', 'success')
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error performing bulk action: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_advanced_labs'))
+
+# Lab Import/Export Routes
+@app.route('/admin/labs/import-export')
+@admin_required
+def admin_lab_import_export():
+    """Lab import/export management"""
+    labs = Lab.query.all()
+    return render_template('admin_lab_import_export.html', labs=labs)
+
+@app.route('/admin/labs/import', methods=['POST'])
+@admin_required
+def admin_import_labs():
+    """Import labs from file"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'})
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        # Read file content
+        content = file.read().decode('utf-8')
+        file_extension = file.filename.split('.')[-1].lower()
+        
+        # Parse file based on extension
+        if file_extension == 'json':
+            labs_data = json.loads(content)
+        elif file_extension == 'csv':
+            labs_data = parse_csv_labs(content)
+        elif file_extension in ['yaml', 'yml']:
+            labs_data = parse_yaml_labs(content)
+        else:
+            return jsonify({'success': False, 'message': 'Unsupported file format'})
+        
+        # Import options
+        update_existing = bool(request.form.get('update_existing'))
+        skip_errors = bool(request.form.get('skip_errors'))
+        import_as_inactive = bool(request.form.get('import_as_inactive'))
+        import_commands = bool(request.form.get('import_commands'))
+        import_questions = bool(request.form.get('import_questions'))
+        import_hints = bool(request.form.get('import_hints'))
+        
+        # Process labs
+        created = 0
+        updated = 0
+        errors = 0
+        skipped = 0
+        error_details = []
+        
+        for lab_data in labs_data:
+            try:
+                # Check if lab exists
+                existing_lab = Lab.query.filter_by(title=lab_data.get('title')).first()
+                
+                if existing_lab and not update_existing:
+                    skipped += 1
+                    continue
+                
+                if existing_lab and update_existing:
+                    # Update existing lab
+                    existing_lab.description = lab_data.get('description', existing_lab.description)
+                    existing_lab.difficulty = lab_data.get('difficulty', existing_lab.difficulty)
+                    existing_lab.category = lab_data.get('category', existing_lab.category)
+                    existing_lab.points = int(lab_data.get('points', existing_lab.points))
+                    existing_lab.estimated_time = int(lab_data.get('estimated_time', existing_lab.estimated_time))
+                    existing_lab.lab_type = lab_data.get('lab_type', existing_lab.lab_type)
+                    existing_lab.flag = lab_data.get('flag', existing_lab.flag)
+                    existing_lab.instructions = lab_data.get('instructions', existing_lab.instructions)
+                    existing_lab.is_premium = bool(lab_data.get('is_premium', existing_lab.is_premium))
+                    existing_lab.is_active = not import_as_inactive if import_as_inactive else existing_lab.is_active
+                    updated += 1
+                else:
+                    # Create new lab
+                    lab = Lab(
+                        title=lab_data.get('title'),
+                        description=lab_data.get('description', ''),
+                        difficulty=lab_data.get('difficulty', 'medium'),
+                        category=lab_data.get('category', 'misc'),
+                        points=int(lab_data.get('points', 10)),
+                        estimated_time=int(lab_data.get('estimated_time', 30)),
+                        lab_type=lab_data.get('lab_type', 'standard'),
+                        flag=lab_data.get('flag', ''),
+                        instructions=lab_data.get('instructions', ''),
+                        is_premium=bool(lab_data.get('is_premium', False)),
+                        is_active=not import_as_inactive,
+                        user_id=current_user.id
+                    )
+                    db.session.add(lab)
+                    created += 1
+                
+                # Import related data if requested
+                if import_commands and lab_data.get('terminal_commands'):
+                    for cmd_data in lab_data['terminal_commands']:
+                        command = LabTerminalCommand(
+                            lab_id=lab.id if 'lab' in locals() else existing_lab.id,
+                            command=cmd_data.get('command'),
+                            expected_output=cmd_data.get('expected_output'),
+                            order=int(cmd_data.get('order', 1)),
+                            points=int(cmd_data.get('points', 1)),
+                            hint=cmd_data.get('hint'),
+                            description=cmd_data.get('description'),
+                            is_optional=bool(cmd_data.get('is_optional', False))
+                        )
+                        db.session.add(command)
+                
+                if import_questions and lab_data.get('quiz_questions'):
+                    for q_data in lab_data['quiz_questions']:
+                        question = LabQuizQuestion(
+                            lab_id=lab.id if 'lab' in locals() else existing_lab.id,
+                            question=q_data.get('question'),
+                            options=json.dumps(q_data.get('options', [])),
+                            correct_answer=q_data.get('correct_answer'),
+                            explanation=q_data.get('explanation'),
+                            order=int(q_data.get('order', 1)),
+                            marks=int(q_data.get('marks', 1))
+                        )
+                        db.session.add(question)
+                
+                if import_hints and lab_data.get('hints'):
+                    for hint_data in lab_data['hints']:
+                        hint = LabHint(
+                            lab_id=lab.id if 'lab' in locals() else existing_lab.id,
+                            hint_text=hint_data.get('hint_text'),
+                            hint_order=int(hint_data.get('hint_order', 1)),
+                            cost=int(hint_data.get('cost', 0)),
+                            is_free=bool(hint_data.get('is_free', True))
+                        )
+                        db.session.add(hint)
+                
+            except Exception as e:
+                if skip_errors:
+                    errors += 1
+                    error_details.append(f"Error processing lab '{lab_data.get('title', 'Unknown')}': {str(e)}")
+                else:
+                    db.session.rollback()
+                    return jsonify({'success': False, 'message': f'Error processing lab: {str(e)}'})
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'total': len(labs_data),
+            'created': created,
+            'updated': updated,
+            'errors': errors,
+            'skipped': skipped,
+            'error_details': error_details
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Import failed: {str(e)}'})
+
+@app.route('/admin/labs/export', methods=['POST'])
+@admin_required
+def admin_export_labs():
+    """Export labs to file"""
+    try:
+        format_type = request.form.get('format', 'json')
+        include_type = request.form.get('include_type', 'all')
+        category = request.form.get('category', '')
+        difficulty = request.form.get('difficulty', '')
+        include_commands = bool(request.form.get('include_commands'))
+        include_questions = bool(request.form.get('include_questions'))
+        include_hints = bool(request.form.get('include_hints'))
+        include_analytics = bool(request.form.get('include_analytics'))
+        
+        # Build query
+        query = Lab.query
+        
+        if include_type == 'active':
+            query = query.filter_by(is_active=True)
+        elif include_type == 'premium':
+            query = query.filter_by(is_premium=True)
+        elif include_type == 'selected':
+            selected_ids = request.form.getlist('selected_labs')
+            query = query.filter(Lab.id.in_(selected_ids))
+        
+        if category:
+            query = query.filter_by(category=category)
+        if difficulty:
+            query = query.filter_by(difficulty=difficulty)
+        
+        labs = query.all()
+        
+        # Prepare export data
+        export_data = []
+        for lab in labs:
+            lab_data = {
+                'title': lab.title,
+                'description': lab.description,
+                'difficulty': lab.difficulty,
+                'category': lab.category,
+                'subcategory': lab.subcategory,
+                'points': lab.points,
+                'estimated_time': lab.estimated_time,
+                'lab_type': lab.lab_type,
+                'lab_format': lab.lab_format,
+                'flag': lab.flag,
+                'hints': lab.hints,
+                'solution': lab.solution,
+                'instructions': lab.instructions,
+                'tools_needed': lab.tools_needed,
+                'learning_objectives': lab.learning_objectives,
+                'prerequisites': lab.prerequisites,
+                'is_premium': lab.is_premium,
+                'is_active': lab.is_active,
+                'created_at': lab.created_at.isoformat() if lab.created_at else None
+            }
+            
+            # Add related data if requested
+            if include_commands and lab.terminal_commands:
+                lab_data['terminal_commands'] = []
+                for cmd in lab.terminal_commands:
+                    lab_data['terminal_commands'].append({
+                        'command': cmd.command,
+                        'expected_output': cmd.expected_output,
+                        'order': cmd.order,
+                        'points': cmd.points,
+                        'hint': cmd.hint,
+                        'description': cmd.description,
+                        'is_optional': cmd.is_optional
+                    })
+            
+            if include_questions and lab.quiz_questions:
+                lab_data['quiz_questions'] = []
+                for q in lab.quiz_questions:
+                    lab_data['quiz_questions'].append({
+                        'question': q.question,
+                        'options': json.loads(q.options) if q.options else [],
+                        'correct_answer': q.correct_answer,
+                        'explanation': q.explanation,
+                        'order': q.order,
+                        'marks': q.marks
+                    })
+            
+            if include_hints and lab.lab_hints:
+                lab_data['hints'] = []
+                for hint in lab.lab_hints:
+                    lab_data['hints'].append({
+                        'hint_text': hint.hint_text,
+                        'hint_order': hint.hint_order,
+                        'cost': hint.cost,
+                        'is_free': hint.is_free
+                    })
+            
+            if include_analytics:
+                lab_data['analytics'] = {
+                    'completion_rate': lab.completion_rate,
+                    'average_time': lab.average_time,
+                    'difficulty_rating': lab.difficulty_rating,
+                    'total_attempts': len(lab.user_progress),
+                    'completions': len(lab.lab_completions)
+                }
+            
+            export_data.append(lab_data)
+        
+        # Generate file content
+        if format_type == 'json':
+            content = json.dumps(export_data, indent=2)
+            filename = f'labs_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            mimetype = 'application/json'
+        elif format_type == 'csv':
+            content = generate_csv_content(export_data)
+            filename = f'labs_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+            mimetype = 'text/csv'
+        elif format_type == 'yaml':
+            content = generate_yaml_content(export_data)
+            filename = f'labs_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.yaml'
+            mimetype = 'text/yaml'
+        else:
+            return jsonify({'success': False, 'message': 'Unsupported export format'})
+        
+        # Create response
+        response = make_response(content)
+        response.headers['Content-Type'] = mimetype
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Export failed: {str(e)}'})
+
+@app.route('/admin/labs/template/<format>')
+@admin_required
+def admin_download_lab_template(format):
+    """Download lab template file"""
+    template_data = [
+        {
+            'title': 'Sample Lab Title',
+            'description': 'This is a sample lab description',
+            'difficulty': 'medium',
+            'category': 'web',
+            'points': 10,
+            'estimated_time': 30,
+            'lab_type': 'standard',
+            'flag': 'CTF{sample_flag}',
+            'instructions': 'Step-by-step instructions for the lab...',
+            'is_premium': False,
+            'is_active': True,
+            'terminal_commands': [
+                {
+                    'command': 'ls -la',
+                    'expected_output': '',
+                    'order': 1,
+                    'points': 1,
+                    'hint': 'List all files',
+                    'description': 'List directory contents',
+                    'is_optional': False
+                }
+            ],
+            'quiz_questions': [
+                {
+                    'question': 'What is the purpose of this lab?',
+                    'options': ['Option A', 'Option B', 'Option C', 'Option D'],
+                    'correct_answer': 'Option A',
+                    'explanation': 'This is the correct answer because...',
+                    'order': 1,
+                    'marks': 1
+                }
+            ],
+            'hints': [
+                {
+                    'hint_text': 'This is a helpful hint',
+                    'hint_order': 1,
+                    'cost': 0,
+                    'is_free': True
+                }
+            ]
+        }
+    ]
+    
+    if format == 'json':
+        content = json.dumps(template_data, indent=2)
+        filename = 'lab_template.json'
+        mimetype = 'application/json'
+    elif format == 'csv':
+        content = generate_csv_content(template_data)
+        filename = 'lab_template.csv'
+        mimetype = 'text/csv'
+    elif format == 'yaml':
+        content = generate_yaml_content(template_data)
+        filename = 'lab_template.yaml'
+        mimetype = 'text/yaml'
+    else:
+        return jsonify({'success': False, 'message': 'Unsupported format'})
+    
+    response = make_response(content)
+    response.headers['Content-Type'] = mimetype
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+
+def parse_csv_labs(content):
+    """Parse CSV content into lab data"""
+    lines = content.split('\n')
+    if len(lines) < 2:
+        return []
+    
+    headers = lines[0].split(',')
+    labs = []
+    
+    for line in lines[1:]:
+        if line.strip():
+            values = line.split(',')
+            lab = {}
+            for i, header in enumerate(headers):
+                if i < len(values):
+                    lab[header.strip()] = values[i].strip()
+            labs.append(lab)
+    
+    return labs
+
+def parse_yaml_labs(content):
+    """Parse YAML content into lab data"""
+    # Simple YAML parser - you might want to use PyYAML
+    labs = []
+    lines = content.split('\n')
+    current_lab = {}
+    in_lab = False
+    
+    for line in lines:
+        line = line.strip()
+        if line.startswith('- title:'):
+            if in_lab:
+                labs.append(current_lab)
+            current_lab = {}
+            in_lab = True
+            current_lab['title'] = line.split(':', 1)[1].strip()
+        elif ':' in line and in_lab:
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                key, value = parts
+                current_lab[key.strip()] = value.strip()
+    
+    if in_lab:
+        labs.append(current_lab)
+    
+    return labs
+
+def generate_csv_content(data):
+    """Generate CSV content from lab data"""
+    if not data:
+        return ''
+    
+    headers = list(data[0].keys())
+    lines = [','.join(headers)]
+    
+    for lab in data:
+        row = []
+        for header in headers:
+            value = lab.get(header, '')
+            if isinstance(value, (list, dict)):
+                value = json.dumps(value)
+            row.append(str(value))
+        lines.append(','.join(row))
+    
+    return '\n'.join(lines)
+
+def generate_yaml_content(data):
+    """Generate YAML content from lab data"""
+    yaml_lines = []
+    
+    for lab in data:
+        yaml_lines.append('- title: ' + str(lab.get('title', '')))
+        for key, value in lab.items():
+            if key != 'title':
+                if isinstance(value, (list, dict)):
+                    yaml_lines.append(f'  {key}: {json.dumps(value)}')
+                else:
+                    yaml_lines.append(f'  {key}: {value}')
+        yaml_lines.append('')
+    
+    return '\n'.join(yaml_lines)
+
+# Lab Analytics
+@app.route('/admin/labs/<int:lab_id>/analytics')
+@admin_required
+def admin_lab_analytics(lab_id):
+    """View detailed analytics for a lab"""
+    lab = Lab.query.get_or_404(lab_id)
+    
+    # Get completion statistics
+    total_attempts = LabProgress.query.filter_by(lab_id=lab_id).count()
+    completions = LabCompletion.query.filter_by(lab_id=lab_id).count()
+    completion_rate = (completions / total_attempts * 100) if total_attempts > 0 else 0
+    
+    # Get average completion time
+    completed_progress = LabProgress.query.filter_by(lab_id=lab_id).filter(LabProgress.completed_at.isnot(None)).all()
+    avg_time = sum(p.time_spent for p in completed_progress) / len(completed_progress) if completed_progress else 0
+    
+    # Get difficulty ratings
+    ratings = LabRating.query.filter_by(lab_id=lab_id).all()
+    avg_rating = sum(r.difficulty_rating for r in ratings) / len(ratings) if ratings else 0
+    
+    # Get recent activity
+    recent_completions = LabCompletion.query.filter_by(lab_id=lab_id).order_by(LabCompletion.completed_at.desc()).limit(10).all()
+    
+    analytics = {
+        'total_attempts': total_attempts,
+        'completions': completions,
+        'completion_rate': completion_rate,
+        'avg_time': avg_time,
+        'avg_rating': avg_rating,
+        'recent_completions': recent_completions
+    }
+    
+    return render_template('admin_lab_analytics.html', lab=lab, analytics=analytics)

@@ -1,0 +1,994 @@
+{% extends 'base.html' %}
+{% block title %}Lab Creation Wizard - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-step {
+        display: none;
+    }
+    .wizard-step.active {
+        display: block;
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    .step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 10px;
+        position: relative;
+    }
+    .step.active {
+        background: #007bff;
+        color: white;
+    }
+    .step.completed {
+        background: #28a745;
+        color: white;
+    }
+    .step::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        width: 20px;
+        height: 2px;
+        background: #e9ecef;
+        transform: translateY(-50%);
+    }
+    .step:last-child::after {
+        display: none;
+    }
+    .step.completed::after {
+        background: #28a745;
+    }
+    .lab-preview {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #f8f9fa;
+        min-height: 200px;
+    }
+    .command-builder {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .question-builder {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .hint-builder {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .drag-handle {
+        cursor: move;
+        color: #6c757d;
+    }
+    .sortable-ghost {
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-magic"></i> Lab Creation Wizard</h3>
+                    <p class="text-muted mb-0">Create comprehensive cybersecurity labs with advanced features</p>
+                </div>
+                <div class="card-body">
+                    <!-- Step Indicators -->
+                    <div class="step-indicator">
+                        <div class="step active" data-step="1">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="step" data-step="2">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="step" data-step="3">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <div class="step" data-step="4">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="step" data-step="5">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="step" data-step="6">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                    </div>
+
+                    <form id="labWizardForm" method="post" action="{{ url_for('admin_create_lab') }}">
+                        <!-- Step 1: Basic Information -->
+                        <div class="wizard-step active" id="step1">
+                            <h4>Step 1: Basic Information</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label">Lab Title *</label>
+                                        <input type="text" class="form-control" name="title" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description *</label>
+                                        <textarea class="form-control" name="description" rows="3" required></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Category *</label>
+                                                <select class="form-select" name="category" required>
+                                                    <option value="">Select Category</option>
+                                                    <option value="web">Web Security</option>
+                                                    <option value="network">Network Security</option>
+                                                    <option value="crypto">Cryptography</option>
+                                                    <option value="forensics">Forensics</option>
+                                                    <option value="reverse">Reverse Engineering</option>
+                                                    <option value="pwn">Pwn</option>
+                                                    <option value="misc">Miscellaneous</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Difficulty *</label>
+                                                <select class="form-select" name="difficulty" required>
+                                                    <option value="">Select Difficulty</option>
+                                                    <option value="easy">Easy</option>
+                                                    <option value="medium">Medium</option>
+                                                    <option value="hard">Hard</option>
+                                                    <option value="expert">Expert</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Lab Type *</label>
+                                                <select class="form-select" name="lab_type" id="labType" required>
+                                                    <option value="">Select Type</option>
+                                                    <option value="standard">Standard Lab</option>
+                                                    <option value="terminal">Terminal Lab</option>
+                                                    <option value="sandbox">Sandbox Lab</option>
+                                                    <option value="quiz">Quiz Lab</option>
+                                                    <option value="ctf">CTF Challenge</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Points</label>
+                                                <input type="number" class="form-control" name="points" value="10" min="1">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Live Preview</h6>
+                                        <div id="basicPreview">
+                                            <p class="text-muted">Fill in the form to see a preview of your lab...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Advanced Configuration -->
+                        <div class="wizard-step" id="step2">
+                            <h4>Step 2: Advanced Configuration</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label">Instructions (Markdown supported)</label>
+                                        <textarea class="form-control" name="instructions" rows="6" placeholder="Detailed step-by-step instructions for the lab..."></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Estimated Time (minutes)</label>
+                                                <input type="number" class="form-control" name="estimated_time" value="30" min="1">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Tools Needed</label>
+                                                <input type="text" class="form-control" name="tools_needed" placeholder="nmap, wireshark, etc.">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Learning Objectives</label>
+                                        <textarea class="form-control" name="learning_objectives" rows="3" placeholder="What will students learn from this lab?"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Prerequisites</label>
+                                        <textarea class="form-control" name="prerequisites" rows="2" placeholder="Required knowledge or skills"></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">CTF Flag</label>
+                                                <input type="text" class="form-control" name="flag" placeholder="CTF{flag_here}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Solution</label>
+                                                <input type="text" class="form-control" name="solution" placeholder="Brief solution description">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="is_premium" id="isPremium">
+                                        <label class="form-check-label" for="isPremium">Premium Lab</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                                        <label class="form-check-label" for="isActive">Active Lab</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Configuration Preview</h6>
+                                        <div id="configPreview">
+                                            <p class="text-muted">Configure your lab settings...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Terminal Commands (Conditional) -->
+                        <div class="wizard-step" id="step3">
+                            <h4>Step 3: Terminal Commands</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div id="terminalCommandsSection">
+                                        <p class="text-muted">This step is for terminal-based labs. Add commands that users must execute in order.</p>
+                                        
+                                        <div id="commandsList">
+                                            <!-- Commands will be added here dynamically -->
+                                        </div>
+                                        
+                                        <div class="command-builder">
+                                            <h6>Add New Command</h6>
+                                            <div class="row">
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Order</label>
+                                                    <input type="number" class="form-control" id="cmdOrder" value="1" min="1">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Command</label>
+                                                    <input type="text" class="form-control" id="cmdCommand" placeholder="ls -la">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Points</label>
+                                                    <input type="number" class="form-control" id="cmdPoints" value="1" min="1">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Action</label>
+                                                    <button type="button" class="btn btn-success btn-sm w-100" onclick="addCommand()">
+                                                        <i class="fas fa-plus"></i> Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Expected Output (optional)</label>
+                                                    <input type="text" class="form-control" id="cmdExpectedOutput" placeholder="Specific output to check">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Hint (optional)</label>
+                                                    <input type="text" class="form-control" id="cmdHint" placeholder="Helpful hint for users">
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <label class="form-label">Description (optional)</label>
+                                                <input type="text" class="form-control" id="cmdDescription" placeholder="What this command does">
+                                            </div>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" id="cmdOptional">
+                                                <label class="form-check-label" for="cmdOptional">Optional Command</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Terminal Commands Preview</h6>
+                                        <div id="terminalPreview">
+                                            <p class="text-muted">Add terminal commands to see them here...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Quiz Questions (Conditional) -->
+                        <div class="wizard-step" id="step4">
+                            <h4>Step 4: Quiz Questions</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div id="quizQuestionsSection">
+                                        <p class="text-muted">Add quiz questions to test users' understanding of the lab concepts.</p>
+                                        
+                                        <div id="questionsList">
+                                            <!-- Questions will be added here dynamically -->
+                                        </div>
+                                        
+                                        <div class="question-builder">
+                                            <h6>Add New Question</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Question</label>
+                                                <textarea class="form-control" id="questionText" rows="2" placeholder="Enter your question here..."></textarea>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Options (comma-separated)</label>
+                                                    <input type="text" class="form-control" id="questionOptions" placeholder="Option A, Option B, Option C, Option D">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Correct Answer</label>
+                                                    <input type="text" class="form-control" id="questionAnswer" placeholder="Option A">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Marks</label>
+                                                    <input type="number" class="form-control" id="questionMarks" value="1" min="1">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Explanation (optional)</label>
+                                                <textarea class="form-control" id="questionExplanation" rows="2" placeholder="Explain why this is the correct answer..."></textarea>
+                                            </div>
+                                            <button type="button" class="btn btn-success" onclick="addQuestion()">
+                                                <i class="fas fa-plus"></i> Add Question
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Quiz Questions Preview</h6>
+                                        <div id="quizPreview">
+                                            <p class="text-muted">Add quiz questions to see them here...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 5: Hints -->
+                        <div class="wizard-step" id="step5">
+                            <h4>Step 5: Progressive Hints</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div id="hintsSection">
+                                        <p class="text-muted">Add progressive hints that users can unlock as they progress through the lab.</p>
+                                        
+                                        <div id="hintsList">
+                                            <!-- Hints will be added here dynamically -->
+                                        </div>
+                                        
+                                        <div class="hint-builder">
+                                            <h6>Add New Hint</h6>
+                                            <div class="row">
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Order</label>
+                                                    <input type="number" class="form-control" id="hintOrder" value="1" min="1">
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Hint Text</label>
+                                                    <textarea class="form-control" id="hintText" rows="2" placeholder="Enter your hint here..."></textarea>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Cost (points)</label>
+                                                    <input type="number" class="form-control" id="hintCost" value="0" min="0">
+                                                </div>
+                                            </div>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" id="hintFree" checked>
+                                                <label class="form-check-label" for="hintFree">Free Hint</label>
+                                            </div>
+                                            <button type="button" class="btn btn-success mt-2" onclick="addHint()">
+                                                <i class="fas fa-plus"></i> Add Hint
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Hints Preview</h6>
+                                        <div id="hintsPreview">
+                                            <p class="text-muted">Add hints to see them here...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 6: Final Review -->
+                        <div class="wizard-step" id="step6">
+                            <h4>Step 6: Final Review</h4>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6>Lab Summary</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="finalReview">
+                                                <!-- Final review content will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="confirmLab" required>
+                                            <label class="form-check-label" for="confirmLab">
+                                                I confirm that all information is correct and the lab is ready for publication
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="lab-preview">
+                                        <h6>Final Preview</h6>
+                                        <div id="finalPreview">
+                                            <!-- Final preview will be shown here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                                    Next <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                                    <i class="fas fa-save"></i> Create Lab
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+let commands = [];
+let questions = [];
+let hints = [];
+
+// Initialize the wizard
+document.addEventListener('DOMContentLoaded', function() {
+    updateStepIndicators();
+    updateNavigationButtons();
+    updatePreviews();
+});
+
+function nextStep() {
+    if (currentStep < 6) {
+        currentStep++;
+        showStep(currentStep);
+        updateStepIndicators();
+        updateNavigationButtons();
+        updatePreviews();
+    }
+}
+
+function previousStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+        updateStepIndicators();
+        updateNavigationButtons();
+        updatePreviews();
+    }
+}
+
+function showStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+    
+    // Show current step
+    document.getElementById(`step${step}`).classList.add('active');
+    
+    // Show/hide conditional steps based on lab type
+    const labType = document.querySelector('select[name="lab_type"]').value;
+    
+    if (labType !== 'terminal') {
+        document.getElementById('step3').style.display = 'none';
+    } else {
+        document.getElementById('step3').style.display = 'block';
+    }
+    
+    if (labType !== 'quiz') {
+        document.getElementById('step4').style.display = 'none';
+    } else {
+        document.getElementById('step4').style.display = 'block';
+    }
+}
+
+function updateStepIndicators() {
+    document.querySelectorAll('.step').forEach((step, index) => {
+        const stepNum = index + 1;
+        step.classList.remove('active', 'completed');
+        
+        if (stepNum === currentStep) {
+            step.classList.add('active');
+        } else if (stepNum < currentStep) {
+            step.classList.add('completed');
+        }
+    });
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+    nextBtn.style.display = currentStep < 6 ? 'block' : 'none';
+    submitBtn.style.display = currentStep === 6 ? 'block' : 'none';
+}
+
+function updatePreviews() {
+    updateBasicPreview();
+    updateConfigPreview();
+    updateTerminalPreview();
+    updateQuizPreview();
+    updateHintsPreview();
+    updateFinalPreview();
+}
+
+function updateBasicPreview() {
+    const title = document.querySelector('input[name="title"]').value;
+    const description = document.querySelector('textarea[name="description"]').value;
+    const category = document.querySelector('select[name="category"]').value;
+    const difficulty = document.querySelector('select[name="difficulty"]').value;
+    const labType = document.querySelector('select[name="lab_type"]').value;
+    const points = document.querySelector('input[name="points"]').value;
+    
+    const preview = document.getElementById('basicPreview');
+    if (title || description) {
+        preview.innerHTML = `
+            <h5>${title || 'Lab Title'}</h5>
+            <p class="small">${description || 'Description will appear here...'}</p>
+            <div class="d-flex gap-2">
+                <span class="badge bg-primary">${category || 'Category'}</span>
+                <span class="badge bg-${difficulty === 'easy' ? 'success' : difficulty === 'medium' ? 'warning' : 'danger'}">${difficulty || 'Difficulty'}</span>
+                <span class="badge bg-info">${labType || 'Type'}</span>
+                <span class="badge bg-secondary">${points || 0} pts</span>
+            </div>
+        `;
+    }
+}
+
+function updateConfigPreview() {
+    const instructions = document.querySelector('textarea[name="instructions"]').value;
+    const estimatedTime = document.querySelector('input[name="estimated_time"]').value;
+    const tools = document.querySelector('input[name="tools_needed"]').value;
+    const objectives = document.querySelector('textarea[name="learning_objectives"]').value;
+    const isPremium = document.querySelector('input[name="is_premium"]').checked;
+    const isActive = document.querySelector('input[name="is_active"]').checked;
+    
+    const preview = document.getElementById('configPreview');
+    preview.innerHTML = `
+        <div class="small">
+            <strong>Time:</strong> ${estimatedTime || 30} minutes<br>
+            <strong>Tools:</strong> ${tools || 'None specified'}<br>
+            <strong>Status:</strong> 
+            <span class="badge bg-${isActive ? 'success' : 'secondary'}">${isActive ? 'Active' : 'Inactive'}</span>
+            ${isPremium ? '<span class="badge bg-warning ms-1">Premium</span>' : ''}<br>
+            <strong>Objectives:</strong> ${objectives || 'Not specified'}
+        </div>
+    `;
+}
+
+function updateTerminalPreview() {
+    const preview = document.getElementById('terminalPreview');
+    if (commands.length === 0) {
+        preview.innerHTML = '<p class="text-muted">No commands added yet...</p>';
+    } else {
+        let html = '<div class="small">';
+        commands.forEach((cmd, index) => {
+            html += `
+                <div class="border-bottom pb-1 mb-1">
+                    <strong>${index + 1}.</strong> <code>${cmd.command}</code><br>
+                    <small class="text-muted">${cmd.points} pts | ${cmd.expected_output || 'Any output'}</small>
+                </div>
+            `;
+        });
+        html += '</div>';
+        preview.innerHTML = html;
+    }
+}
+
+function updateQuizPreview() {
+    const preview = document.getElementById('quizPreview');
+    if (questions.length === 0) {
+        preview.innerHTML = '<p class="text-muted">No questions added yet...</p>';
+    } else {
+        let html = '<div class="small">';
+        questions.forEach((q, index) => {
+            html += `
+                <div class="border-bottom pb-1 mb-1">
+                    <strong>Q${index + 1}:</strong> ${q.question.substring(0, 50)}...<br>
+                    <small class="text-muted">${q.marks} mark(s) | Answer: ${q.correct_answer}</small>
+                </div>
+            `;
+        });
+        html += '</div>';
+        preview.innerHTML = html;
+    }
+}
+
+function updateHintsPreview() {
+    const preview = document.getElementById('hintsPreview');
+    if (hints.length === 0) {
+        preview.innerHTML = '<p class="text-muted">No hints added yet...</p>';
+    } else {
+        let html = '<div class="small">';
+        hints.forEach((hint, index) => {
+            html += `
+                <div class="border-bottom pb-1 mb-1">
+                    <strong>Hint ${index + 1}:</strong> ${hint.text.substring(0, 50)}...<br>
+                    <small class="text-muted">${hint.cost} pts | ${hint.free ? 'Free' : 'Paid'}</small>
+                </div>
+            `;
+        });
+        html += '</div>';
+        preview.innerHTML = html;
+    }
+}
+
+function updateFinalPreview() {
+    const title = document.querySelector('input[name="title"]').value;
+    const description = document.querySelector('textarea[name="description"]').value;
+    const category = document.querySelector('select[name="category"]').value;
+    const difficulty = document.querySelector('select[name="difficulty"]').value;
+    const labType = document.querySelector('select[name="lab_type"]').value;
+    const points = document.querySelector('input[name="points"]').value;
+    
+    const preview = document.getElementById('finalPreview');
+    preview.innerHTML = `
+        <h5>${title || 'Lab Title'}</h5>
+        <p>${description || 'Description'}</p>
+        <div class="row">
+            <div class="col-6">
+                <strong>Category:</strong> ${category}<br>
+                <strong>Difficulty:</strong> ${difficulty}<br>
+                <strong>Type:</strong> ${labType}<br>
+                <strong>Points:</strong> ${points}
+            </div>
+            <div class="col-6">
+                <strong>Commands:</strong> ${commands.length}<br>
+                <strong>Questions:</strong> ${questions.length}<br>
+                <strong>Hints:</strong> ${hints.length}
+            </div>
+        </div>
+    `;
+}
+
+// Terminal Commands Functions
+function addCommand() {
+    const command = {
+        order: parseInt(document.getElementById('cmdOrder').value),
+        command: document.getElementById('cmdCommand').value,
+        expectedOutput: document.getElementById('cmdExpectedOutput').value,
+        points: parseInt(document.getElementById('cmdPoints').value),
+        hint: document.getElementById('cmdHint').value,
+        description: document.getElementById('cmdDescription').value,
+        optional: document.getElementById('cmdOptional').checked
+    };
+    
+    if (!command.command) {
+        alert('Please enter a command');
+        return;
+    }
+    
+    commands.push(command);
+    commands.sort((a, b) => a.order - b.order);
+    
+    // Clear form
+    document.getElementById('cmdCommand').value = '';
+    document.getElementById('cmdExpectedOutput').value = '';
+    document.getElementById('cmdHint').value = '';
+    document.getElementById('cmdDescription').value = '';
+    document.getElementById('cmdOptional').checked = false;
+    document.getElementById('cmdOrder').value = commands.length + 1;
+    
+    updateCommandsList();
+    updateTerminalPreview();
+}
+
+function updateCommandsList() {
+    const list = document.getElementById('commandsList');
+    list.innerHTML = '';
+    
+    commands.forEach((cmd, index) => {
+        const div = document.createElement('div');
+        div.className = 'command-builder mb-2';
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${cmd.order}.</strong> <code>${cmd.command}</code>
+                    <small class="text-muted">(${cmd.points} pts)</small>
+                    ${cmd.optional ? '<span class="badge bg-secondary">Optional</span>' : ''}
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeCommand(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function removeCommand(index) {
+    commands.splice(index, 1);
+    updateCommandsList();
+    updateTerminalPreview();
+}
+
+// Quiz Questions Functions
+function addQuestion() {
+    const question = {
+        question: document.getElementById('questionText').value,
+        options: document.getElementById('questionOptions').value.split(',').map(opt => opt.trim()),
+        correctAnswer: document.getElementById('questionAnswer').value,
+        marks: parseInt(document.getElementById('questionMarks').value),
+        explanation: document.getElementById('questionExplanation').value
+    };
+    
+    if (!question.question || !question.correctAnswer) {
+        alert('Please fill in the question and correct answer');
+        return;
+    }
+    
+    questions.push(question);
+    
+    // Clear form
+    document.getElementById('questionText').value = '';
+    document.getElementById('questionOptions').value = '';
+    document.getElementById('questionAnswer').value = '';
+    document.getElementById('questionMarks').value = '1';
+    document.getElementById('questionExplanation').value = '';
+    
+    updateQuestionsList();
+    updateQuizPreview();
+}
+
+function updateQuestionsList() {
+    const list = document.getElementById('questionsList');
+    list.innerHTML = '';
+    
+    questions.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'question-builder mb-2';
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Q${index + 1}:</strong> ${q.question}<br>
+                    <small class="text-muted">Answer: ${q.correctAnswer} | ${q.marks} mark(s)</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function removeQuestion(index) {
+    questions.splice(index, 1);
+    updateQuestionsList();
+    updateQuizPreview();
+}
+
+// Hints Functions
+function addHint() {
+    const hint = {
+        order: parseInt(document.getElementById('hintOrder').value),
+        text: document.getElementById('hintText').value,
+        cost: parseInt(document.getElementById('hintCost').value),
+        free: document.getElementById('hintFree').checked
+    };
+    
+    if (!hint.text) {
+        alert('Please enter hint text');
+        return;
+    }
+    
+    hints.push(hint);
+    hints.sort((a, b) => a.order - b.order);
+    
+    // Clear form
+    document.getElementById('hintText').value = '';
+    document.getElementById('hintCost').value = '0';
+    document.getElementById('hintFree').checked = true;
+    document.getElementById('hintOrder').value = hints.length + 1;
+    
+    updateHintsList();
+    updateHintsPreview();
+}
+
+function updateHintsList() {
+    const list = document.getElementById('hintsList');
+    list.innerHTML = '';
+    
+    hints.forEach((hint, index) => {
+        const div = document.createElement('div');
+        div.className = 'hint-builder mb-2';
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Hint ${hint.order}:</strong> ${hint.text}<br>
+                    <small class="text-muted">${hint.cost} pts | ${hint.free ? 'Free' : 'Paid'}</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeHint(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function removeHint(index) {
+    hints.splice(index, 1);
+    updateHintsList();
+    updateHintsPreview();
+}
+
+// Form submission
+document.getElementById('labWizardForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Add commands, questions, and hints to form data
+    commands.forEach((cmd, index) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `commands[${index}][command]`;
+        input.value = cmd.command;
+        this.appendChild(input);
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = `commands[${index}][expected_output]`;
+        input2.value = cmd.expectedOutput;
+        this.appendChild(input2);
+        
+        const input3 = document.createElement('input');
+        input3.type = 'hidden';
+        input3.name = `commands[${index}][order]`;
+        input3.value = cmd.order;
+        this.appendChild(input3);
+        
+        const input4 = document.createElement('input');
+        input4.type = 'hidden';
+        input4.name = `commands[${index}][points]`;
+        input4.value = cmd.points;
+        this.appendChild(input4);
+        
+        const input5 = document.createElement('input');
+        input5.type = 'hidden';
+        input5.name = `commands[${index}][hint]`;
+        input5.value = cmd.hint;
+        this.appendChild(input5);
+        
+        const input6 = document.createElement('input');
+        input6.type = 'hidden';
+        input6.name = `commands[${index}][description]`;
+        input6.value = cmd.description;
+        this.appendChild(input6);
+        
+        const input7 = document.createElement('input');
+        input7.type = 'hidden';
+        input7.name = `commands[${index}][is_optional]`;
+        input7.value = cmd.optional;
+        this.appendChild(input7);
+    });
+    
+    questions.forEach((q, index) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `questions[${index}][question]`;
+        input.value = q.question;
+        this.appendChild(input);
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = `questions[${index}][options]`;
+        input2.value = q.options.join(',');
+        this.appendChild(input2);
+        
+        const input3 = document.createElement('input');
+        input3.type = 'hidden';
+        input3.name = `questions[${index}][correct_answer]`;
+        input3.value = q.correctAnswer;
+        this.appendChild(input3);
+        
+        const input4 = document.createElement('input');
+        input4.type = 'hidden';
+        input4.name = `questions[${index}][marks]`;
+        input4.value = q.marks;
+        this.appendChild(input4);
+        
+        const input5 = document.createElement('input');
+        input5.type = 'hidden';
+        input5.name = `questions[${index}][explanation]`;
+        input5.value = q.explanation;
+        this.appendChild(input5);
+    });
+    
+    hints.forEach((hint, index) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `hints[${index}][hint_text]`;
+        input.value = hint.text;
+        this.appendChild(input);
+        
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = `hints[${index}][hint_order]`;
+        input2.value = hint.order;
+        this.appendChild(input2);
+        
+        const input3 = document.createElement('input');
+        input3.type = 'hidden';
+        input3.name = `hints[${index}][cost]`;
+        input3.value = hint.cost;
+        this.appendChild(input3);
+        
+        const input4 = document.createElement('input');
+        input4.type = 'hidden';
+        input4.name = `hints[${index}][is_free]`;
+        input4.value = hint.free;
+        this.appendChild(input4);
+    });
+    
+    // Submit the form
+    this.submit();
+});
+
+// Real-time preview updates
+document.querySelectorAll('input, textarea, select').forEach(element => {
+    element.addEventListener('input', updatePreviews);
+    element.addEventListener('change', updatePreviews);
+});
+</script>
+{% endblock %} 
