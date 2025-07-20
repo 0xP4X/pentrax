@@ -24,13 +24,16 @@ def update_user_streak(user_id):
 
 def get_user_stats(user):
     """Get comprehensive user statistics for achievement checking"""
+    # Optimize received likes queries
+    post_ids = db.session.query(Post.id).filter_by(user_id=user.id)
+    comment_ids = db.session.query(Comment.id).filter_by(user_id=user.id)
     stats = {
         'posts': Post.query.filter_by(user_id=user.id).count(),
         'comments': Comment.query.filter_by(user_id=user.id).count(),
         'post_likes_given': PostLike.query.filter_by(user_id=user.id).count(),
-        'post_likes_received': PostLike.query.filter_by(post_id=Post.query.filter_by(user_id=user.id).with_entities(Post.id).subquery()).count(),
+        'post_likes_received': PostLike.query.filter(PostLike.post_id.in_(post_ids)).count(),
         'comment_likes_given': CommentLike.query.filter_by(user_id=user.id).count(),
-        'comment_likes_received': CommentLike.query.filter_by(comment_id=Comment.query.filter_by(user_id=user.id).with_entities(Comment.id).subquery()).count(),
+        'comment_likes_received': CommentLike.query.filter(CommentLike.comment_id.in_(comment_ids)).count(),
         'labs_completed': LabCompletion.query.filter_by(user_id=user.id).count(),
         'reputation': user.reputation,
         'days_since_joined': (datetime.date.today() - user.created_at.date()).days,
