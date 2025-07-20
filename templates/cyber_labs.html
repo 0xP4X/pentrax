@@ -82,7 +82,7 @@
                         {% endif %}
                         <span class="badge bg-info" aria-label="Category">{{ lab.category.title() }}</span>
                         <span class="badge bg-secondary" aria-label="Lab Type">
-                            {% if lab.type == 'guided' %}<i class="fas fa-route"></i> Guided{% elif lab.type == 'ctf' %}<i class="fas fa-flag"></i> CTF{% elif lab.type == 'quiz' %}<i class="fas fa-question"></i> Quiz{% elif lab.type == 'realtime' %}<i class="fas fa-bolt"></i> Real-Time{% else %}{{ lab.type.title() }}{% endif %}
+                            {% if lab.lab_type == 'guided' %}<i class="fas fa-route"></i> Guided{% elif lab.lab_type == 'ctf' %}<i class="fas fa-flag"></i> CTF{% elif lab.lab_type == 'quiz' %}<i class="fas fa-question"></i> Quiz{% elif lab.lab_type == 'realtime' %}<i class="fas fa-bolt"></i> Real-Time{% else %}{{ lab.lab_type.title() }}{% endif %}
                         </span>
                         {% if lab.tags %}
                         <span class="badge bg-light text-dark" aria-label="Tags">
