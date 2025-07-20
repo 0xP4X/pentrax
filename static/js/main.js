@@ -319,6 +319,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update message badge every 30 seconds
     setInterval(updateMessageBadge, 30000);
 
+    // Achievement toast logic
+    const achievementToastContainer = document.getElementById('achievement-toast-container');
+    const flashAlerts = document.querySelectorAll('.alert');
+    flashAlerts.forEach(function(alert) {
+        if (alert.textContent.includes('Achievement Unlocked:')) {
+            const match = alert.textContent.match(/Achievement Unlocked: ([^\n]+)\n?(.*)/);
+            if (match) {
+                const name = match[1].trim();
+                const desc = match[2].trim();
+                showAchievementToast(name, desc);
+            }
+        }
+    });
+    function showAchievementToast(name, desc) {
+        if (!achievementToastContainer) return;
+        const toastId = 'achievementToast' + Date.now();
+        const toastHTML = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-primary border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              <i class="fas fa-trophy me-2"></i>
+              <strong>Achievement Unlocked!</strong><br>
+              <span class="fw-bold">${name}</span><br>
+              <span class="small">${desc}</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>`;
+        achievementToastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastEl = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastEl, { delay: 6000 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', function() {
+            toastEl.remove();
+        });
+    }
+
     if (localStorage.getItem('pentrax_show_tour_prompt') === 'true') {
         localStorage.removeItem('pentrax_show_tour_prompt');
         if (window.OnboardingManager && (!localStorage.getItem('pentrax_guided_tour_completed') || localStorage.getItem('pentrax_guided_tour_completed') === 'skipped')) {
