@@ -3482,3 +3482,66 @@ def api_achievement_progress():
         })
     
     return jsonify(progress_data)
+
+@app.route('/labs/<int:lab_id>/sandbox/command', methods=['POST'])
+@login_required
+def sandbox_command(lab_id):
+    data = request.get_json()
+    user_command = data.get('command', '').strip()
+    lab = Lab.query.get_or_404(lab_id)
+    # Get or create terminal session
+    session = LabTerminalSession.query.filter_by(user_id=current_user.id, lab_id=lab_id).first()
+    if not session:
+        total_steps = LabTerminalCommand.query.filter_by(lab_id=lab_id).count()
+        session = LabTerminalSession(
+            user_id=current_user.id,
+            lab_id=lab_id,
+            session_id=str(uuid.uuid4()),
+            current_step=1,
+            total_steps=total_steps,
+            completed_steps=0,
+            total_points=0,
+            max_points=total_steps,
+            is_completed=False
+        )
+        db.session.add(session)
+        db.session.commit()
+    # Get the next required command
+    command_obj = LabTerminalCommand.query.filter_by(lab_id=lab_id, order=session.current_step).first()
+    if not command_obj or session.is_completed:
+        return jsonify({"output": "Sandbox already completed!", "completed": True, "prompt": "user@pentrax:~$"})
+    # Log the attempt
+    attempt = LabTerminalAttempt(
+        user_id=current_user.id,
+        lab_id=lab_id,
+        command_id=command_obj.id,
+        user_command=user_command,
+        is_correct=False
+    )
+    # Check command
+    if user_command == command_obj.command.strip():
+        attempt.is_correct = True
+        attempt.user_output = command_obj.expected_output or "Command executed."
+        attempt.points_earned = command_obj.points
+        session.current_step += 1
+        session.completed_steps += 1
+        session.total_points += command_obj.points
+        if session.completed_steps >= session.total_steps:
+            session.is_completed = True
+            session.completed_at = db.func.now()
+        db.session.add(attempt)
+        db.session.commit()
+        return jsonify({
+            "output": attempt.user_output,
+            "completed": session.is_completed,
+            "prompt": "user@pentrax:~$"
+        })
+    else:
+        attempt.user_output = f"bash: {user_command.split()[0]}: command not found"
+        db.session.add(attempt)
+        db.session.commit()
+        return jsonify({
+            "output": attempt.user_output,
+            "completed": False,
+            "prompt": "user@pentrax:~$"
+        })

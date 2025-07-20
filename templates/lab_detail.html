@@ -5,6 +5,79 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-8">
+        <!-- Dynamic Progress Stepper -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                <!-- Instructions Step -->
+                <div class="stepper-step {% if not quiz_attempt and not completion %}active{% elif quiz_attempt or completion %}completed{% endif %}">
+                    <span class="stepper-icon">{% if quiz_attempt or completion %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-book"></i>{% endif %}</span>
+                    <span class="stepper-label">Instructions</span>
+                </div>
+                {% if quiz_questions and quiz_questions|length > 0 %}
+                <div class="stepper-divider"></div>
+                <!-- Quiz Step -->
+                <div class="stepper-step {% if quiz_attempt %}completed{% elif not completion %}active{% else %}locked{% endif %}">
+                    <span class="stepper-icon">{% if quiz_attempt %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-question-circle"></i>{% endif %}</span>
+                    <span class="stepper-label">Quiz</span>
+                </div>
+                {% endif %}
+                {% if lab.flag %}
+                <div class="stepper-divider"></div>
+                <!-- CTF/Flag Step -->
+                <div class="stepper-step {% if completion %}completed{% elif not quiz_attempt and (quiz_questions and quiz_questions|length > 0) %}locked{% else %}active{% endif %}">
+                    <span class="stepper-icon">{% if completion %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-flag-checkered"></i>{% endif %}</span>
+                    <span class="stepper-label">CTF/Flag</span>
+                </div>
+                {% endif %}
+                {% if lab.sandbox_url or lab.sandbox_instructions or lab.required_command or lab.command_success_criteria %}
+                <div class="stepper-divider"></div>
+                <!-- Sandbox Step -->
+                <div class="stepper-step {% if sandbox_completed %}completed{% elif not completion and not quiz_attempt %}locked{% else %}active{% endif %}">
+                    <span class="stepper-icon">{% if sandbox_completed %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-terminal"></i>{% endif %}</span>
+                    <span class="stepper-label">Sandbox</span>
+                </div>
+                {% endif %}
+                <!-- Percentage Complete -->
+                <div class="ms-3">
+                    <span class="badge bg-primary">{{ progress_percent|default(0) }}% Complete</span>
+                </div>
+            </div>
+        </div>
+        <style>
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+            opacity: 0.7;
+        }
+        .stepper-step.active {
+            opacity: 1;
+            color: #007bff;
+        }
+        .stepper-step.completed {
+            opacity: 1;
+            color: #28a745;
+        }
+        .stepper-step.locked {
+            opacity: 0.4;
+        }
+        .stepper-icon {
+            font-size: 1.7em;
+        }
+        .stepper-label {
+            font-size: 0.95em;
+            margin-top: 0.2em;
+        }
+        .stepper-divider {
+            width: 32px;
+            height: 3px;
+            background: linear-gradient(90deg, #007bff 0%, #ffc107 100%);
+            border-radius: 2px;
+            margin: 0 4px;
+            align-self: center;
+        }
+        </style>
         <!-- Progress Bar/Checklist -->
         <div class="mb-3">
             <ul class="nav nav-pills justify-content-center" id="labProgressNav">
@@ -197,11 +270,49 @@
                         <h5><i class="fas fa-terminal"></i> Interactive Terminal</h5>
                     </div>
                     <div class="card-body">
-                        <div id="terminal" style="width: 100%; height: 400px; background: #222;"></div>
-                        <div class="text-muted mt-2">This is a simulated shell. Type the correct commands to progress.</div>
+                        <div id="sandbox-terminal" style="width:100%;background:#222;color:#fff;padding:1em;border-radius:8px;min-height:200px;font-family:monospace;">
+                            <div id="sandbox-history"></div>
+                            <form id="sandbox-form" class="mt-2 d-flex">
+                                <span class="me-2" id="sandbox-prompt" style="color:#0af;">user@pentrax:~$</span>
+                                <input type="text" id="sandbox-input" class="form-control form-control-sm" autocomplete="off" style="background:#222;color:#fff;border:none;outline:none;max-width:300px;">
+                                <button type="submit" class="btn btn-primary btn-sm ms-2">Run</button>
+                            </form>
+                        </div>
+                        <div id="sandbox-complete" class="alert alert-success mt-3 d-none">
+                            <i class="fas fa-check-circle"></i> Sandbox Complete!
+                        </div>
                     </div>
                 </div>
             </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const form = document.getElementById('sandbox-form');
+              const input = document.getElementById('sandbox-input');
+              const history = document.getElementById('sandbox-history');
+              const complete = document.getElementById('sandbox-complete');
+              form.onsubmit = function(e) {
+                e.preventDefault();
+                const cmd = input.value.trim();
+                if (!cmd) return;
+                history.innerHTML += `<div><span style='color:#0af'>user@pentrax:~$</span> ${cmd}</div>`;
+                fetch('{{ url_for("sandbox_command", lab_id=lab.id) }}', {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({command: cmd})
+                })
+                .then(res => res.json())
+                .then(data => {
+                  history.innerHTML += `<div>${data.output}</div>`;
+                  if (data.completed) {
+                    complete.classList.remove('d-none');
+                    form.classList.add('d-none');
+                  }
+                  history.scrollTop = history.scrollHeight;
+                });
+                input.value = '';
+              };
+            });
+            </script>
             {% endif %}
         </div>
     </div>
