@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; }
+        .error-container { text-align: center; background: #fff; padding: 2.5rem 2rem; border-radius: 1.2rem; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
+        .error-logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--pentrax-primary);
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: welcomeGlow 1.5s infinite alternate;
+        }
+        .error-logo i {
+            font-size: 2.5rem;
+            margin-right: 0.5rem;
+            color: var(--pentrax-secondary);
+            filter: drop-shadow(0 2px 6px #764ba2cc);
+        }
+        .error-icon { font-size: 4rem; color: #0074d9; margin-bottom: 1rem; animation: pulse 1.5s infinite alternate; }
+        .error-title { font-size: 2.5rem; font-weight: 700; color: #222; margin-bottom: 0.5rem; }
+        .error-message { font-size: 1.2rem; color: #555; margin-bottom: 1.5rem; }
+        .home-btn { display: inline-block; padding: 0.7rem 1.5rem; background: #0074d9; color: #fff; border-radius: 0.5rem; text-decoration: none; font-weight: 600; transition: background 0.2s; }
+        .home-btn:hover { background: #005fa3; }
+        @media (max-width: 600px) {
+            .error-container { padding: 1.5rem 0.5rem; }
+            .error-title { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container welcome-animation">
+        <div class="error-logo">
+            <i class="fas fa-shield-alt"></i> PentraX
+        </div>
+        <div class="error-icon"><i class="fas fa-ban"></i></div>
+        <div class="error-title">403 Forbidden</div>
+        <div class="error-message">
+            Sorry, you don't have permission to access this page.<br>
+            If you believe this is a mistake, please contact support.<br>
+            <small>(You may have been blocked by the firewall or lack the required permissions.)</small>
+        </div>
+        <a href="/" class="home-btn">Go to Home</a>
+    </div>
+</body>
+</html> 

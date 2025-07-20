@@ -12,7 +12,7 @@ import eventlet
 # import pty  # Commented out for Windows compatibility
 # import select  # Commented out for Windows compatibility
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils.firewall import firewall_middleware
 from db import db
 
@@ -46,6 +46,8 @@ app.config["UPLOAD_FOLDER"] = "uploads"
 
 # Set session cookies to Secure
 app.config['SESSION_COOKIE_SECURE'] = True
+# Set session lifetime to 24 hours
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 
 # Add X-Content-Type-Options header to all responses
 @app.after_request

@@ -53,11 +53,12 @@ def login():
                     ip_address=ip,
                     source='auth'
                 )
-                flash('Your account has been permanently banned. Please contact support if you believe this is an error.', 'error')
+                flash('Your account has been banned.', 'error')
                 return render_template('login.html')
             # Allow temporarily banned and muted users to log in
             # They will be redirected to ban notification by the before_request middleware
             login_user(user)
+            session.permanent = True  # <-- Set session to permanent for 24hr timeout
             update_user_streak(user.id)
             check_and_unlock_achievements(user)
             log_siem_event(
@@ -88,9 +89,8 @@ def register():
         email = request.form['email']
         password = request.form['password']
         ip = request.remote_addr
-        # Check if user already exists
         if User.query.filter_by(username=username).first():
-            flash('Username already exists', 'error')
+            flash('Username already taken', 'error')
             return render_template('register.html')
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
@@ -103,10 +103,10 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-        # Log in the user automatically after registration
         login_user(user)
+        session.permanent = True  # <-- Set session to permanent for 24hr timeout
         log_siem_event(
-            event_type='register_success',
+            event_type='register',
             message=f'User {user.username} registered',
             severity='info',
             user=user,

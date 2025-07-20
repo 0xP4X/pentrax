@@ -4,190 +4,67 @@
 
 {% block content %}
 <style>
-.error-page {
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.error-page::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-    opacity: 0.3;
-}
-
-.error-container {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 3rem;
-    text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    max-width: 600px;
-    width: 90%;
-    position: relative;
-    z-index: 1;
-}
-
-.error-number {
-    font-size: 8rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 1rem;
-    line-height: 1;
-}
-
-.error-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2d3748;
-    margin-bottom: 1rem;
-}
-
-.error-message {
-    font-size: 1.1rem;
-    color: #718096;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-}
-
-.error-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.btn-error {
-    padding: 12px 24px;
-    border-radius: 50px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-primary-error {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: white;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-}
-
-.btn-primary-error:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
-    color: white;
-    text-decoration: none;
-}
-
-.btn-secondary-error {
-    background: rgba(255, 255, 255, 0.9);
-    color: #4a5568;
-    border: 2px solid #e2e8f0;
-}
-
-.btn-secondary-error:hover {
-    background: #f7fafc;
-    color: #2d3748;
-    transform: translateY(-2px);
-    text-decoration: none;
-}
-
-.illustration {
-    margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-    .error-container {
-        padding: 2rem;
-        margin: 1rem;
-    }
-    
-    .error-number {
-        font-size: 6rem;
-    }
-    
-    .error-title {
-        font-size: 1.5rem;
-    }
-    
-    .error-actions {
-        flex-direction: column;
+    .error-logo {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--pentrax-primary);
+        letter-spacing: 2px;
+        margin-bottom: 1.5rem;
+        display: flex;
         align-items: center;
-    }
-    
-    .btn-error {
-        width: 100%;
-        max-width: 250px;
         justify-content: center;
+        animation: welcomeGlow 1.5s infinite alternate;
     }
-}
+    .error-logo i {
+        font-size: 2.5rem;
+        margin-right: 0.5rem;
+        color: var(--pentrax-secondary);
+        filter: drop-shadow(0 2px 6px #764ba2cc);
+    }
+    .error-number {
+        animation: pulse 1.5s infinite alternate;
+    }
+    .illustration svg {
+        animation: fadeIn 1.2s;
+    }
 </style>
-
 <div class="error-page">
-    <div class="error-container">
+    <div class="error-container welcome-animation">
+        <div class="error-logo">
+            <i class="fas fa-shield-alt"></i> PentraX
+        </div>
         <div class="illustration">
             <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <!-- Background circle -->
                 <circle cx="100" cy="100" r="90" fill="#fef5f5" stroke="#fed7d7" stroke-width="2"/>
-                
-                <!-- Server/Computer icon -->
                 <rect x="60" y="70" width="80" height="60" rx="5" fill="#ff6b6b" opacity="0.8"/>
                 <rect x="65" y="75" width="70" height="50" rx="3" fill="#fff"/>
-                
-                <!-- Screen lines -->
                 <line x1="70" y1="85" x2="130" y2="85" stroke="#ff6b6b" stroke-width="2"/>
                 <line x1="70" y1="95" x2="120" y2="95" stroke="#ff6b6b" stroke-width="2"/>
                 <line x1="70" y1="105" x2="110" y2="105" stroke="#ff6b6b" stroke-width="2"/>
-                
-                <!-- Warning triangle -->
                 <polygon points="100,40 85,70 115,70" fill="#ee5a24" opacity="0.8"/>
                 <text x="100" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="white">!</text>
-                
-                <!-- Error indicators -->
                 <circle cx="40" cy="40" r="3" fill="#ff6b6b" opacity="0.6"/>
                 <circle cx="160" cy="50" r="2" fill="#ee5a24" opacity="0.6"/>
                 <circle cx="45" cy="150" r="2" fill="#ff6b6b" opacity="0.6"/>
                 <circle cx="155" cy="140" r="3" fill="#ee5a24" opacity="0.6"/>
-                
-                <!-- Lightning bolt -->
                 <path d="M 140 60 L 150 70 L 145 75 L 155 85 L 140 80 L 145 70 Z" fill="#ee5a24" opacity="0.8"/>
             </svg>
         </div>
-        
         <div class="error-number">500</div>
         <h1 class="error-title">Server Error</h1>
         <p class="error-message">
             Uh-oh! Something went wrong on our end. Our technical team has been automatically notified 
             and is working to fix this issue. Please try again in a few moments.
-                </p>
-        
+        </p>
         <div class="error-actions">
             <a href="{{ url_for('index') }}" class="btn-error btn-primary-error">
                 <i class="fas fa-home"></i>
                 Go Home
-                    </a>
+            </a>
             <button onclick="location.reload()" class="btn-error btn-secondary-error">
                 <i class="fas fa-redo"></i>
                 Try Again
-                    </button>
+            </button>
         </div>
     </div>
 </div>
