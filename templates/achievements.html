@@ -101,10 +101,10 @@
                     <div class="row">
                         {% for item in achievements_with_progress %}
                         <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 {% if item.unlocked %}border-success{% endif %}">
+                            <div class="card h-100 achievement-card {% if item.unlocked %}unlocked{% else %}locked{% endif %}" data-achievement-id="{{ item.achievement.id }}">
                                 <div class="card-body text-center">
                                     <div class="mb-3">
-                                        <i class="{{ item.achievement.icon }} fa-3x {% if item.unlocked %}text-success{% else %}text-muted{% endif %}"></i>
+                                        <i class="{{ item.achievement.icon }} fa-3x"></i>
                                     </div>
                                     <h5 class="card-title">{{ item.achievement.name }}</h5>
                                     <p class="card-text text-muted">{{ item.achievement.description }}</p>
@@ -124,7 +124,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="card-footer text-center">
-                                    <span class="badge bg-secondary">{{ item.achievement.type|title }}</span>
+                                    <span class="achievement-type-badge {{ item.achievement.type|title }}" title="{{ item.achievement.type|title }}">{{ item.achievement.type|title }}</span>
                                 </div>
                             </div>
                         </div>
@@ -138,10 +138,10 @@
                     <div class="row">
                         {% for item in items %}
                         <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 {% if item.unlocked %}border-success{% endif %}">
+                            <div class="card h-100 achievement-card {% if item.unlocked %}unlocked{% else %}locked{% endif %}" data-achievement-id="{{ item.achievement.id }}">
                                 <div class="card-body text-center">
                                     <div class="mb-3">
-                                        <i class="{{ item.achievement.icon }} fa-3x {% if item.unlocked %}text-success{% else %}text-muted{% endif %}"></i>
+                                        <i class="{{ item.achievement.icon }} fa-3x"></i>
                                     </div>
                                     <h5 class="card-title">{{ item.achievement.name }}</h5>
                                     <p class="card-text text-muted">{{ item.achievement.description }}</p>
@@ -161,7 +161,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="card-footer text-center">
-                                    <span class="badge bg-secondary">{{ item.achievement.type|title }}</span>
+                                    <span class="achievement-type-badge {{ item.achievement.type|title }}" title="{{ item.achievement.type|title }}">{{ item.achievement.type|title }}</span>
                                 </div>
                             </div>
                         </div>
@@ -200,4 +200,56 @@ setInterval(function() {
         .catch(error => console.error('Error updating achievements:', error));
 }, 30000);
 </script>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.achievement-card {
+  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--bs-card-bg);
+}
+.achievement-card.unlocked {
+  background: linear-gradient(135deg, #e0ffe7 0%, #b2f7ef 100%);
+  box-shadow: 0 4px 16px 0 rgba(40,167,69,0.15), 0 1.5px 8px 0 rgba(0,0,0,0.07);
+  border: 2px solid #28a745;
+}
+.achievement-card.locked {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  opacity: 0.92;
+}
+.achievement-card .fa-3x {
+  filter: drop-shadow(0 0 6px #b2f7ef);
+  transition: filter 0.2s;
+}
+.achievement-card.unlocked .fa-3x {
+  color: #28a745 !important;
+  filter: drop-shadow(0 0 12px #28a745);
+}
+.achievement-card.locked .fa-3x {
+  color: #adb5bd !important;
+  filter: none;
+}
+.achievement-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 24px 0 rgba(0,123,255,0.10), 0 2px 8px 0 rgba(0,0,0,0.10);
+}
+.achievement-type-badge {
+  font-size: 0.95em;
+  font-weight: 600;
+  border-radius: 1em;
+  padding: 0.4em 1em;
+  margin: 0 0.2em;
+}
+.achievement-type-badge.Quiz { background: #007bff; color: #fff; }
+.achievement-type-badge.CTF { background: #fd7e14; color: #fff; }
+.achievement-type-badge.Guided { background: #20c997; color: #fff; }
+.achievement-type-badge[title="Real-Time"] { background: #6610f2; color: #fff; }
+.achievement-type-badge.Other { background: #6c757d; color: #fff; }
+.progress-bar {
+  background: linear-gradient(90deg, #20c997 0%, #007bff 100%);
+}
+</style>
 {% endblock %} 
