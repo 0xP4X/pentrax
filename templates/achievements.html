@@ -1,203 +1,71 @@
 {% extends "base.html" %}
-
 {% block title %}Achievements - PentraX{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-trophy"></i> Achievements</h1>
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('streaks_dashboard') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-fire"></i> View Streaks
-                    </a>
-                    <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-success">
-                        <i class="fas fa-medal"></i> Leaderboard
-                    </a>
-                </div>
-            </div>
-        </div>
+  <h2><i class="fas fa-trophy text-warning"></i> Achievements</h2>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <input type="text" class="form-control" placeholder="Search achievements..." id="achievement-search">
     </div>
-
-    <!-- User Stats Overview -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Your Progress</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
-                                <h4>{{ user_stats.posts }}</h4>
-                                <small class="text-muted">Posts</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-flask fa-2x text-success mb-2"></i>
-                                <h4>{{ user_stats.labs_completed }}</h4>
-                                <small class="text-muted">Labs</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-fire fa-2x text-warning mb-2"></i>
-                                <h4>{{ user_stats.current_streak }}</h4>
-                                <small class="text-muted">Current Streak</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-star fa-2x text-info mb-2"></i>
-                                <h4>{{ user_stats.reputation }}</h4>
-                                <small class="text-muted">Reputation</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-users fa-2x text-secondary mb-2"></i>
-                                <h4>{{ user_stats.followers }}</h4>
-                                <small class="text-muted">Followers</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
-                                <h4>{{ achievements_with_progress|selectattr('unlocked')|list|length }}</h4>
-                                <small class="text-muted">Unlocked</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="col-md-6 text-end">
+      <select class="form-select w-auto d-inline" id="achievement-filter">
+        <option value="">All Types</option>
+        <option value="lab">Labs</option>
+        <option value="post">Posts</option>
+        <option value="streak">Streaks</option>
+      </select>
     </div>
-
-    <!-- Achievement Categories -->
-    <div class="row">
-        <div class="col-12">
-            <ul class="nav nav-tabs" id="achievementTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                        All ({{ achievements_with_progress|length }})
-                    </button>
-                </li>
-                {% for category, items in achievement_groups.items() %}
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="{{ category }}-tab" data-bs-toggle="tab" data-bs-target="#{{ category }}" type="button" role="tab">
-                        {{ category|title }} ({{ items|length }})
-                    </button>
-                </li>
-                {% endfor %}
-            </ul>
-
-            <div class="tab-content" id="achievementTabContent">
-                <!-- All Achievements Tab -->
-                <div class="tab-pane fade show active" id="all" role="tabpanel">
-                    <div class="row">
-                        {% for item in achievements_with_progress %}
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 {% if item.unlocked %}border-success{% endif %}">
-                                <div class="card-body text-center">
-                                    <div class="mb-3">
-                                        <i class="{{ item.achievement.icon }} fa-3x {% if item.unlocked %}text-success{% else %}text-muted{% endif %}"></i>
-                                    </div>
-                                    <h5 class="card-title">{{ item.achievement.name }}</h5>
-                                    <p class="card-text text-muted">{{ item.achievement.description }}</p>
-                                    
-                                    {% if item.unlocked %}
-                                        <div class="alert alert-success py-2">
-                                            <i class="fas fa-check-circle"></i> Unlocked
-                                            {% if item.unlocked_at %}
-                                                <br><small>{{ item.unlocked_at.strftime('%Y-%m-%d') }}</small>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <div class="progress mb-3" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: {{ item.progress }}%"></div>
-                                        </div>
-                                        <small class="text-muted">{{ item.progress }}% complete</small>
-                                    {% endif %}
-                                </div>
-                                <div class="card-footer text-center">
-                                    <span class="badge bg-secondary">{{ item.achievement.type|title }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Category Tabs -->
-                {% for category, items in achievement_groups.items() %}
-                <div class="tab-pane fade" id="{{ category }}" role="tabpanel">
-                    <div class="row">
-                        {% for item in items %}
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 {% if item.unlocked %}border-success{% endif %}">
-                                <div class="card-body text-center">
-                                    <div class="mb-3">
-                                        <i class="{{ item.achievement.icon }} fa-3x {% if item.unlocked %}text-success{% else %}text-muted{% endif %}"></i>
-                                    </div>
-                                    <h5 class="card-title">{{ item.achievement.name }}</h5>
-                                    <p class="card-text text-muted">{{ item.achievement.description }}</p>
-                                    
-                                    {% if item.unlocked %}
-                                        <div class="alert alert-success py-2">
-                                            <i class="fas fa-check-circle"></i> Unlocked
-                                            {% if item.unlocked_at %}
-                                                <br><small>{{ item.unlocked_at.strftime('%Y-%m-%d') }}</small>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <div class="progress mb-3" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: {{ item.progress }}%"></div>
-                                        </div>
-                                        <small class="text-muted">{{ item.progress }}% complete</small>
-                                    {% endif %}
-                                </div>
-                                <div class="card-footer text-center">
-                                    <span class="badge bg-secondary">{{ item.achievement.type|title }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
+  </div>
+  <div class="row" id="achievements-list">
+    {% for achievement in achievements %}
+    <div class="col-6 col-md-4 col-lg-3 mb-4">
+      <div class="card h-100 {% if not achievement.unlocked %}bg-light text-muted{% endif %}">
+        <div class="card-body text-center">
+          <i class="{{ achievement.icon }} fa-2x mb-2 {% if achievement.unlocked %}text-warning{% endif %}"></i>
+          <h5 class="card-title mb-1">{{ achievement.name }}</h5>
+          <p class="card-text small">{{ achievement.description }}</p>
+          {% if achievement.progress is defined %}
+            <div class="progress mb-2" style="height: 8px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ achievement.progress }}%"></div>
             </div>
+            <small>{{ achievement.progress }}% complete</small>
+          {% endif %}
+          {% if achievement.unlocked %}
+            <span class="badge bg-success mt-2">Unlocked</span>
+          {% else %}
+            <span class="badge bg-secondary mt-2">Locked</span>
+          {% endif %}
         </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-// Auto-refresh achievement progress every 30 seconds
-setInterval(function() {
-    fetch('/api/achievement_progress')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(achievement => {
-                const card = document.querySelector(`[data-achievement-id="${achievement.id}"]`);
-                if (card) {
-                    const progressBar = card.querySelector('.progress-bar');
-                    const progressText = card.querySelector('.text-muted');
-                    
-                    if (achievement.unlocked) {
-                        card.classList.add('border-success');
-                        card.querySelector('.fa-3x').classList.add('text-success');
-                        card.querySelector('.fa-3x').classList.remove('text-muted');
-                    } else {
-                        progressBar.style.width = achievement.progress + '%';
-                        progressText.textContent = achievement.progress + '% complete';
-                    }
-                }
-            });
-        })
-        .catch(error => console.error('Error updating achievements:', error));
-}, 30000);
+// Simple client-side filter/search (to be replaced with backend logic)
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('achievement-search');
+  const filterSelect = document.getElementById('achievement-filter');
+  const cards = document.querySelectorAll('#achievements-list .card');
+
+  function filterAchievements() {
+    const search = searchInput.value.toLowerCase();
+    const filter = filterSelect.value;
+    cards.forEach(card => {
+      const name = card.querySelector('.card-title').textContent.toLowerCase();
+      const desc = card.querySelector('.card-text').textContent.toLowerCase();
+      const type = card.getAttribute('data-type') || '';
+      const matchesSearch = name.includes(search) || desc.includes(search);
+      const matchesType = !filter || type === filter;
+      card.parentElement.style.display = (matchesSearch && matchesType) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterAchievements);
+  filterSelect.addEventListener('change', filterAchievements);
+});
 </script>
 {% endblock %} 
