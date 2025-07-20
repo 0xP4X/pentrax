@@ -108,17 +108,14 @@ def unlock_achievement(user, achievement):
     # Notify user
     create_notification(user.id, f"Achievement Unlocked: {achievement.name}", f"{achievement.description}")
 
-def get_achievement_progress(user, achievement):
+def get_achievement_progress(user, achievement, stats=None):
     """Get progress towards an achievement (0-100)"""
-    stats = get_user_stats(user)
-    
+    if stats is None:
+        stats = get_user_stats(user)
     try:
-        # Parse the criteria to understand what we're tracking
         criteria = achievement.criteria
-        
         if 'posts' in criteria:
             current = stats['posts']
-            # Extract target from criteria like "posts>=10"
             target = int(criteria.split('>=')[1].split()[0])
         elif 'labs_completed' in criteria:
             current = stats['labs_completed']
@@ -137,36 +134,34 @@ def get_achievement_progress(user, achievement):
             target = int(criteria.split('>=')[1].split()[0])
         else:
             return 0
-        
         progress = min(100, (current / target) * 100) if target > 0 else 0
         return round(progress, 1)
     except:
         return 0
 
+
 def get_user_achievements_with_progress(user):
     """Get all achievements with progress for a user"""
     all_achievements = Achievement.query.all()
     user_achievements = {ua.achievement_id for ua in user.user_achievements}
-    
+    # Compute stats ONCE
+    stats = get_user_stats(user)
     achievements_with_progress = []
     for achievement in all_achievements:
-        progress = get_achievement_progress(user, achievement)
+        progress = get_achievement_progress(user, achievement, stats)
         is_unlocked = achievement.id in user_achievements
-        
         achievements_with_progress.append({
             'achievement': achievement,
             'progress': progress,
             'unlocked': is_unlocked,
             'unlocked_at': None
         })
-    
     # Add unlock dates for unlocked achievements
     for ua in user.user_achievements:
         for item in achievements_with_progress:
             if item['achievement'].id == ua.achievement_id:
                 item['unlocked_at'] = ua.unlocked_at
                 break
-    
     return achievements_with_progress
 
 def get_leaderboard_data():

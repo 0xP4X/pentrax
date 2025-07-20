@@ -3412,8 +3412,8 @@ def admin_protection():
             add_blocked_ip(ip, reason='Unauthorized admin access', blocked_by='SIEM')
 
 # Achievements and Streaks Routes
-@app.route('/achievements')
 @login_required
+@app.route('/achievements')
 def achievements_dashboard():
     """Display user's achievements with progress tracking"""
     achievements_with_progress = get_user_achievements_with_progress(current_user)
@@ -3432,8 +3432,8 @@ def achievements_dashboard():
                          achievement_groups=achievement_groups,
                          user_stats=user_stats)
 
-@app.route('/streaks')
 @login_required
+@app.route('/streaks')
 def streaks_dashboard():
     """Display user's streak information and progress"""
     user_stats = get_user_stats(current_user)
