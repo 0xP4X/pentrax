@@ -10,23 +10,92 @@
     </div>
   </form>
   {% if info %}
-    <div class="card mb-4">
-      <div class="card-header bg-dark text-white"><strong>IP: {{ info.ip }}</strong></div>
+    <div class="card mb-4 shadow-lg" style="max-width: 700px; margin: 0 auto;">
+      <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
+        <span><i class="fas fa-globe fa-lg me-2"></i><strong>IP: {{ info.ip }}</strong></span>
+        <div>
+          <form method="post" action="{{ url_for('admin_block_ip') }}" style="display:inline;">
+            <input type="hidden" name="ip_address" value="{{ info.ip }}">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this IP?');"><i class="fas fa-ban"></i> Block IP</button>
+          </form>
+          {% if info.device_fingerprint %}
+          <form method="post" action="{{ url_for('admin_block_device') }}" style="display:inline;">
+            <input type="hidden" name="fingerprint" value="{{ info.device_fingerprint }}">
+            <button type="submit" class="btn btn-warning btn-sm ms-2" onclick="return confirm('Block this device fingerprint?');"><i class="fas fa-fingerprint"></i> Block Device</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
       <div class="card-body">
-        {% if info.hostname %}<div><strong>Hostname:</strong> {{ info.hostname }}</div>{% endif %}
-        {% if info.city or info.region or info.country %}
-          <div><strong>Location:</strong> {{ info.city }}, {{ info.region }}, {{ info.country }}</div>
+        <table class="table table-borderless mb-0">
+          <tbody>
+            {% if info.hostname %}
+            <tr><th>Hostname</th><td>{{ info.hostname }}</td></tr>
+            {% endif %}
+            {% if info.city or info.region or info.country %}
+            <tr><th>Location</th><td>{{ info.city }}, {{ info.region }}, {{ info.country }}</td></tr>
+            {% endif %}
+            {% if info.loc %}
+            <tr><th>Coordinates</th><td>{{ info.loc }}</td></tr>
+            {% endif %}
+            {% if info.org %}
+            <tr><th>Org/ISP</th><td>{{ info.org }}</td></tr>
+            {% endif %}
+            {% if info.asn %}
+            <tr><th>ASN</th><td>{{ info.asn }}</td></tr>
+            {% endif %}
+            {% if info.ipqs %}
+            <tr>
+              <th>VPN/Proxy/Tor</th>
+              <td>
+                {% if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor %}
+                  <span class="badge bg-danger"><i class="fas fa-shield-alt"></i> Yes</span>
+                {% else %}
+                  <span class="badge bg-success"><i class="fas fa-check"></i> No</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th>Threat Score</th>
+              <td><span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> {{ info.ipqs.fraud_score }}/100</span></td>
+            </tr>
+            <tr>
+              <th>ISP</th>
+              <td>{{ info.ipqs.ISP }}</td>
+            </tr>
+            <tr>
+              <th>Connection Type</th>
+              <td>{{ info.ipqs.connection_type }}</td>
+            </tr>
+            <tr>
+              <th>Abuse/VPN/Hosting</th>
+              <td>
+                {% if info.ipqs.abuse_velocity or info.ipqs.hosting_provider %}
+                  <span class="badge bg-danger"><i class="fas fa-exclamation-circle"></i> Yes</span>
+                {% else %}
+                  <span class="badge bg-success"><i class="fas fa-check"></i> No</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        {% if info.loc %}
+          {% set lat, lon = info.loc.split(',') %}
+          <div class="mt-4 text-center">
+            <iframe width="100%" height="250" frameborder="0" style="border-radius:12px;" src="https://www.openstreetmap.org/export/embed.html?bbox={{ lon|float - 0.05 }},{{ lat|float - 0.05 }},{{ lon|float + 0.05 }},{{ lat|float + 0.05 }}&amp;layer=mapnik&amp;marker={{ lat }},{{ lon }}" allowfullscreen></iframe>
+            <div class="small text-muted">Map: <a href="https://www.openstreetmap.org/?mlat={{ lat }}&amp;mlon={{ lon }}#map=12/{{ lat }}/{{ lon }}" target="_blank">OpenStreetMap</a></div>
+          </div>
         {% endif %}
-        {% if info.loc %}<div><strong>Coordinates:</strong> {{ info.loc }}</div>{% endif %}
-        {% if info.org %}<div><strong>Org/ISP:</strong> {{ info.org }}</div>{% endif %}
-        {% if info.asn %}<div><strong>ASN:</strong> {{ info.asn }}</div>{% endif %}
-        {% if info.ipqs %}
+        {% if info.device_fingerprint %}
           <hr>
-          <div><strong>VPN/Proxy/Tor:</strong> {{ 'Yes' if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor else 'No' }}</div>
-          <div><strong>Threat Score:</strong> {{ info.ipqs.fraud_score }}/100</div>
-          <div><strong>ISP:</strong> {{ info.ipqs.ISP }}</div>
-          <div><strong>Connection Type:</strong> {{ info.ipqs.connection_type }}</div>
-          <div><strong>Abuse/VPN/Hosting:</strong> {{ 'Yes' if info.ipqs.abuse_velocity or info.ipqs.hosting_provider else 'No' }}</div>
+          <div class="mt-3">
+            <strong><i class="fas fa-fingerprint"></i> Device Fingerprint:</strong>
+            <span class="badge bg-info text-dark">{{ info.device_fingerprint }}</span>
+            {% if info.device_info %}
+              <div class="mt-2 small text-muted">{{ info.device_info }}</div>
+            {% endif %}
+          </div>
         {% endif %}
         {% if info.error or info.ipinfo_error or info.ipqs_error %}
           <div class="alert alert-danger mt-3">
