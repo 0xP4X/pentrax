@@ -10,36 +10,23 @@ ABUSEIPDB_API_KEY = None  # Set to your key for abuse reports
 # Deep IP info function for on-demand scans
 
 def get_deep_ip_info(ip):
-    result = {}
-    # ip-api.com (geo)
+    info = {'ip': ip}
+    # IPInfo.io (basic geolocation, ASN, org, etc.)
     try:
-        resp = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,as,query', timeout=2)
-        data = resp.json()
-        if data.get('status') == 'success':
-            result['geo'] = data
+        resp = requests.get(f'https://ipinfo.io/{ip}/json')
+        if resp.ok:
+            info.update(resp.json())
     except Exception as e:
-        result['geo_error'] = str(e)
-    # ipinfo.io (ASN, org, privacy)
+        info['ipinfo_error'] = str(e)
+    # IPQualityScore (VPN/proxy/tor/threat)
     try:
-        resp = requests.get(f'https://ipinfo.io/{ip}/json', timeout=2)
-        if resp.status_code == 200:
-            result['ipinfo'] = resp.json()
+        IPQS_KEY = 'gmnxgQYYckRqsxrJLuezVIR1BUkB3xjU'
+        resp = requests.get(f'https://ipqualityscore.com/api/json/ip/{IPQS_KEY}/{ip}')
+        if resp.ok:
+            info['ipqs'] = resp.json()
     except Exception as e:
-        result['ipinfo_error'] = str(e)
-    # AbuseIPDB (abuse/blacklist)
-    if ABUSEIPDB_API_KEY:
-        try:
-            resp = requests.get(
-                'https://api.abuseipdb.com/api/v2/check',
-                params={'ipAddress': ip, 'maxAgeInDays': 90},
-                headers={'Key': ABUSEIPDB_API_KEY, 'Accept': 'application/json'},
-                timeout=3
-            )
-            if resp.status_code == 200:
-                result['abuseipdb'] = resp.json().get('data', {})
-        except Exception as e:
-            result['abuseipdb_error'] = str(e)
-    return result
+        info['ipqs_error'] = str(e)
+    return info
 
 def enrich_ip_info(ip):
     # Use only fast geo for event logging, deep scan for on-demand

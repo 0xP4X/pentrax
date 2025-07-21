@@ -3129,16 +3129,17 @@ def admin_unblock_ip():
 def get_blocked_ips():
     return BlockedIP.query.order_by(BlockedIP.blocked_at.desc()).all()
 
-@app.route('/admin/deep_ip_scan')
+@app.route('/admin/deep_ip_scan', methods=['GET'])
 @login_required
 def admin_deep_ip_scan():
     if not current_user.is_admin:
-        return {'error': 'Access denied'}, 403
+        flash('Access denied.', 'error')
+        return redirect(url_for('index'))
     ip = request.args.get('ip')
-    if not ip:
-        return {'error': 'No IP provided'}, 400
-    data = get_deep_ip_info(ip)
-    return data
+    info = None
+    if ip:
+        info = get_deep_ip_info(ip)
+    return render_template('admin_deep_ip_scan.html', ip=ip, info=info)
 
 # Error handlers for unauthorized, forbidden, and rate limit
 @app.errorhandler(401)

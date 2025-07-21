@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Deep IP Scan - Admin{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="fas fa-search-location"></i> Deep IP Scan</h2>
+  <form method="get" class="mb-4">
+    <div class="input-group">
+      <input type="text" class="form-control" name="ip" placeholder="Enter IP address..." value="{{ ip or '' }}" required>
+      <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Scan</button>
+    </div>
+  </form>
+  {% if info %}
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white"><strong>IP: {{ info.ip }}</strong></div>
+      <div class="card-body">
+        {% if info.hostname %}<div><strong>Hostname:</strong> {{ info.hostname }}</div>{% endif %}
+        {% if info.city or info.region or info.country %}
+          <div><strong>Location:</strong> {{ info.city }}, {{ info.region }}, {{ info.country }}</div>
+        {% endif %}
+        {% if info.loc %}<div><strong>Coordinates:</strong> {{ info.loc }}</div>{% endif %}
+        {% if info.org %}<div><strong>Org/ISP:</strong> {{ info.org }}</div>{% endif %}
+        {% if info.asn %}<div><strong>ASN:</strong> {{ info.asn }}</div>{% endif %}
+        {% if info.ipqs %}
+          <hr>
+          <div><strong>VPN/Proxy/Tor:</strong> {{ 'Yes' if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor else 'No' }}</div>
+          <div><strong>Threat Score:</strong> {{ info.ipqs.fraud_score }}/100</div>
+          <div><strong>ISP:</strong> {{ info.ipqs.ISP }}</div>
+          <div><strong>Connection Type:</strong> {{ info.ipqs.connection_type }}</div>
+          <div><strong>Abuse/VPN/Hosting:</strong> {{ 'Yes' if info.ipqs.abuse_velocity or info.ipqs.hosting_provider else 'No' }}</div>
+        {% endif %}
+        {% if info.error or info.ipinfo_error or info.ipqs_error %}
+          <div class="alert alert-danger mt-3">
+            <strong>Errors:</strong>
+            {{ info.error or '' }} {{ info.ipinfo_error or '' }} {{ info.ipqs_error or '' }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% elif ip %}
+    <div class="alert alert-warning">No info found for IP: {{ ip }}</div>
+  {% endif %}
+</div>
+{% endblock %} 
