@@ -63,6 +63,16 @@
                           <div class="text-white">Loading deep scan...</div>
                         </div>
                         <iframe id="deep-scan-iframe-{{ e.id }}" src="/admin/deep_ip_scan?ip={{ e.ip_address }}" style="width:100%;height:500px;border:none;border-radius:8px;" loading="lazy" onload="document.getElementById('deep-scan-spinner-{{ e.id }}').style.display='none';"></iframe>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                          var spinner = document.getElementById('deep-scan-spinner-{{ e.id }}');
+                          if (spinner) {
+                            setTimeout(function() {
+                              spinner.style.display = 'none';
+                            }, 10000); // Hide after 10 seconds no matter what
+                          }
+                        });
+                        </script>
                       </div>
                     </div>
                   </div>
