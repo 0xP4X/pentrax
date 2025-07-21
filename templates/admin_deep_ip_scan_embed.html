@@ -1,5 +1,5 @@
-<div class="container py-3" style="background: #f8f9fa; border-radius: 18px; max-width: 740px; margin: 2rem auto;">
-  <div class="card shadow-lg border-0" style="border-radius: 16px; background: #fff;">
+<div class="container py-3" style="border-radius: 18px; max-width: 740px; margin: 2rem auto;">
+  <div class="card shadow-lg border-0 bg-body" style="border-radius: 16px;">
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between" style="border-radius: 16px 16px 0 0;">
       <span><i class="fas fa-globe fa-lg me-2"></i><strong>IP: {{ info.ip }}</strong></span>
       <div>
@@ -15,29 +15,29 @@
         {% endif %}
       </div>
     </div>
-    <div class="card-body" style="background: #fff; border-radius: 0 0 16px 16px;">
+    <div class="card-body bg-body" style="border-radius: 0 0 16px 16px;">
       <h5 class="mb-3 text-primary fw-bold"><i class="fas fa-search-location"></i> Scan Summary</h5>
-      <table class="table table-borderless mb-0 small align-middle">
+      <table class="table table-striped table-bordered mb-0 small align-middle bg-body text-body" style="width:100%;">
         <tbody>
           {% if info.hostname %}
-          <tr><th class="text-muted">Hostname</th><td class="text-dark">{{ info.hostname }}</td></tr>
+          <tr><th class="text-muted text-start w-25">Hostname</th><td class="text-end">{{ info.hostname }}</td></tr>
           {% endif %}
           {% if info.city or info.region or info.country %}
-          <tr><th class="text-muted">Location</th><td class="text-dark">{{ info.city }}, {{ info.region }}, {{ info.country }}</td></tr>
+          <tr><th class="text-muted text-start">Location</th><td class="text-end">{{ info.city }}, {{ info.region }}, {{ info.country }}</td></tr>
           {% endif %}
           {% if info.loc %}
-          <tr><th class="text-muted">Coordinates</th><td class="text-dark">{{ info.loc }}</td></tr>
+          <tr><th class="text-muted text-start">Coordinates</th><td class="text-end">{{ info.loc }}</td></tr>
           {% endif %}
           {% if info.org %}
-          <tr><th class="text-muted">Org/ISP</th><td class="text-dark">{{ info.org }}</td></tr>
+          <tr><th class="text-muted text-start">Org/ISP</th><td class="text-end">{{ info.org }}</td></tr>
           {% endif %}
           {% if info.asn %}
-          <tr><th class="text-muted">ASN</th><td class="text-dark">{{ info.asn }}</td></tr>
+          <tr><th class="text-muted text-start">ASN</th><td class="text-end">{{ info.asn }}</td></tr>
           {% endif %}
           {% if info.ipqs %}
           <tr>
-            <th class="text-muted">VPN/Proxy/Tor</th>
-            <td>
+            <th class="text-muted text-start">VPN/Proxy/Tor</th>
+            <td class="text-end">
               {% if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor %}
                 <span class="badge bg-danger"><i class="fas fa-shield-alt"></i> Yes</span>
               {% else %}
@@ -46,20 +46,20 @@
             </td>
           </tr>
           <tr>
-            <th class="text-muted">Threat Score</th>
-            <td><span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> {{ info.ipqs.fraud_score }}/100</span></td>
+            <th class="text-muted text-start">Threat Score</th>
+            <td class="text-end"><span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> {{ info.ipqs.fraud_score }}/100</span></td>
           </tr>
           <tr>
-            <th class="text-muted">ISP</th>
-            <td class="text-dark">{{ info.ipqs.ISP }}</td>
+            <th class="text-muted text-start">ISP</th>
+            <td class="text-end">{{ info.ipqs.ISP }}</td>
           </tr>
           <tr>
-            <th class="text-muted">Connection Type</th>
-            <td class="text-dark">{{ info.ipqs.connection_type }}</td>
+            <th class="text-muted text-start">Connection Type</th>
+            <td class="text-end">{{ info.ipqs.connection_type }}</td>
           </tr>
           <tr>
-            <th class="text-muted">Abuse/VPN/Hosting</th>
-            <td>
+            <th class="text-muted text-start">Abuse/VPN/Hosting</th>
+            <td class="text-end">
               {% if info.ipqs.abuse_velocity or info.ipqs.hosting_provider %}
                 <span class="badge bg-danger"><i class="fas fa-exclamation-circle"></i> Yes</span>
               {% else %}
@@ -73,7 +73,7 @@
       {% if info.loc %}
         {% set lat, lon = info.loc.split(',') %}
         <div class="mt-4 text-center">
-          <iframe width="100%" height="250" frameborder="0" style="border-radius:12px; background:#e9ecef;" src="https://www.openstreetmap.org/export/embed.html?bbox={{ lon|float - 0.05 }},{{ lat|float - 0.05 }},{{ lon|float + 0.05 }},{{ lat|float + 0.05 }}&amp;layer=mapnik&amp;marker={{ lat }},{{ lon }}" allowfullscreen></iframe>
+          <iframe width="100%" height="250" frameborder="0" style="border-radius:12px; background:var(--bs-light);" src="https://www.openstreetmap.org/export/embed.html?bbox={{ lon|float - 0.05 }},{{ lat|float - 0.05 }},{{ lon|float + 0.05 }},{{ lat|float + 0.05 }}&amp;layer=mapnik&amp;marker={{ lat }},{{ lon }}" allowfullscreen></iframe>
           <div class="small text-muted">Map: <a href="https://www.openstreetmap.org/?mlat={{ lat }}&amp;mlon={{ lon }}#map=12/{{ lat }}/{{ lon }}" target="_blank">OpenStreetMap</a></div>
         </div>
       {% endif %}
@@ -90,21 +90,21 @@
       {% if info.raw_data and info.raw_data.ip_info %}
         <hr>
         <h6 class="text-primary mt-4 mb-2 fw-bold"><i class="fas fa-info-circle"></i> IP Info</h6>
-        <table class="table table-sm table-bordered bg-white">
+        <table class="table table-sm table-bordered bg-body text-body" style="width:100%;">
           <tbody>
             {% set ipinfo = info.raw_data.ip_info %}
-            {% if ipinfo.country %}<tr><th class="bg-light text-muted">Country</th><td class="text-dark">{{ ipinfo.country }}</td></tr>{% endif %}
-            {% if ipinfo.regionName %}<tr><th class="bg-light text-muted">Region</th><td class="text-dark">{{ ipinfo.regionName }}</td></tr>{% endif %}
-            {% if ipinfo.city %}<tr><th class="bg-light text-muted">City</th><td class="text-dark">{{ ipinfo.city }}</td></tr>{% endif %}
-            {% if ipinfo.isp %}<tr><th class="bg-light text-muted">ISP</th><td class="text-dark">{{ ipinfo.isp }}</td></tr>{% endif %}
-            {% if ipinfo.org %}<tr><th class="bg-light text-muted">Org</th><td class="text-dark">{{ ipinfo.org }}</td></tr>{% endif %}
-            {% if ipinfo['as'] %}<tr><th class="bg-light text-muted">ASN</th><td class="text-dark">{{ ipinfo['as'] }}</td></tr>{% endif %}
+            {% if ipinfo.country %}<tr><th class="bg-light text-muted text-start w-25">Country</th><td class="text-end">{{ ipinfo.country }}</td></tr>{% endif %}
+            {% if ipinfo.regionName %}<tr><th class="bg-light text-muted text-start">Region</th><td class="text-end">{{ ipinfo.regionName }}</td></tr>{% endif %}
+            {% if ipinfo.city %}<tr><th class="bg-light text-muted text-start">City</th><td class="text-end">{{ ipinfo.city }}</td></tr>{% endif %}
+            {% if ipinfo.isp %}<tr><th class="bg-light text-muted text-start">ISP</th><td class="text-end">{{ ipinfo.isp }}</td></tr>{% endif %}
+            {% if ipinfo.org %}<tr><th class="bg-light text-muted text-start">Org</th><td class="text-end">{{ ipinfo.org }}</td></tr>{% endif %}
+            {% if ipinfo['as'] %}<tr><th class="bg-light text-muted text-start">ASN</th><td class="text-end">{{ ipinfo['as'] }}</td></tr>{% endif %}
             {% if ipinfo.lat and ipinfo.lon %}
-              <tr><th class="bg-light text-muted">Lat/Lon</th><td class="text-dark">{{ ipinfo.lat }}, {{ ipinfo.lon }}</td></tr>
+              <tr><th class="bg-light text-muted text-start">Lat/Lon</th><td class="text-end">{{ ipinfo.lat }}, {{ ipinfo.lon }}</td></tr>
             {% endif %}
-            {% if ipinfo.query %}<tr><th class="bg-light text-muted">IP</th><td class="text-dark">{{ ipinfo.query }}</td></tr>{% endif %}
-            {% if ipinfo.status %}<tr><th class="bg-light text-muted">Status</th><td class="text-dark">{{ ipinfo.status }}</td></tr>{% endif %}
-            {% if ipinfo.zip %}<tr><th class="bg-light text-muted">ZIP</th><td class="text-dark">{{ ipinfo.zip }}</td></tr>{% endif %}
+            {% if ipinfo.query %}<tr><th class="bg-light text-muted text-start">IP</th><td class="text-end">{{ ipinfo.query }}</td></tr>{% endif %}
+            {% if ipinfo.status %}<tr><th class="bg-light text-muted text-start">Status</th><td class="text-end">{{ ipinfo.status }}</td></tr>{% endif %}
+            {% if ipinfo.zip %}<tr><th class="bg-light text-muted text-start">ZIP</th><td class="text-end">{{ ipinfo.zip }}</td></tr>{% endif %}
           </tbody>
         </table>
       {% endif %}
