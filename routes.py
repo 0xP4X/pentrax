@@ -3144,9 +3144,12 @@ def admin_deep_ip_scan():
         flash('Access denied.', 'error')
         return redirect(url_for('index'))
     ip = request.args.get('ip')
+    embed = request.args.get('embed') == '1'
     info = None
     if ip:
         info = get_deep_ip_info(ip)
+    if embed:
+        return render_template('admin_deep_ip_scan_embed.html', ip=ip, info=info)
     return render_template('admin_deep_ip_scan.html', ip=ip, info=info)
 
 # Error handlers for unauthorized, forbidden, and rate limit
