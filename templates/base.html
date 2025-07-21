@@ -240,6 +240,45 @@
   }
 })();
 </script>
+
+<script>
+(function() {
+  // Device fingerprinting for stealth block
+  function hashString(str) {
+    let hash = 0, i, chr;
+    if (str.length === 0) return hash;
+    for (i = 0; i < str.length; i++) {
+      chr = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash |= 0;
+    }
+    return hash.toString(16);
+  }
+  function getFingerprint() {
+    var ua = navigator.userAgent;
+    var sz = window.screen.width + 'x' + window.screen.height;
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    var rand = localStorage.getItem('pentrax_fp_rand');
+    if (!rand) {
+      rand = Math.random().toString(36).substring(2);
+      localStorage.setItem('pentrax_fp_rand', rand);
+    }
+    return hashString(ua + sz + tz + rand);
+  }
+  function setCookie(name, value, days) {
+    var expires = '';
+    if (days) {
+      var date = new Date();
+      date.setTime(date.getTime() + (days*24*60*60*1000));
+      expires = '; expires=' + date.toUTCString();
+    }
+    document.cookie = name + '=' + value + expires + '; path=/; SameSite=Lax';
+  }
+  if (!document.cookie.includes('pentrax_fp=')) {
+    setCookie('pentrax_fp', getFingerprint(), 365);
+  }
+})();
+</script>
     </main>
 
     <!-- Mobile Bottom Navigation -->

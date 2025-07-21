@@ -596,6 +596,12 @@ class BlockedIP(db.Model):
     def __repr__(self):
         return f'<BlockedIP {self.ip_address}>'
 
+class BlockedDevice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fingerprint = db.Column(db.String(128), unique=True, nullable=False)
+    reason = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class LabPhase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)

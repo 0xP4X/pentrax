@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
@@ -15,6 +15,7 @@ import subprocess
 from datetime import datetime, timedelta
 from utils.firewall import firewall_middleware
 from db import db
+from models import BlockedIP, BlockedDevice
 
 # Load environment variables
 load_dotenv()
@@ -168,6 +169,19 @@ def inject_now():
 #         if select.select([fd], [], [], 0)[0]:
 #             output = os.read(fd, 1024).decode(errors='ignore')
 #             socketio.emit('output', {'output': output}, namespace='/terminals')
+
+def get_device_fingerprint():
+    fp = request.cookies.get('pentrax_fp')
+    return fp
+
+@app.before_request
+def block_ip_and_device():
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if BlockedIP.query.filter_by(ip_address=ip).first():
+        abort(404)
+    fp = get_device_fingerprint()
+    if fp and BlockedDevice.query.filter_by(fingerprint=fp).first():
+        abort(404)
 
 if __name__ == '__main__':
     # This block is for local development only.
