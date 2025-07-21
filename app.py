@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
@@ -58,6 +58,19 @@ def set_security_headers(response):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     else:
         response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@app.after_request
+def add_cache_headers(response):
+    # For static files, allow long-term caching
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    # For public pages (index, about, etc.), allow short-term caching
+    elif request.endpoint in ['index', 'about', 'terms', 'privacy']:
+        response.headers['Cache-Control'] = 'public, max-age=600'
+    # For user-specific or sensitive pages, prevent caching
+    else:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     return response
 
 # Initialize extensions

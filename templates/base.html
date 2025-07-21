@@ -217,6 +217,29 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
+
+<!-- Cookie/Cache Consent Banner -->
+<div id="cookieConsentBanner" style="display:none; position:fixed; bottom:0; left:0; width:100%; z-index:9999; background:rgba(30,34,62,0.98); color:#fff; padding:1rem 0; box-shadow:0 -2px 16px #232b5c33; text-align:center;">
+  <span style="font-size:1.05rem;">This site uses cookies and local storage to enhance your experience. By continuing, you accept our <a href="{{ url_for('privacy') }}" style="color:#ffd600; text-decoration:underline;">privacy policy</a>.</span>
+  <button id="acceptCookieBtn" style="margin-left:1.5rem; background:#667eea; color:#fff; border:none; border-radius:6px; padding:0.5rem 1.2rem; font-weight:600; cursor:pointer;">Accept</button>
+</div>
+<script>
+(function() {
+  function showBanner() {
+    document.getElementById('cookieConsentBanner').style.display = 'block';
+  }
+  function hideBanner() {
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+  }
+  if (!localStorage.getItem('pentrax_cookie_consent')) {
+    showBanner();
+    document.getElementById('acceptCookieBtn').onclick = function() {
+      localStorage.setItem('pentrax_cookie_consent', '1');
+      hideBanner();
+    };
+  }
+})();
+</script>
     </main>
 
     <!-- Mobile Bottom Navigation -->
