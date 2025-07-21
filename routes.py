@@ -3072,29 +3072,37 @@ def admin_siem_dashboard():
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
-    # Filters
+    # Get filter params
     event_type = request.args.get('event_type')
     severity = request.args.get('severity')
     ip = request.args.get('ip')
     user = request.args.get('user')
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
+    # Default: last 15 minutes
+    if not date_from and not date_to:
+        date_to_dt = datetime.utcnow()
+        date_from_dt = date_to_dt - timedelta(minutes=15)
+    else:
+        date_from_dt = datetime.strptime(date_from, '%Y-%m-%dT%H:%M') if date_from else None
+        date_to_dt = datetime.strptime(date_to, '%Y-%m-%dT%H:%M') if date_to else None
+    # Build query
     query = SIEMEvent.query
     if event_type:
         query = query.filter_by(event_type=event_type)
     if severity:
         query = query.filter_by(severity=severity)
     if ip:
-        query = query.filter(SIEMEvent.ip_address == ip)
+        query = query.filter_by(ip_address=ip)
     if user:
-        query = query.filter(SIEMEvent.username.ilike(f'%{user}%'))
-    if date_from:
-        query = query.filter(SIEMEvent.timestamp >= date_from)
-    if date_to:
-        query = query.filter(SIEMEvent.timestamp <= date_to)
-    events = query.order_by(SIEMEvent.timestamp.desc()).limit(200).all()
+        query = query.filter_by(username=user)
+    if date_from_dt:
+        query = query.filter(SIEMEvent.timestamp >= date_from_dt)
+    if date_to_dt:
+        query = query.filter(SIEMEvent.timestamp <= date_to_dt)
+    events = query.order_by(SIEMEvent.timestamp.desc()).all()
     blocked_ips = get_blocked_ips()
-    return render_template('admin_siem_dashboard.html', events=events, blocked_ips=blocked_ips, event_type=event_type, severity=severity, ip=ip, user=user, date_from=date_from, date_to=date_to)
+    return render_template('admin_siem_dashboard.html', events=events, event_type=event_type, severity=severity, ip=ip, user=user, date_from=date_from, date_to=date_to, blocked_ips=blocked_ips)
 
 @app.route('/admin/block_ip', methods=['POST'])
 @login_required

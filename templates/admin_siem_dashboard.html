@@ -19,9 +19,10 @@
         <div class="col-md-2"><input type="text" class="form-control" name="severity" placeholder="Severity" value="{{ severity or '' }}"></div>
         <div class="col-md-2"><input type="text" class="form-control" name="ip" placeholder="IP Address" value="{{ ip or '' }}"></div>
         <div class="col-md-2"><input type="text" class="form-control" name="user" placeholder="User" value="{{ user or '' }}"></div>
-        <div class="col-md-2"><input type="date" class="form-control" name="date_from" value="{{ date_from or '' }}"></div>
-        <div class="col-md-2"><input type="date" class="form-control" name="date_to" value="{{ date_to or '' }}"></div>
+        <div class="col-md-2"><input type="datetime-local" class="form-control" name="date_from" value="{{ date_from or '' }}"></div>
+        <div class="col-md-2"><input type="datetime-local" class="form-control" name="date_to" value="{{ date_to or '' }}"></div>
         <div class="col-md-12 mt-2"><button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Filter</button></div>
+        <div class="col-md-12 mt-1 small text-muted">By default, only events from the last 15 minutes are shown. Use the date/time filters to view a custom range.</div>
       </form>
       <div class="table-responsive">
         <table class="table table-hover align-middle bg-white">
@@ -45,9 +46,23 @@
                   <input type="hidden" name="ip" value="{{ e.ip_address }}">
                   <button class="btn btn-sm btn-danger" type="submit" title="Block IP"><i class="fas fa-ban"></i></button>
                 </form>
-                <a href="/admin/deep_ip_scan?ip={{ e.ip_address }}" class="btn btn-sm btn-info ms-1" target="_blank">
+                <button class="btn btn-sm btn-info ms-1" type="button" data-bs-toggle="modal" data-bs-target="#deepScanModal{{ e.id }}">
                   <i class="fas fa-search-location"></i> Deep Scan
-                </a>
+                </button>
+                <!-- Deep Scan Modal -->
+                <div class="modal fade" id="deepScanModal{{ e.id }}" tabindex="-1" aria-labelledby="deepScanModalLabel{{ e.id }}" aria-hidden="true">
+                  <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deepScanModalLabel{{ e.id }}">Deep IP Scan: {{ e.ip_address }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body p-0" style="min-height:500px;">
+                        <iframe src="/admin/deep_ip_scan?ip={{ e.ip_address }}" style="width:100%;height:500px;border:none;border-radius:8px;" loading="lazy"></iframe>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 {% endif %}
               </td>
             </tr>
