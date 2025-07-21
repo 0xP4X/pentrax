@@ -35,38 +35,24 @@
           <tr><th class="text-muted text-start">ASN</th><td class="text-end">{{ info.asn }}</td></tr>
           {% endif %}
           {% if info.ipqs %}
-          <tr>
-            <th class="text-muted text-start">VPN/Proxy/Tor</th>
-            <td class="text-end">
-              {% if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor %}
-                <span class="badge bg-danger"><i class="fas fa-shield-alt"></i> Yes</span>
-              {% else %}
-                <span class="badge bg-success"><i class="fas fa-check"></i> No</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="text-muted text-start">Threat Score</th>
-            <td class="text-end"><span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> {{ info.ipqs.fraud_score }}/100</span></td>
-          </tr>
-          <tr>
-            <th class="text-muted text-start">ISP</th>
-            <td class="text-end">{{ info.ipqs.ISP }}</td>
-          </tr>
-          <tr>
-            <th class="text-muted text-start">Connection Type</th>
-            <td class="text-end">{{ info.ipqs.connection_type }}</td>
-          </tr>
-          <tr>
-            <th class="text-muted text-start">Abuse/VPN/Hosting</th>
-            <td class="text-end">
-              {% if info.ipqs.abuse_velocity or info.ipqs.hosting_provider %}
-                <span class="badge bg-danger"><i class="fas fa-exclamation-circle"></i> Yes</span>
-              {% else %}
-                <span class="badge bg-success"><i class="fas fa-check"></i> No</span>
-              {% endif %}
-            </td>
-          </tr>
+          <tr><th class="text-muted text-start">VPN/Proxy/Tor</th><td class="text-end">{% if info.ipqs.vpn or info.ipqs.proxy or info.ipqs.tor %}<span class="badge bg-danger"><i class="fas fa-shield-alt"></i> Yes</span>{% else %}<span class="badge bg-success"><i class="fas fa-check"></i> No</span>{% endif %}</td></tr>
+          <tr><th class="text-muted text-start">Threat Score</th><td class="text-end"><span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle"></i> {{ info.ipqs.fraud_score }}/100</span></td></tr>
+          <tr><th class="text-muted text-start">ISP</th><td class="text-end">{{ info.ipqs.ISP }}</td></tr>
+          <tr><th class="text-muted text-start">Connection Type</th><td class="text-end">{{ info.ipqs.connection_type }}</td></tr>
+          <tr><th class="text-muted text-start">Abuse/VPN/Hosting</th><td class="text-end">{% if info.ipqs.abuse_velocity or info.ipqs.hosting_provider %}<span class="badge bg-danger"><i class="fas fa-exclamation-circle"></i> Yes</span>{% else %}<span class="badge bg-success"><i class="fas fa-check"></i> No</span>{% endif %}</td></tr>
+          {% if info.ipqs.bot_status is defined %}<tr><th class="text-muted text-start">Bot Status</th><td class="text-end">{{ info.ipqs.bot_status }}</td></tr>{% endif %}
+          {% if info.ipqs.recent_abuse is defined %}<tr><th class="text-muted text-start">Recent Abuse</th><td class="text-end">{{ info.ipqs.recent_abuse }}</td></tr>{% endif %}
+          {% if info.ipqs.open_ports is defined and info.ipqs.open_ports %}<tr><th class="text-muted text-start">Open Ports</th><td class="text-end">{{ info.ipqs.open_ports|join(', ') }}</td></tr>{% endif %}
+          {% if info.ipqs.is_crawler is defined %}<tr><th class="text-muted text-start">Is Crawler</th><td class="text-end">{{ info.ipqs.is_crawler }}</td></tr>{% endif %}
+          {% if info.ipqs.is_datacenter is defined %}<tr><th class="text-muted text-start">Is Datacenter</th><td class="text-end">{{ info.ipqs.is_datacenter }}</td></tr>{% endif %}
+          {% if info.ipqs.is_mobile is defined %}<tr><th class="text-muted text-start">Is Mobile</th><td class="text-end">{{ info.ipqs.is_mobile }}</td></tr>{% endif %}
+          {% if info.ipqs.is_residential is defined %}<tr><th class="text-muted text-start">Is Residential</th><td class="text-end">{{ info.ipqs.is_residential }}</td></tr>{% endif %}
+          {% if info.ipqs.reverse_dns %}<tr><th class="text-muted text-start">Reverse DNS</th><td class="text-end">{{ info.ipqs.reverse_dns }}</td></tr>{% endif %}
+          {% if info.ipqs.timezone %}<tr><th class="text-muted text-start">Timezone</th><td class="text-end">{{ info.ipqs.timezone }}</td></tr>{% endif %}
+          {% if info.ipqs.region_code %}<tr><th class="text-muted text-start">Region Code</th><td class="text-end">{{ info.ipqs.region_code }}</td></tr>{% endif %}
+          {% if info.ipqs.city %}<tr><th class="text-muted text-start">City</th><td class="text-end">{{ info.ipqs.city }}</td></tr>{% endif %}
+          {% if info.ipqs.zip_code %}<tr><th class="text-muted text-start">ZIP Code</th><td class="text-end">{{ info.ipqs.zip_code }}</td></tr>{% endif %}
+          {% if info.ipqs.request_id %}<tr><th class="text-muted text-start">Request ID</th><td class="text-end">{{ info.ipqs.request_id }}</td></tr>{% endif %}
           {% endif %}
         </tbody>
       </table>
