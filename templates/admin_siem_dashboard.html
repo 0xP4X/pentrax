@@ -58,29 +58,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                       </div>
                       <div class="modal-body p-0 position-relative" style="min-height:500px; background: #181a1b;">
-                        <div id="deep-scan-spinner-{{ e.id }}" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark bg-opacity-75" style="z-index:10;">
-                          <div class="spinner-border text-info mb-3" role="status" style="width:3rem;height:3rem;"></div>
-                          <div class="text-white">Loading deep scan...</div>
-                        </div>
                         <iframe id="deep-scan-iframe-{{ e.id }}" src="/admin/deep_ip_scan?ip={{ e.ip_address }}&embed=1" style="width:100%;height:500px;border:none;border-radius:8px;" loading="lazy"></iframe>
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                          var modal = document.getElementById('deepScanModal{{ e.id }}');
-                          var spinner = document.getElementById('deep-scan-spinner-{{ e.id }}');
-                          var iframe = document.getElementById('deep-scan-iframe-{{ e.id }}');
-                          if (modal && spinner && iframe) {
-                            modal.addEventListener('show.bs.modal', function() {
-                              spinner.style.display = 'flex';
-                              setTimeout(function() { spinner.style.display = 'none'; }, 10000);
-                              var gspinner = document.getElementById('global-spinner');
-                              if (gspinner) gspinner.style.display = 'none';
-                            });
-                            iframe.onload = function() {
-                              setTimeout(function() { spinner.style.display = 'none'; }, 1000);
-                            };
-                          }
-                        });
-                        </script>
                       </div>
                     </div>
                   </div>
