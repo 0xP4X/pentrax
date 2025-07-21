@@ -52,12 +52,12 @@
                 <!-- Deep Scan Modal -->
                 <div class="modal fade" id="deepScanModal{{ e.id }}" tabindex="-1" aria-labelledby="deepScanModalLabel{{ e.id }}" aria-hidden="true">
                   <div class="modal-dialog modal-xl modal-dialog-centered">
-                    <div class="modal-content">
+                    <div class="modal-content" style="background: #181a1b;">
                       <div class="modal-header">
                         <h5 class="modal-title" id="deepScanModalLabel{{ e.id }}">Deep IP Scan: {{ e.ip_address }}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                       </div>
-                      <div class="modal-body p-0 position-relative" style="min-height:500px;">
+                      <div class="modal-body p-0 position-relative" style="min-height:500px; background: #181a1b;">
                         <div id="deep-scan-spinner-{{ e.id }}" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark bg-opacity-75" style="z-index:10;">
                           <div class="spinner-border text-info mb-3" role="status" style="width:3rem;height:3rem;"></div>
                           <div class="text-white">Loading deep scan...</div>
@@ -72,6 +72,8 @@
                             modal.addEventListener('show.bs.modal', function() {
                               spinner.style.display = 'flex';
                               setTimeout(function() { spinner.style.display = 'none'; }, 10000);
+                              var gspinner = document.getElementById('global-spinner');
+                              if (gspinner) gspinner.style.display = 'none';
                             });
                             iframe.onload = function() {
                               setTimeout(function() { spinner.style.display = 'none'; }, 1000);
