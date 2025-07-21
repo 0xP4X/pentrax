@@ -21,11 +21,70 @@
         color: var(--pentrax-secondary);
         filter: drop-shadow(0 2px 6px #764ba2cc);
     }
+    .error-anim {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    .magnifier {
+        animation: floatY 2.5s ease-in-out infinite alternate;
+        transform-origin: 50% 60%;
+    }
+    @keyframes floatY {
+        0% { transform: translateY(0) rotate(-8deg); }
+        100% { transform: translateY(-18px) rotate(8deg); }
+    }
     .error-number {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #667eea;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 12px #667eea33;
         animation: pulse 1.5s infinite alternate;
     }
-    .illustration svg {
-        animation: fadeIn 1.2s;
+    .error-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #222;
+        margin-bottom: 0.5rem;
+        letter-spacing: 1px;
+    }
+    .error-message {
+        font-size: 1.2rem;
+        color: #555;
+        margin-bottom: 1.5rem;
+    }
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    .btn-error {
+        padding: 0.7rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: background 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 12px #667eea22;
+    }
+    .btn-primary-error {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+    }
+    .btn-primary-error:hover {
+        background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+        color: #fff;
+        box-shadow: 0 4px 24px #764ba244;
+    }
+    .btn-secondary-error {
+        background: #f7fafc;
+        color: #667eea;
+        border: 1px solid #667eea;
+    }
+    .btn-secondary-error:hover {
+        background: #e2e8f0;
+        color: #222;
     }
 </style>
 <div class="error-page">
@@ -33,23 +92,21 @@
         <div class="error-logo">
             <i class="fas fa-shield-alt"></i> PentraX
         </div>
-        <div class="illustration">
-            <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="100" cy="100" r="90" fill="#f7fafc" stroke="#e2e8f0" stroke-width="2"/>
-                <circle cx="70" cy="70" r="25" fill="none" stroke="#667eea" stroke-width="4"/>
-                <line x1="85" y1="85" x2="110" y2="110" stroke="#667eea" stroke-width="4" stroke-linecap="round"/>
-                <circle cx="130" cy="130" r="15" fill="#764ba2" opacity="0.2"/>
-                <text x="130" y="135" text-anchor="middle" font-size="20" font-weight="bold" fill="#764ba2">?</text>
-                <circle cx="40" cy="40" r="3" fill="#667eea" opacity="0.6"/>
-                <circle cx="160" cy="60" r="2" fill="#764ba2" opacity="0.6"/>
-                <circle cx="50" cy="150" r="2" fill="#667eea" opacity="0.6"/>
-                <circle cx="150" cy="140" r="3" fill="#764ba2" opacity="0.6"/>
+        <div class="error-anim">
+            <!-- Animated SVG: Magnifying Glass -->
+            <svg class="magnifier" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="55" cy="55" r="40" fill="#f7fafc" stroke="#667eea" stroke-width="4"/>
+                <ellipse cx="55" cy="55" rx="28" ry="28" fill="#fff" stroke="#764ba2" stroke-width="2"/>
+                <rect x="85" y="85" width="22" height="8" rx="4" fill="#667eea" transform="rotate(45 85 85)"/>
+                <circle cx="55" cy="55" r="18" fill="#e2e8f0"/>
+                <circle cx="55" cy="55" r="8" fill="#667eea"/>
+                <animateTransform attributeName="transform" type="rotate" from="0 55 55" to="360 55 55" dur="6s" repeatCount="indefinite"/>
             </svg>
         </div>
         <div class="error-number">404</div>
         <h1 class="error-title">Page Not Found</h1>
         <p class="error-message">
-            Oops! The page you're looking for seems to have wandered off into the digital wilderness. 
+            Oops! The page you're looking for seems to have wandered off into the digital wilderness.<br>
             It might have been moved, deleted, or perhaps it never existed in the first place.
         </p>
         <div class="error-actions">

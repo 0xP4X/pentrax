@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc
 from app import app, db
-from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent, BlockedIP, LabPhase
+from models import User, Post, Comment, Lab, LabCompletion, Notification, Follow, AdminSettings, UserAction, UserBan, PostLike, CommentLike, Purchase, Order, OrderItem, Transaction, UserWallet, WalletTransaction, LabQuizQuestion, LabQuizAttempt, ActivationKey, PremiumSubscription, PaymentPlan, is_platform_free_mode, set_platform_free_mode, LabTerminalCommand, LabTerminalSession, Contact, SIEMEvent, BlockedIP, LabPhase, LearningPath, LearningPathLab, LearningPathCompletion
 from ai_assistant import get_ai_response
 from utils import allowed_file, create_notification, send_email
 from payment_service import PaymentService
@@ -22,6 +22,7 @@ from utils.firewall import add_blocked_ip, get_blocked_ips, unblock_ip
 from utils.siem import get_deep_ip_info, log_siem_event
 import re
 from collections import defaultdict
+from utils.certificate import generate_certificate
 
 @app.context_processor
 def inject_user():
@@ -604,6 +605,7 @@ def submit_flag(lab_id):
         db.session.commit()
         update_user_streak(current_user.id)
         check_and_unlock_achievements(current_user)
+        check_and_award_learning_path_completion(current_user)
         flash('Congratulations! You completed the lab and earned points!', 'success')
         log_siem_event(
             event_type='lab_complete',
@@ -3615,3 +3617,100 @@ def admin_delete_phase(lab_id, phase_id):
         db.session.rollback()
         flash(f'Error deleting phase: {str(e)}', 'error')
     return redirect(url_for('admin_edit_lab', lab_id=lab_id))
+
+@app.route('/admin/learning-paths')
+@login_required
+def admin_learning_paths():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    learning_paths = LearningPath.query.order_by(LearningPath.created_at.desc()).all()
+    return render_template('admin_learning_paths.html', learning_paths=learning_paths)
+
+@app.route('/admin/learning-paths/new', methods=['GET', 'POST'])
+@login_required
+def admin_create_learning_path():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    from models import Lab
+    all_labs = Lab.query.filter_by(is_active=True).all()
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form.get('description', '')
+        icon = request.form.get('icon', '')
+        is_active = 'is_active' in request.form
+        lab_ids = request.form.getlist('labs')
+        lab_order = request.form.get('lab_order', '')
+        path = LearningPath(title=title, description=description, icon=icon, is_active=is_active)
+        db.session.add(path)
+        db.session.commit()
+        # Assign labs to path
+        ordered_ids = [int(i) for i in lab_order.split(',') if i.strip().isdigit()] if lab_order else [int(i) for i in lab_ids]
+        for order, lab_id in enumerate(ordered_ids, 1):
+            db.session.add(LearningPathLab(learning_path_id=path.id, lab_id=lab_id, order=order))
+        db.session.commit()
+        flash('Learning path created successfully!', 'success')
+        return redirect(url_for('admin_learning_paths'))
+    return render_template('admin_learning_path_form.html', path=None, all_labs=all_labs, path_lab_ids=[])
+
+@app.route('/admin/learning-paths/edit/<int:path_id>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_learning_path(path_id):
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    from models import Lab
+    path = LearningPath.query.get_or_404(path_id)
+    all_labs = Lab.query.filter_by(is_active=True).all()
+    path_lab_ids = [lab.lab_id for lab in path.labs]
+    if request.method == 'POST':
+        path.title = request.form['title']
+        path.description = request.form.get('description', '')
+        path.icon = request.form.get('icon', '')
+        path.is_active = 'is_active' in request.form
+        lab_ids = request.form.getlist('labs')
+        lab_order = request.form.get('lab_order', '')
+        # Remove old labs
+        LearningPathLab.query.filter_by(learning_path_id=path.id).delete()
+        ordered_ids = [int(i) for i in lab_order.split(',') if i.strip().isdigit()] if lab_order else [int(i) for i in lab_ids]
+        for order, lab_id in enumerate(ordered_ids, 1):
+            db.session.add(LearningPathLab(learning_path_id=path.id, lab_id=lab_id, order=order))
+        db.session.commit()
+        flash('Learning path updated successfully!', 'success')
+        return redirect(url_for('admin_learning_paths'))
+    return render_template('admin_learning_path_form.html', path=path, all_labs=all_labs, path_lab_ids=path_lab_ids)
+
+@app.route('/admin/learning-paths/delete/<int:path_id>', methods=['POST'])
+@login_required
+def admin_delete_learning_path(path_id):
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    path = LearningPath.query.get_or_404(path_id)
+    LearningPathLab.query.filter_by(learning_path_id=path.id).delete()
+    LearningPathCompletion.query.filter_by(learning_path_id=path.id).delete()
+    db.session.delete(path)
+    db.session.commit()
+    flash('Learning path deleted successfully!', 'success')
+    return redirect(url_for('admin_learning_paths'))
+
+def check_and_award_learning_path_completion(user):
+    from models import LearningPath, LearningPathLab, LearningPathCompletion, LabCompletion
+    completed_lab_ids = set(lc.lab_id for lc in LabCompletion.query.filter_by(user_id=user.id).all())
+    paths = LearningPath.query.filter_by(is_active=True).all()
+    for path in paths:
+        path_lab_ids = set(lab.lab_id for lab in path.labs)
+        if path_lab_ids and path_lab_ids.issubset(completed_lab_ids):
+            # Check if already awarded
+            existing = LearningPathCompletion.query.filter_by(user_id=user.id, learning_path_id=path.id).first()
+            if not existing:
+                # Generate certificate
+                cert_path = generate_certificate(user.username, path.title)
+                cert_url = cert_path.replace('static/', '/static/') if cert_path.startswith('static/') else cert_path
+                completion = LearningPathCompletion(user_id=user.id, learning_path_id=path.id, certificate_url=cert_url)
+                db.session.add(completion)
+                db.session.commit()
+                # Optionally, create a notification or award a badge here
+                create_notification(user.id, 'Learning Path Completed', f'You completed the learning path "{path.title}"! Download your certificate.')
+                flash(f'Congratulations! You completed the learning path "{path.title}" and earned a certificate!', 'success')

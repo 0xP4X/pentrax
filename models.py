@@ -606,3 +606,34 @@ class LabPhase(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     lab = db.relationship('Lab', backref='phases')
+
+class LearningPath(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    icon = db.Column(db.String(100), nullable=True)  # Optional icon for the path
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    labs = db.relationship('LearningPathLab', back_populates='learning_path', cascade='all, delete-orphan')
+    completions = db.relationship('LearningPathCompletion', back_populates='learning_path', cascade='all, delete-orphan')
+
+class LearningPathLab(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    learning_path_id = db.Column(db.Integer, db.ForeignKey('learning_path.id'), nullable=False)
+    lab_id = db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=False)
+    order = db.Column(db.Integer, default=1)  # Order of lab in the path
+
+    learning_path = db.relationship('LearningPath', back_populates='labs')
+    lab = db.relationship('Lab')
+
+class LearningPathCompletion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    learning_path_id = db.Column(db.Integer, db.ForeignKey('learning_path.id'), nullable=False)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    certificate_url = db.Column(db.String(500), nullable=True)  # URL to downloadable certificate
+
+    user = db.relationship('User', backref='learning_path_completions')
+    learning_path = db.relationship('LearningPath', back_populates='completions')

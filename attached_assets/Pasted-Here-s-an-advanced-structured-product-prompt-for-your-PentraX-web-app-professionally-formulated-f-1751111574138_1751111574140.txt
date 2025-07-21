@@ -1,141 +1,84 @@
-Here's an advanced, structured product prompt for your PentraX web app — professionally formulated for development or passing to a full-stack dev team, AI assistant, or generator like Replit AI or GPT-Engineer.
-
-🔐🛠️ PentraX: Cybersecurity Collaboration and Innovation Platform
-
-🔷 Goal:
-
-Build a modern, secure web app called PentraX — a community-driven platform for cybersecurity engineers to share tools, report vulnerabilities/bugs, publish ideas, collaborate, and monetize their content (e.g., scripts, zero-days, and research).
-
-🧠 Core Features
-
-🔹 1. User System
-
-Full user authentication & profile
-
-Social-style profiles (name, skills, avatar, banner, about)
-
-Add GitHub account + pull public repos
-
-Display projects and contributions
-
-Follow & connect with other hackers
-
-Badge and reputation system (based on contributions)
-
-🔹 2. AI Assistant
-
-Always-available AI popup assistant
-
-GPT-based, with security-focused prompts
-
-Can help users debug, explain tools, guide through labs
-
-Admin can update/change AI API key at any time
-
-🔹 3. Forum Modules
-
-🔧 Tools – Upload/share CLI tools and payloads
-
-🐛 Bugs – Report and track CVEs and 0-days
-
-💡 Ideas – Share attack vectors, concepts
-
-🧑‍💻 Jobs & Collabs – Freelance gigs, team-ups
-
-📁 Docs & Projects – Attach GitHub repos or paste links
-
-🔹 4. Cyber Labs
-
-Real-time terminal interface (optional Docker backend)
-
-Practice space with challenges (Gobuster, SQLi, XSS, etc.)
-
-Each lab has hints, difficulty level, leaderboard
-
-🔹 5. Monetization Engine
-
-Sell scripts, tools, bug reports, PDFs, training material
-
-Built-in store (like Gumroad for hackers)
-
-Paystack or Stripe integration
-
-Free vs Premium tags for content
-
-Admin cuts % commission on sales
-
-🔹 6. Admin Dashboard
-
-Admin login: admin / password123
-
-View all users, activity, posted tools/labs/scripts
-
-Ban, mute, promote users
-
-Set featured tools and users
-
-Update AI API keys, pricing models
-
-Analytics dashboard: downloads, views, revenue
-
-🔹 7. Notifications & Real-time Updates
-
-New comment, new sale, reply, tag = in-app alert
-
-WebSocket or polling-based real-time updates
-
-Night mode / light mode support
-
-🎨 UI/UX
-
-Inspired by GitHub, Google Developers, and Microsoft Learn
-
-Responsive UI
-
-Built-in light and dark themes
-
-Sidebar + dashboard layout
-
-Markdown editor for posts and docs
-
-⚙️ Tech Stack Suggestion
-
-Frontend: React (with Tailwind CSS + ShadCN), or HTMX/Alpine.js for lighter builds
-
-Backend: Python Flask or FastAPI
-
-Database: PostgreSQL (with Supabase (Admin can update supabase database URL))
-
-AI Assistant: GPT-4 via OpenAI API (configurable)
-
-Auth: JWT + OAuth2 (GitHub login)
-
-Docker: Optional lab containers
-
-Payments: Paystack (Key will be provided by admin later )
-
-Hosting: Render.com, Railway, or Hetzner VPS
-
-🛡️ Security Considerations
-
-HTTPS everywhere
-
-Proper RBAC (admin, premium, free user)
-
-Rate limiting, XSS/CSRF protection
-
-Secure file uploads (validate extensions, scan if needed)
-
-Logs, audit trails in admin panel
-
-💡 Monetization Summary
-
-Paid script uploads (platform gets commission)
-
-Premium lab content or early access
-
-Featured content promotion (paid pinning)
-
-GitHub sponsor integration
-
-Optional SaaS APIs for automation tools
+PentraX: Cybersecurity Collaboration and Innovation Platform (MVP Feature Breakdown)
+
+Goal:
+Build a secure, modern web app for cybersecurity engineers to share tools, report vulnerabilities, publish ideas, collaborate, and monetize content. Below is an in-depth breakdown of how each feature works in MVP terms.
+
+---
+
+1. User System (MVP)
+- Registration/Login: Users sign up with email/password (JWT-based auth). Optionally, OAuth2 with GitHub for quick onboarding.
+- Profile: Each user has a profile page with editable fields: name, skills, avatar, banner, and about section. Minimal UI: profile edit form, profile view page.
+- GitHub Integration: Users can link their GitHub account (OAuth2). Public repos are fetched and displayed on their profile (read-only, no write access).
+- Social: Users can follow/unfollow others. Simple follower/following lists on profile pages.
+- Badges & Reputation: Users earn badges for actions (e.g., first post, first sale). Reputation is a numeric score based on contributions (posts, sales, bug reports). Displayed on profile.
+
+2. AI Assistant (MVP)
+- Always-available popup/chat widget (bottom-right corner).
+- Powered by GPT-4 (OpenAI API key set by admin in dashboard).
+- Users can ask questions, get tool explanations, or request lab hints. Simple chat UI, no conversation history persistence in MVP.
+- Admin can update the API key from the admin dashboard.
+
+3. Forum Modules (MVP)
+- Forum is divided into categories: Tools, Bugs, Ideas, Jobs & Collabs, Docs & Projects.
+- Users can create posts in each category. Each post has a title, body (Markdown editor), optional file/link attachment.
+- Commenting: Users can comment on posts. Simple threaded comments.
+- Search and filter by category/tag.
+
+4. Cyber Labs (MVP)
+- Labs are listed on a dedicated page, each with a title, description, difficulty, and tags.
+- Each lab has a real-time terminal (xterm.js) connected to a backend (Docker container or simulated shell for MVP).
+- Labs include hints (shown on request), and a leaderboard (top scorers by completion time).
+- Users can attempt labs, submit flags/answers, and see their progress.
+
+5. Monetization Engine (MVP)
+- Store page lists scripts, tools, bug reports, PDFs, and training material for sale.
+- Users can upload content, set price (or mark as free/premium).
+- Payment integration (Paystack or Stripe; admin sets API keys in dashboard).
+- Purchases tracked in user dashboard (My Purchases).
+- Platform takes a commission (configurable by admin).
+
+6. Admin Dashboard (MVP)
+- Admin login (separate from user login; default credentials set on deploy, must be changed).
+- View/manage all users, posts, labs, and store items.
+- Ban, mute, or promote users (role management).
+- Set featured tools/users (appear on homepage or highlighted sections).
+- Update AI API keys, payment keys, and pricing models.
+- Analytics: basic stats (user count, sales, downloads, views).
+
+7. Notifications & Real-time Updates (MVP)
+- In-app notifications for new comments, sales, replies, or tags (bell icon in navbar).
+- Real-time updates via WebSocket or polling (MVP can use polling for simplicity).
+- Night mode/light mode toggle (UI theme switcher in settings or navbar).
+
+UI/UX (MVP)
+- Responsive layout (sidebar + dashboard style), inspired by GitHub/Google Developers.
+- Light and dark themes (toggle in settings).
+- Markdown editor for posts/docs (simple, with preview).
+- Minimal, clean design prioritizing usability.
+
+Tech Stack (MVP)
+- Frontend: React (with Tailwind CSS), or HTMX/Alpine.js for lighter builds.
+- Backend: Python Flask or FastAPI.
+- Database: PostgreSQL (admin can update DB URL in dashboard).
+- Auth: JWT + OAuth2 (GitHub login).
+- AI: GPT-4 via OpenAI API (configurable key).
+- Payments: Paystack or Stripe (configurable key).
+- Hosting: Render.com, Railway, or Hetzner VPS.
+
+Security (MVP)
+- HTTPS enforced.
+- RBAC: Roles for admin, premium, and free users.
+- Rate limiting, XSS/CSRF protection on all forms.
+- Secure file uploads (extension/type validation).
+- Audit logs for admin actions.
+
+Monetization Summary (MVP)
+- Paid script uploads (platform commission).
+- Premium lab content or early access.
+- Paid featured content (pinning posts/tools).
+- GitHub sponsor links on profiles.
+- Optional SaaS APIs for automation tools.
+
+---
+
+This breakdown provides a clear, actionable MVP implementation plan for each PentraX feature, focusing on user experience, backend logic, and essential UI elements.
