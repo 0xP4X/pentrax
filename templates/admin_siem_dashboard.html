@@ -62,14 +62,20 @@
                           <div class="spinner-border text-info mb-3" role="status" style="width:3rem;height:3rem;"></div>
                           <div class="text-white">Loading deep scan...</div>
                         </div>
-                        <iframe id="deep-scan-iframe-{{ e.id }}" src="/admin/deep_ip_scan?ip={{ e.ip_address }}&embed=1" style="width:100%;height:500px;border:none;border-radius:8px;" loading="lazy" onload="document.getElementById('deep-scan-spinner-{{ e.id }}').style.display='none';"></iframe>
+                        <iframe id="deep-scan-iframe-{{ e.id }}" src="/admin/deep_ip_scan?ip={{ e.ip_address }}&embed=1" style="width:100%;height:500px;border:none;border-radius:8px;" loading="lazy"></iframe>
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
+                          var modal = document.getElementById('deepScanModal{{ e.id }}');
                           var spinner = document.getElementById('deep-scan-spinner-{{ e.id }}');
-                          if (spinner) {
-                            setTimeout(function() {
-                              spinner.style.display = 'none';
-                            }, 10000); // Hide after 10 seconds no matter what
+                          var iframe = document.getElementById('deep-scan-iframe-{{ e.id }}');
+                          if (modal && spinner && iframe) {
+                            modal.addEventListener('show.bs.modal', function() {
+                              spinner.style.display = 'flex';
+                              setTimeout(function() { spinner.style.display = 'none'; }, 10000);
+                            });
+                            iframe.onload = function() {
+                              setTimeout(function() { spinner.style.display = 'none'; }, 1000);
+                            };
                           }
                         });
                         </script>
