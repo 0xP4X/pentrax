@@ -45,47 +45,9 @@
                   <input type="hidden" name="ip" value="{{ e.ip_address }}">
                   <button class="btn btn-sm btn-danger" type="submit" title="Block IP"><i class="fas fa-ban"></i></button>
                 </form>
-                <button class="btn btn-sm btn-info ms-1" type="button" data-bs-toggle="modal" data-bs-target="#deepScanModal{{ e.id }}">
+                <a href="/admin/deep_ip_scan?ip={{ e.ip_address }}" class="btn btn-sm btn-info ms-1" target="_blank">
                   <i class="fas fa-search-location"></i> Deep Scan
-                </button>
-                <!-- Deep Scan Modal -->
-                <div class="modal fade" id="deepScanModal{{ e.id }}" tabindex="-1" aria-labelledby="deepScanModalLabel{{ e.id }}" aria-hidden="true">
-                  <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="deepScanModalLabel{{ e.id }}">Deep IP Scan: {{ e.ip_address }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div id="deep-scan-content-{{ e.id }}">
-                          <div class="text-center my-4">
-                            <div class="spinner-border text-info" role="status"></div>
-                            <div>Loading deep scan...</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <script>
-                  document.addEventListener('DOMContentLoaded', function() {
-                    var modal = document.getElementById('deepScanModal{{ e.id }}');
-                    if (modal) {
-                      modal.addEventListener('show.bs.modal', function () {
-                        var content = document.getElementById('deep-scan-content-{{ e.id }}');
-                        content.innerHTML = '<div class="text-center my-4"><div class="spinner-border text-info" role="status"></div><div>Loading deep scan...</div></div>';
-                        fetch('/admin/deep_ip_scan?ip={{ e.ip_address }}')
-                          .then(resp => resp.json())
-                          .then(data => {
-                            content.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-                          })
-                          .catch(err => {
-                            content.innerHTML = '<div class="alert alert-danger">Failed to load deep scan: ' + err + '</div>';
-                          });
-                      });
-                    }
-                  });
-                </script>
+                </a>
                 {% endif %}
               </td>
             </tr>
