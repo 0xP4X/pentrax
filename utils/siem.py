@@ -13,7 +13,7 @@ def get_deep_ip_info(ip):
     info = {'ip': ip}
     # IPInfo.io (basic geolocation, ASN, org, etc.)
     try:
-        resp = requests.get(f'https://ipinfo.io/{ip}/json')
+        resp = requests.get(f'https://ipinfo.io/{ip}/json', timeout=5)
         if resp.ok:
             info.update(resp.json())
     except Exception as e:
@@ -21,7 +21,7 @@ def get_deep_ip_info(ip):
     # IPQualityScore (VPN/proxy/tor/threat)
     try:
         IPQS_KEY = 'gmnxgQYYckRqsxrJLuezVIR1BUkB3xjU'
-        resp = requests.get(f'https://ipqualityscore.com/api/json/ip/{IPQS_KEY}/{ip}')
+        resp = requests.get(f'https://ipqualityscore.com/api/json/ip/{IPQS_KEY}/{ip}', timeout=5)
         if resp.ok:
             info['ipqs'] = resp.json()
     except Exception as e:
